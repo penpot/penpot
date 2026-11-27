@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
+   [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.types.shape-tree :as ctst]
@@ -431,7 +432,15 @@
       (let [share-id (-> state :viewer-local :share-id)]
         (rx/merge
          (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
-              (rx/map comment-threads-fetched))
+              (rx/map comment-threads-fetched)
+              ;; Without the backend the threads are fetched the next time
+              (rx/catch (fn [cause]
+                          (if (rp/retryable-error? cause)
+                            (do
+                              (log/warn :hint "unable to fetch the comment threads"
+                                        :file-id (str file-id))
+                              (rx/empty))
+                            (rx/throw cause)))))
 
          (when (:workspace-local state)
            (rx/of (dtm/fetch-members))))))))

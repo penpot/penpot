@@ -18,6 +18,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.token-values :as cttv]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
@@ -77,7 +78,8 @@
     :variant-component-bad-name
     :variant-component-bad-id
     :variant-main-outside-board
-    :missing-tokens-status})
+    :missing-tokens-status
+    :token-values-mismatch})
 
 (def ^:private schema:error
   [:map {:title "ValidationError"}
@@ -489,6 +491,14 @@
                     "This thape has text type touched but not content touched"
                     shape file page))))
 
+(defn- check-token-values
+  "Validate that the token values of the shape are for applied tokens."
+  [shape file page]
+  (when (seq (cttv/orphan-attrs shape))
+    (report-error :token-values-mismatch
+                  "This shape has token values for attributes without a token"
+                  shape file page)))
+
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -794,6 +804,7 @@
       (check-geometry shape file page)
       (check-parent-children shape file page)
       (check-frame shape file page)
+      (check-token-values shape file page)
 
       (when (ctk/is-variant-container? shape)
         (check-variant-container shape file page))
@@ -1216,7 +1227,7 @@
     :add-typography :mod-typography :del-typography
     :set-tokens-lib :set-token :set-token-set :set-token-theme :set-tokens-status
     :rename-token-set-group :move-token-set :move-token-set-group
-    :set-base-font-size :set-tokens-source})
+    :set-base-font-size :set-tokens-source :set-tokens-resolved})
 
 (defn- touched-page-ids
   "Ids of the pages `changes` modify, or nil if a change has a type not

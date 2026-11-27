@@ -16,6 +16,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
+   [app.common.types.token-values :as cttv]
    [app.common.types.tokens-lib :as ctob]))
 
 (defn get-tokens-source
@@ -131,3 +132,20 @@
                            (:id page)
                            #(ctst/set-shape % shape'))))
       file)))
+
+(defn applied-targets
+  "Targets for `generate-token-propagation` with every token applied to the
+  shapes of `objects`."
+  [objects]
+  (into {}
+        (keep (fn [[id shape]]
+                (when-let [attrs (some-> shape :applied-tokens keys seq)]
+                  [id (set attrs)])))
+        objects))
+
+(defn stale-attrs
+  "Token attributes of `shape` that are stale."
+  [{:keys [applied-tokens token-values] :as shape}]
+  (if (cttv/assigned? shape)
+    (into #{} (remove #(contains? token-values %)) (keys applied-tokens))
+    #{}))

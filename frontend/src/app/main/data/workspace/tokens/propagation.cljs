@@ -5,276 +5,491 @@
 ;; Copyright (c) KALEIDOS SUBSIDIARY SL
 
 (ns app.main.data.workspace.tokens.propagation
+  "Sets the shapes to the values of their tokens after the tokens change.
+
+  Only the token attributes that are out of date are set: the ones whose
+  shape holds another value than its token resolves to, the stale ones and
+  the unassigned ones (§ `app.common.types.token-values`)."
   (:require
+   [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
-   [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
+   [app.common.logic.tokens-propagation :as cltp]
+   [app.common.thumbnails :as thc]
    [app.common.time :as ct]
-   [app.common.types.token :as ctt]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
-   [app.main.data.style-dictionary :as sd]
-   [app.main.data.tokenscript :as ts]
-   [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.persistence :as-alias dps]
+   [app.main.data.persistence.lock :as plk]
+   [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.drain :as drain]
+   [app.main.data.workspace.tokens.lookup :as lookup]
+   [app.main.data.workspace.tokens.page-values :as pv]
+   [app.main.data.workspace.tokens.progress :as dwtpr]
    [app.main.data.workspace.undo :as dwu]
+   [app.main.fonts :as fonts]
+   [app.util.activity :as activity]
+   [app.util.timers :as tm]
    [beicon.v2.core :as rx]
-   [clojure.data :as data]
-   [clojure.set :as set]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (l/set-level! :warn)
 
-;; Helpers ---------------------------------------------------------------------
+;; Targets ---------------------------------------------------------------------
 
-;; TODO: see if this can be replaced by more standard functions
-(defn deep-merge
-  "Like d/deep-merge but unions set values."
-  ([a b]
-   (cond
-     (map? a) (merge-with deep-merge a b)
-     (set? a) (set/union a b)
-     :else b))
-  ([a b & rest]
-   (reduce deep-merge a (cons b rest))))
+(defn- token-names
+  "Names of the `changed` tokens, nil for any token."
+  [changed]
+  (when (some? changed) (vec (keys changed))))
 
-(defn- flatten-set-keyed-map
-  "Flattens a map where the keys are sets of keywords."
-  [m into-m]
-  (reduce
-   (fn [acc [ks action]]
-     (into acc (map (fn [k] [k action]) ks)))
-   into-m m))
+(defn- candidate-ids
+  "Ids of the shapes of `objects` that may be out of date: the ones that
+  apply some of the `changed` tokens, or every shape with tokens when
+  `changed` is nil."
+  [objects changed]
+  (pv/candidate-ids objects (token-names changed)))
 
-;; Constants -------------------------------------------------------------------
-
-(def ^:private filter-existing-values? false)
-
-(def ^:private attributes->shape-update dwta/attributes->shape-update)
-
-(def ^:private attribute-actions-map
-  (flatten-set-keyed-map attributes->shape-update {}))
-
-;; Data flows ------------------------------------------------------------------
-
-(defn- invert-collect-key-vals
-  [xs resolved-tokens shape]
-  (-> (reduce
-       (fn [acc [k v]]
-         (let [resolved-token (get resolved-tokens v)
-               resolved-value (get resolved-token :resolved-value)
-               skip? (or
-                      (not (get resolved-tokens v))
-                      (and filter-existing-values? (= (get shape k) resolved-value)))]
-           (if skip?
-             acc
-             (update acc resolved-value (fnil conj #{}) k))))
-       {} xs)))
-
-(defn- split-by-action
-  "Attributes applied by different actions can share a value (a radius
-  and a stroke width of 4): one group per action, or only one of them
-  would be applied (see `actionize-shapes-update-info`)."
-  [attrs-values-map]
-  (reduce
-   (fn [acc [attrs v]]
-     (reduce (fn [acc group] (assoc acc (set group) v))
-             acc
-             (vals (group-by attribute-actions-map attrs))))
-   {} attrs-values-map))
-
-(defn- split-attribute-groups [attrs-values-map]
-  (-> (reduce
-       (fn [acc [attrs v]]
-         (cond
-           (some attrs #{:width :height}) (let [[_ a b] (data/diff #{:width :height} attrs)]
-                                            (cond-> (assoc acc b v)
-                                              ;; Exact match in attrs
-                                              a (assoc a v)))
-           (some attrs ctt/spacing-keys) (let [[_ rst gap] (data/diff #{:row-gap :column-gap} attrs)
-                                               [_ position padding] (data/diff #{:p1 :p2 :p3 :p4} rst)]
-                                           (cond-> acc
-                                             (seq gap) (assoc gap v)
-                                             (seq position) (assoc position v)
-                                             (seq padding) (assoc padding v)))
-           attrs (assoc acc attrs v)))
-       {} attrs-values-map)
-      (split-by-action)))
-
-(defn- shape-ids-by-values
-  [attrs-values-map object-id]
-  (->> (map (fn [[value attrs]] [attrs {value #{object-id}}]) attrs-values-map)
-       (into {})))
-
-(defn- collect-shapes-update-info
-  "Collect the token updates of `shapes`, a seq of [id shape] entries of
-  `objects`."
-  [resolved-tokens objects shapes]
-  (loop [items (seq shapes)
-         frame-ids #{}
-         text-ids []
-         tokens {}]
-    (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
-      (let [applied-tokens
-            (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
-                (shape-ids-by-values shape-id)
-                (split-attribute-groups))
-
-            parent-frame-id
-            (cfh/get-shape-id-root-frame objects shape-id)]
-
-        (recur (rest items)
-               (if parent-frame-id
-                 (conj frame-ids parent-frame-id)
-                 frame-ids)
-               (if (cfh/text-shape? shape)
-                 (conj text-ids shape-id)
-                 text-ids)
-               (deep-merge tokens applied-tokens)))
-
-      [tokens frame-ids text-ids])))
-
-(defn- actionize-shapes-update-info [page-id shapes-update-info]
-  (mapcat (fn [[attrs update-infos]]
-            (let [action (some attribute-actions-map attrs)]
-              (assert (fn? action) "missing action function on attributes->shape-update")
-              (map
-               (fn [[v shape-ids]]
-                 (action v shape-ids attrs page-id))
-               update-infos)))
-          shapes-update-info))
-
-(defn- update-canvas-background
-  "Set the background of `page-id` to the resolved value of its linked
-  color token, when that value differs from the current background."
-  [page-id resolved-tokens]
-  (ptk/reify ::update-canvas-background
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page       (dsh/lookup-page state page-id)
-            token-name (:background-token page)
-            color      (some-> (get-in resolved-tokens [token-name :resolved-value])
-                               (dwta/value->color)
-                               (:color))]
-        (when (and (some? color) (not= color (:background page)))
-          (rx/of (dch/commit-changes
-                  (-> (pcb/empty-changes it)
-                      (pcb/with-page page)
-                      (pcb/mod-page {:background color})))))))))
-
-(defn- scoped-shapes
-  "Entries of `objects` for the shapes in `root-ids` and all their descendants."
-  [objects root-ids]
+(defn- main-ids
+  "Ids of the main components on `page-id`, from the components of `fdata`,
+  without reading the other shapes of the page."
+  [fdata page-id objects]
   (into []
-        (comp (mapcat #(cfh/get-children-ids-with-self objects %))
-              (distinct)
-              (keep (fn [id]
-                      (when-let [shape (get objects id)]
-                        [id shape]))))
-        root-ids))
+        (comp (remove :deleted)
+              (filter #(= page-id (:main-instance-page %)))
+              (map :main-instance-id)
+              (filter #(contains? objects %)))
+        (vals (:components fdata))))
 
-(defn propagate-tokens
-  "Propagate tokens values to all shapes and page backgrounds where they
-  are applied. A non-nil `scope` of `:page-id` and `:root-ids` limits it
-  to those shapes and their descendants in that page."
-  [state resolved-tokens {scope-page-id :page-id root-ids :root-ids :as scope}]
-  (let [file-id         (get state :current-file-id)
-        current-page-id (get state :current-page-id)
-        fdata           (dsh/lookup-file-data state file-id)
-        scoped?         (some? scope)
-        tpoint          (ct/tpoint-ms)]
+(defn- users-by-root
+  "Map of each shape of `root-ids` to the ids of the shapes under it, or
+  itself, that apply the `changed` tokens, found without decoding the
+  shapes that are still encoded: on the main thread, unlike
+  `pv/page-stale-thumbnails` in the drain worker."
+  [objects root-ids changed]
+  (let [root-ids (set root-ids)
+        found    (volatile! {})
+        roots-of (fn roots-of [id]
+                   (if (contains? @found id)
+                     (get @found id)
+                     (let [parent-id (when-not (or (nil? id) (= id uuid/zero))
+                                       (lookup/parent-id objects id))
+                           roots     (cond-> (if (and (some? parent-id) (not= parent-id id))
+                                               (roots-of parent-id)
+                                               [])
+                                       (contains? root-ids id) (conj id))]
+                       (vswap! found assoc id roots)
+                       roots)))]
+    (reduce (fn [users id]
+              (reduce #(update %1 %2 (fnil conj []) id) users (roots-of id)))
+            {}
+            (candidate-ids objects changed))))
 
-    (l/inf :status "START" :hint "propagate-tokens" :scoped scoped?)
-    (->> (if scoped?
-           (rx/of scope-page-id)
-           (rx/concat
-            (rx/of current-page-id)
-            (->> (rx/from (:pages fdata))
-                 (rx/filter (fn [id] (not= id current-page-id))))))
-         (rx/mapcat
-          (fn [page-id]
-            (let [page
-                  (dsh/get-page fdata page-id)
+(defn- thumbnail-frame-ids
+  "Ids of the frames of `page-id` with a stored frame thumbnail."
+  [state file-id page-id]
+  (let [prefix (dm/str file-id "/" page-id "/")]
+    (into []
+          (comp (filter #(str/starts-with? % prefix))
+                (map thc/parse-object-id)
+                (filter #(= "frame" (:tag %)))
+                (keep :frame-id))
+          (keys (:thumbnails state)))))
 
-                  objects
-                  (:objects page)
+(defn- stale-thumbnails
+  "Events that clear the thumbnails of the frames `frame-ids` and of the
+  main components `main-ids` of `page-id` that hold shapes applying the
+  `changed` tokens."
+  [file-id page-id objects frame-ids main-ids changed]
+  (let [users  (users-by-root objects (concat frame-ids main-ids) changed)
+        stale? #(contains? users %)]
+    (dwt/clear-stale-thumbnails file-id page-id {:frame-ids (filter stale? frame-ids)
+                                                 :main-ids  (filter stale? main-ids)})))
 
-                  [attrs frame-ids text-ids]
-                  (collect-shapes-update-info resolved-tokens
-                                              objects
-                                              (if scoped?
-                                                (scoped-shapes objects root-ids)
-                                                objects))
+;; Propagation -----------------------------------------------------------------
 
-                  actions
-                  (actionize-shapes-update-info page-id attrs)
+(defn- propagate-page
+  "Events that set the out of date shapes of a scope (`plan-scopes`) to
+  `resolved-tokens`, in one commit tagged with `tags`. With
+  `:thumbnails-only?` they clear the thumbnails it leaves out of date
+  instead. The commit only follows tokens already committed, so it goes
+  through while saves fail."
+  [it state resolved-tokens changed
+   {:keys [page-id root-ids save-resolved? thumbnails-only? main-ids frame-ids background?
+           undo-group]
+    scope-targets :targets} tags]
+  (let [file-id  (get state :current-file-id)
+        page     (dsh/lookup-page state file-id page-id)
+        objects  (:objects page)
+        other?   (not= page-id (get state :current-page-id))
+        saved    (:tokens-resolved (dsh/lookup-file-data state file-id))
 
-                  ;; Composed updates return observables and need to be executed differently
-                  {:keys [observable normal]} (group-by #(if (rx/observable? %) :observable :normal) actions)]
+        targets
+        (cond
+          (some? scope-targets)
+          scope-targets
 
-              (l/inf :status "PROGRESS"
-                     :hint "propagate-tokens"
-                     :page-id (str page-id)
-                     :elapsed (tpoint)
-                     ::l/sync? true)
+          thumbnails-only?
+          {}
 
-              (rx/merge
-               (when (seq observable) (apply rx/merge observable))
-               (when (seq normal) (rx/concat-all (rx/of normal)))
+          (some? root-ids)
+          (cltp/out-of-date-targets objects resolved-tokens
+                                    :ids (into [] (comp (mapcat #(cfh/get-children-ids-with-self objects %))
+                                                        (distinct))
+                                               root-ids)
+                                    :unassigned? true)
 
-               (when (and (not scoped?) (:background-token page))
-                 (rx/of (update-canvas-background page-id resolved-tokens)))
+          :else
+          (cltp/out-of-date-targets objects resolved-tokens
+                                    :ids (candidate-ids objects changed)
+                                    :unassigned? true))
 
-               (->> (rx/from frame-ids)
-                    (rx/mapcat (fn [frame-id]
-                                 (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")
-                                        (dwt/clear-thumbnail file-id page-id frame-id "component")))))
-               (when (not= page-id current-page-id)   ;; Texts in the current page have already their position-data regenerated
-                 (rx/of (dwsh/update-shapes text-ids  ;; after change. But those on other pages need to be specifically reset.
-                                            (fn [shape]
-                                              (dissoc shape :position-data))
-                                            {:page-id page-id
-                                             :ignore-touched true})))))))
+        changes
+        (-> (pcb/empty-changes it)
+            (pv/page-propagation page resolved-tokens targets
+                                 {:fonts @fonts/fontsdb
+                                  :geometry (dwta/geometry-mode state page-id)
+                                  :reset-position-data? other?})
+            ;; The readers set their shapes with the values saved in the file
+            (cond-> save-resolved?
+              (pcb/set-tokens-resolved saved (cltp/values-to-save resolved-tokens saved)))
+            (cond-> (seq tags) (update :tags (fnil into #{}) tags))
+            ;; Work in the background is not something to undo
+            (cond-> background? (pcb/set-save-undo? false))
+            (cond-> (and (some? undo-group) (not background?)) (assoc :undo-group undo-group)))]
+
+    (rx/concat
+     (dwta/commit-token-values state changes page-id objects targets true)
+     (dwt/clear-stale-thumbnails file-id page-id (pv/stale-thumbnail-ids objects (pv/changed-shape-ids changes)))
+     (if thumbnails-only?
+       (stale-thumbnails file-id page-id objects frame-ids main-ids changed)
+       (rx/empty)))))
+
+(defn- page-affected?
+  "True when `page` may have something to set for the `changed` tokens."
+  [page changed]
+  (pv/page-affected? page (token-names changed)))
+
+(defn- page-scopes
+  "Scopes that cover the pages of the file that may have something to
+  update for the `changed` tokens, the current page first and always.
+  With `lazy?` the other pages only clear their out of date thumbnails;
+  with `thumbnails-only?` the current page too."
+  [state changed lazy? thumbnails-only?]
+  (let [fdata           (dsh/lookup-file-data state)
+        file-id         (get state :current-file-id)
+        current-page-id (get state :current-page-id)]
+    (for [page-id (cons current-page-id
+                        (remove #(= % current-page-id) (:pages fdata)))
+          :let    [current? (= page-id current-page-id)
+                   page     (dsh/get-page fdata page-id)
+                   thumbs?  (and lazy? (or thumbnails-only? (not current?)))
+                   main-ids (when thumbs? (main-ids fdata page-id (:objects page)))
+                   frames   (when thumbs? (thumbnail-frame-ids state file-id page-id))]
+          :when   (or current?
+                      (if thumbs?
+                        (or (seq main-ids) (seq frames) (some? (:background-token page)))
+                        (page-affected? page changed)))]
+      (cond-> {:page-id page-id}
+        thumbs? (assoc :thumbnails-only? true :main-ids main-ids :frame-ids frames)))))
+
+(defn- page-done
+  "Event emitted when a scope has been set."
+  [scope-id]
+  (ptk/data-event ::page-done {:scope-id scope-id}))
+
+(defn- page-done?
+  [scope-id event]
+  (and (ptk/type? ::page-done event)
+       (= scope-id (:scope-id (deref event)))))
+
+(defn- wait-for-user
+  "Observable that emits once the user makes a pause, or at once when a
+  newer change of the tokens waits for this one."
+  [state stream]
+  (if (> (count (::running state)) 1)
+    (rx/of nil)
+    (->> (rx/merge (activity/pause)
+                   (rx/filter (ptk/type? ::propagate-workspace-tokens) stream))
+         (rx/take 1))))
+
+(defn- propagate-scope
+  [resolved-tokens changed scope tags scope-id]
+  (ptk/reify ::propagate-scope
+    cljs.core/IDeref
+    (-deref [_] scope-id)
+
+    ptk/WatchEvent
+    (watch [it state stream]
+      ;; A failure still ends its work, so the dialog closes
+      (->> (rx/defer
+            (fn []
+              (let [whole?  (and (nil? (:targets scope))
+                                 (not (:thumbnails-only? scope))
+                                 (nil? (:root-ids scope)))
+                    objects (when whole? (:objects (dsh/lookup-page state (:page-id scope))))
+                    targets (when whole?
+                              (cltp/out-of-date-targets objects resolved-tokens
+                                                        :ids (candidate-ids objects changed)
+                                                        :unassigned? true))]
+                (cond
+                  ;; The work in the background waits for a pause of the user
+                  (and (:background? scope)
+                       (not (::waited? scope)))
+                  (->> (wait-for-user state stream)
+                       (rx/map #(propagate-scope resolved-tokens changed (assoc scope ::waited? true)
+                                                 tags scope-id)))
+
+                  (and whole? (dwtpr/long-work? objects targets))
+                  ;; The dialog that blocks the workspace is painted before the work
+                  (rx/concat
+                   (rx/of (dwtpr/show))
+                   (->> (rx/of (propagate-scope resolved-tokens changed (assoc scope :targets targets) tags scope-id))
+                        (rx/delay dwtpr/paint-delay-ms)))
+
+                  :else
+                  (rx/concat
+                   (propagate-page it state resolved-tokens changed
+                                   (cond-> scope whole? (assoc :targets targets))
+                                   tags)
+                   (rx/of (dwtpr/work-done (:units scope 0))
+                          (page-done scope-id)))))))
+           (rx/catch #(rx/concat (rx/of (dwtpr/work-done (:units scope 0))
+                                        (page-done scope-id))
+                                 (rx/throw %)))))))
+
+(defn- run-scopes
+  "Observable that propagates `resolved-tokens` to each scope of `scopes`,
+  one after another, letting the browser paint and handle input between
+  them. Each scope reads the state left by the previous one."
+  [stream resolved-tokens changed scopes tags]
+  (if (empty? scopes)
+    (rx/empty)
+    (let [scope-id (uuid/next)]
+      (rx/concat
+       (rx/merge
+        (->> stream
+             (rx/filter (partial page-done? scope-id))
+             (rx/take 1)
+             (rx/ignore))
+        (rx/of (propagate-scope resolved-tokens changed (first scopes) tags scope-id)))
+       (rx/ignore (tm/next-task))
+       (rx/defer #(run-scopes stream resolved-tokens changed (rest scopes) tags))))))
+
+(defn changed-tokens
+  "Entries of `resolved-tokens` whose resolved value differs from the one
+  in `previous-tokens`."
+  [resolved-tokens previous-tokens]
+  (into {}
+        (remove (fn [[token-name token]]
+                  (= (:resolved-value token)
+                     (dm/get-in previous-tokens [token-name :resolved-value]))))
+        resolved-tokens))
+
+(defn running-propagations
+  "Ids of the propagations started and not finished yet."
+  [state]
+  (get state ::running))
+
+(defn- propagation-finished
+  [run-id]
+  (ptk/reify ::propagation-finished
+    cljs.core/IDeref
+    (-deref [_] run-id)
+
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state ::running disj run-id))))
+
+(defn- drain?
+  "True when a lazy change of the tokens sets the other pages in the
+  background."
+  []
+  (contains? cf/flags :lazy-token-propagation-drain))
+
+(defn- plan-scopes
+  "The scopes that set the `changed` tokens in `state` (see `run-scopes`),
+  each with the `:units` of work it weighs, and their total `:units`;
+  whether the pages after the first only clear their thumbnails in the
+  background (`:background?`) and whether the drain sets the other pages
+  (`:drain-pages?`)."
+  [state changed {:keys [page-id root-ids thumbnails-only? undo-group]}]
+  (let [lazy?        (dwta/lazy?)
+        drain-pages? (and lazy? (drain?) (nil? root-ids) (not thumbnails-only?))
+        scopes       (if (some? root-ids)
+                       [{:page-id page-id :root-ids root-ids}]
+                       (cond-> (vec (page-scopes state changed lazy? thumbnails-only?))
+                         drain-pages? (subvec 0 1)
+                         :always      (assoc-in [0 :save-resolved?] true)))
+        scopes       (cond->> scopes
+                       (some? undo-group) (mapv #(assoc % :undo-group undo-group)))
+        background?  (boolean (and (next scopes) (every? :thumbnails-only? (rest scopes))))
+        ;; The current page weighs as much as the other pages waited for
+        scopes       (into [(assoc (first scopes) :units (if background? 1 (max 1 (dec (count scopes)))))]
+                           (map #(if background? (assoc % :background? true :units 0) (assoc % :units 1)))
+                           (rest scopes))]
+    {:scopes       scopes
+     :units        (reduce + (map :units scopes))
+     :background?  background?
+     :drain-pages? drain-pages?}))
+
+(defn- resolve-changed
+  "Observable of `[resolved-tokens changed]`: the active tokens of `state`
+  resolved, and the ones that change, the tokens `token-names`, the ones
+  whose value differs from `previous-tokens` resolved with
+  `previous-base-font-size` (the current one when nil), or nil for any
+  token."
+  [state previous-tokens previous-base-font-size token-names]
+  (->> (dwta/resolve-sets (dwta/active-tokens state) (dwta/base-font-size state))
+       (rx/mapcat
+        (fn [resolved-tokens]
+          (cond
+            (some? token-names)
+            (rx/of [resolved-tokens (select-keys resolved-tokens token-names)])
+
+            (some? previous-tokens)
+            (->> (dwta/resolve-sets previous-tokens (d/nilv previous-base-font-size (dwta/base-font-size state)))
+                 (rx/map #(vector resolved-tokens (changed-tokens resolved-tokens %))))
+
+            :else
+            (rx/of [resolved-tokens nil]))))))
+
+(defn- propagate
+  "Events that set the shapes to `resolved-tokens`, for the `changed` tokens,
+  in one undo transaction: the current page first and then the other
+  pages, or the drain."
+  [state stream resolved-tokens changed {:keys [root-ids] :as opts}]
+  (let [{:keys [scopes units background? drain-pages?]} (plan-scopes state changed opts)
+        undo-id (js/Symbol)
+        tpoint  (ct/tpoint-ms)
+        ;; Covering every shape it updates the copies itself
+        tags    (when (nil? root-ids) #{:token-propagation})]
+    (l/inf :status "START" :hint "propagate-tokens"
+           :tokens (count resolved-tokens) :pages (count scopes))
+    (->> (rx/concat
+          (rx/of (dwtpr/add-work units)
+                 (dwu/start-undo-transaction undo-id :timeout false))
+          (run-scopes stream resolved-tokens changed (take 1 scopes) tags)
+          (if background?
+            (rx/of (dwu/commit-undo-transaction undo-id))
+            (rx/empty))
+          ;; The texts of the current page are laid out before the other
+          ;; pages are set; the change and the page are saved once the
+          ;; dialog closes
+          (if (or (next scopes) drain-pages?)
+            (rx/of ::dw/layout-texts
+                   (dwtpr/persist-when-closed))
+            (rx/empty))
+          (run-scopes stream resolved-tokens changed (rest scopes) tags)
+          (if background?
+            (rx/empty)
+            (rx/of (dwu/commit-undo-transaction undo-id)))
+          ;; The pages left out of date
+          (if drain-pages?
+            (let [current-page-id (:current-page-id state)]
+              (rx/of (drain/start resolved-tokens changed
+                                  (into [] (remove #(= % current-page-id))
+                                        (:pages (dsh/lookup-file-data state))))))
+            (rx/empty)))
          (rx/finalize
-          (fn [_]
-            (let [elapsed (tpoint)]
-              (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
+          #(l/inf :status "END" :hint "propagate-tokens" :elapsed (tpoint))))))
+
+(defn- run-propagation
+  "The work of a propagation, from the state when the previous one has
+  finished."
+  [run-id {:keys [previous-tokens previous-base-font-size token-names] :as opts}]
+  (ptk/reify ::run-propagation
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (rx/concat
+       ;; A failure still ends the run, so the next ones go on
+       (->> (rx/defer
+             (fn []
+               (if (some? (dwta/active-tokens state))
+                 (->> (resolve-changed state previous-tokens previous-base-font-size token-names)
+                      (rx/mapcat
+                       (fn [[resolved-tokens changed]]
+                         (if (and (some? changed) (empty? changed))
+                           (rx/empty)
+                           (propagate state stream resolved-tokens changed opts)))))
+                 (rx/empty))))
+            (rx/catch #(rx/concat
+                        (rx/of (propagation-finished run-id))
+                        (rx/throw %))))
+       (rx/of (propagation-finished run-id))))))
+
+(declare propagate-workspace-tokens)
+
+(defn commit-token-changes
+  "Commit `changes`, a change of the tokens or of the base font size, at
+  once, and then set the shapes to the new values; one undo step reverts
+  both. While saves fail the change is refused, and nothing follows it."
+  [changes]
+  (ptk/reify ::commit-token-changes
+    ptk/WatchEvent
+    (watch [_ state _]
+      (when (and (seq (:redo-changes changes))
+                 (not (plk/locked? state)))
+        (let [undo-group (d/nilv (:undo-group changes) (uuid/next))]
+          (rx/of (dch/commit-changes (-> changes
+                                         (assoc :undo-group undo-group)
+                                         ;; The propagation that follows sets the
+                                         ;; current page, not its check after commits
+                                         (update :tags (fnil conj #{}) :token-propagation)))
+                 (propagate-workspace-tokens {:previous-tokens         (dwta/active-tokens state)
+                                              :previous-base-font-size (dwta/base-font-size state)
+                                              :undo-group              undo-group})))))))
 
 (defn propagate-workspace-tokens
-  "Apply the resolved values of the active tokens to the shapes that use
-  them. Without `scope` it covers every page of the file. A `scope` of
-  `:page-id` and `:root-ids` limits it to those shapes and their
-  descendants."
+  "Set the shapes to the resolved values of the active tokens, where they
+  are out of date. Options:
+  - `:page-id` and `:root-ids` limit it to those shapes and their
+    descendants. Without them it covers every page of the file, with a
+    commit each.
+  - `:previous-tokens`, the active token sets before a change, limits it to the
+    shapes that apply the tokens whose resolved value changed.
+  - `:previous-base-font-size`: the base font size `:previous-tokens`
+    resolve with, the current one by default.
+  - `:token-names` limits it to the shapes that apply those tokens.
+  - `:undo-group`: the commits are undone with the other ones of that
+    group.
+  - `:thumbnails-only?`: set no shape, only clear the thumbnails left out
+    of date, on every page.
+
+  With the `:lazy-token-propagation` flag the pages other than the current
+  one only clear their thumbnails left out of date.
+
+  A propagation starts when the previous one has finished, so it sees the
+  shapes it left."
   ([]
    (propagate-workspace-tokens nil))
-  ([scope]
-   (ptk/reify ::propagate-workspace-tokens
-     ptk/WatchEvent
-     (watch [_ state _]
-       (let [tokens-lib    (dsh/lookup-tokens-lib state)
-             tokens-status (dsh/lookup-tokens-status state)]
-         (when (and tokens-lib tokens-status)
-           (->> (if (contains? cf/flags :tokenscript)
-                  (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
-                  (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
-                (rx/mapcat
-                 (fn [sd-tokens]
-                   (let [undo-id (js/Symbol)]
-                     (rx/concat
-                      (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+  ([opts]
+   (let [run-id        (uuid/next)
+         previous-run* (volatile! nil)]
+     (ptk/reify ::propagate-workspace-tokens
+       ptk/UpdateEvent
+       (update [_ state]
+         (vreset! previous-run* (::last-run state))
+         (-> state
+             (assoc ::last-run run-id)
+             (update ::running (fnil conj #{}) run-id)))
 
-                      ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                      ;; into a single commit-changes. This is not really the best way, the token application
-                      ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                      ;; of creating lots of `update-shapes`.
-                      (rx/of (dwsh/update-shapes-buffer-start))
-                      (->> (propagate-tokens state sd-tokens scope)
-                           (rx/catch #(rx/concat
-                                       (rx/of (dwsh/update-shapes-buffer-stop))
-                                       (rx/throw %))))
-                      (rx/of (dwsh/update-shapes-buffer-stop))
-                      (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (let [previous-run @previous-run*]
+           (rx/concat
+            (if (contains? (::running state) previous-run)
+              (->> stream
+                   (rx/filter #(and (ptk/type? ::propagation-finished %)
+                                    (= previous-run (deref %))))
+                   (rx/take 1)
+                   (rx/ignore))
+              (rx/empty))
+            (rx/of (run-propagation run-id opts)))))))))

@@ -483,3 +483,224 @@
         a (+ (* ah 100) (* av 10))
         b (+ (* bh 100) (* bv 10))]
     (compare a b)))
+
+;; --- CSS color parsing
+;;
+;; A port of the color string parsing of tinycolor2, the library that
+;; Style Dictionary uses, so design token colors resolve to the same
+;; color and opacity in every runtime.
+
+(def ^:private css-names
+  (assoc names
+         "burntsienna" "#ea7e5d"
+         "rebeccapurple" "#663399"))
+
+(def ^:private css-unit
+  "(?:[-\\+]?\\d*\\.\\d+%?)|(?:[-\\+]?\\d+%?)")
+
+(def ^:private css-unit-re
+  (re-pattern css-unit))
+
+(defn- css-color-re
+  [prefix n]
+  (re-pattern
+   (str prefix
+        "[\\s|\\(]+(" css-unit ")"
+        (apply str (repeat (dec n) (str "[,|\\s]+(" css-unit ")")))
+        "\\s*\\)?")))
+
+(def ^:private css-color-matchers
+  [[:rgb  (css-color-re "rgb" 3)]
+   [:rgba (css-color-re "rgba" 4)]
+   [:hsl  (css-color-re "hsl" 3)]
+   [:hsla (css-color-re "hsla" 4)]
+   [:hsv  (css-color-re "hsv" 3)]
+   [:hsva (css-color-re "hsva" 4)]])
+
+(def ^:private hex8-re #"^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$")
+(def ^:private hex6-re #"^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$")
+(def ^:private hex4-re #"^#?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])$")
+(def ^:private hex3-re #"^#?([0-9a-f])([0-9a-f])([0-9a-f])$")
+
+(defn- parse-float
+  "Number at the start of `s`, like JavaScript's `parseFloat`, or NaN."
+  [s]
+  (if (number? s)
+    s
+    (if-let [match (re-find #"^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?" s)]
+      #?(:clj (Double/parseDouble match)
+         :cljs (js/parseFloat match))
+      ##NaN)))
+
+(defn- parse-number
+  "`s` as a number when it is all a number, like JavaScript's `Number`, or
+  NaN."
+  [s]
+  (if (number? s)
+    s
+    (if (re-matches #"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?" s)
+      (parse-float s)
+      ##NaN)))
+
+(defn- round
+  [n]
+  #?(:clj (Math/round (double n))
+     :cljs (js/Math.round n)))
+
+(defn- nan?
+  [n]
+  #?(:clj (Double/isNaN (double n))
+     :cljs (js/isNaN n)))
+
+(defn- hex->int
+  [s]
+  #?(:clj (Integer/parseInt s 16)
+     :cljs (js/parseInt s 16)))
+
+(defn- bound01
+  "`n`, a number or a CSS unit string in [0, `max`], as a number in [0, 1]."
+  [n max]
+  (let [n        (if (and (string? n)
+                          (str/includes? n ".")
+                          (== 1 (parse-float n)))
+                   "100%"
+                   n)
+        percent? (and (string? n) (str/includes? n "%"))
+        n        (min max (clojure.core/max 0 (parse-float n)))
+        n        (if percent?
+                   (/ (mth/floor (* n max)) 100)
+                   n)]
+    (if (< (mth/abs (- n max)) 0.000001)
+      1
+      (/ (double (mod n max)) max))))
+
+(defn- number->str
+  "`n` printed as JavaScript prints numbers."
+  [n]
+  (if (== n (mth/floor n))
+    (str (long n))
+    (str n)))
+
+(defn- percentage
+  "`n` as a percentage string when it is a fraction of one."
+  [n]
+  (let [value (parse-number n)]
+    (if (and (not (nan? value)) (<= value 1))
+      (str (number->str (* value 100)) "%")
+      n)))
+
+(defn- bound-alpha
+  [a]
+  (let [a (parse-float a)]
+    (if (or (nan? a) (< a 0) (> a 1)) 1 a)))
+
+(defn- hue->rgb*
+  [p q t]
+  (let [t (cond (< t 0) (+ t 1)
+                (> t 1) (- t 1)
+                :else   t)]
+    (cond
+      (< t (/ 1 6)) (+ p (* (- q p) 6 t))
+      (< t (/ 1 2)) q
+      (< t (/ 2 3)) (+ p (* (- q p) (- (/ 2 3) t) 6))
+      :else         p)))
+
+(defn- css-hsl->rgb
+  [h s l]
+  (let [h (bound01 h 360)
+        s (bound01 s 100)
+        l (bound01 l 100)]
+    (if (zero? s)
+      [(* l 255) (* l 255) (* l 255)]
+      (let [q (if (< l 0.5) (* l (+ 1 s)) (- (+ l s) (* l s)))
+            p (- (* 2 l) q)]
+        [(* 255 (hue->rgb* p q (+ h (/ 1 3))))
+         (* 255 (hue->rgb* p q h))
+         (* 255 (hue->rgb* p q (- h (/ 1 3))))]))))
+
+(defn- css-hsv->rgb
+  [h s v]
+  (let [h   (* 6 (bound01 h 360))
+        s   (bound01 s 100)
+        v   (bound01 v 100)
+        i   (mth/floor h)
+        f   (- h i)
+        p   (* v (- 1 s))
+        q   (* v (- 1 (* f s)))
+        t   (* v (- 1 (* (- 1 f) s)))
+        idx (int (mod i 6))]
+    [(* 255 (nth [v q p p t v] idx))
+     (* 255 (nth [t v v q p p] idx))
+     (* 255 (nth [p p t v v q] idx))]))
+
+(defn- css-string->color
+  "Parse `s` into a map with the color components, in the form tinycolor2
+  reads them, or nil."
+  [s]
+  (let [s      (-> s str/trim str/lower)
+        named  (get css-names s)
+        s      (or named s)
+        format (when named :name)]
+    (if (= s "transparent")
+      {:r 0 :g 0 :b 0 :a 0 :format :name}
+      (or (some (fn [[type re]]
+                  (when-let [[_ c1 c2 c3 c4] (re-find re s)]
+                    (case type
+                      :rgb  {:r c1 :g c2 :b c3}
+                      :rgba {:r c1 :g c2 :b c3 :a c4}
+                      :hsl  {:h c1 :s c2 :l c3}
+                      :hsla {:h c1 :s c2 :l c3 :a c4}
+                      :hsv  {:h c1 :s c2 :v c3}
+                      :hsva {:h c1 :s c2 :v c3 :a c4})))
+                css-color-matchers)
+          (when-let [[_ r g b a] (re-find hex8-re s)]
+            {:r (hex->int r) :g (hex->int g) :b (hex->int b)
+             :a (/ (double (hex->int a)) 255) :format (or format :hex8)})
+          (when-let [[_ r g b] (re-find hex6-re s)]
+            {:r (hex->int r) :g (hex->int g) :b (hex->int b)
+             :format (or format :hex)})
+          (when-let [[_ r g b a] (re-find hex4-re s)]
+            {:r (hex->int (str r r)) :g (hex->int (str g g)) :b (hex->int (str b b))
+             :a (/ (double (hex->int (str a a))) 255) :format (or format :hex8)})
+          (when-let [[_ r g b] (re-find hex3-re s)]
+            {:r (hex->int (str r r)) :g (hex->int (str g g)) :b (hex->int (str b b))
+             :format (or format :hex)})))))
+
+(defn- css-unit?
+  [v]
+  (and (some? v) (some? (re-find css-unit-re (str v)))))
+
+(defn- css-color->rgba
+  "Components of the parsed color `c` as `[r g b a format]`, or nil when it
+  isn't a valid color."
+  [{:keys [r g b h s l v a format] :as c}]
+  (let [[rgb format]
+        (cond
+          (and (css-unit? r) (css-unit? g) (css-unit? b))
+          [[(* 255 (bound01 r 255)) (* 255 (bound01 g 255)) (* 255 (bound01 b 255))]
+           (or format (if (str/ends-with? (str r) "%") :prgb :rgb))]
+
+          (and (css-unit? h) (css-unit? s) (css-unit? v))
+          [(css-hsv->rgb h (percentage s) (percentage v)) (or format :hsv)]
+
+          (and (css-unit? h) (css-unit? s) (css-unit? l))
+          [(css-hsl->rgb h (percentage s) (percentage l)) (or format :hsl)])]
+    (when (some? rgb)
+      (let [clamp #(let [c (min 255 (max % 0))] (if (< c 1) (round c) c))]
+        (conj (mapv clamp rgb)
+              (bound-alpha (if (contains? c :a) a 1))
+              format)))))
+
+(defn parse-css-color
+  "Parse a CSS color string into `{:color hex :opacity alpha}`, with the
+  same rules as tinycolor2. Hex colors need the `#` prefix. Nil when
+  `color` isn't a valid CSS color."
+  [color]
+  (when (string? color)
+    (when-let [[r g b a format] (some-> (css-string->color color) (css-color->rgba))]
+      (when (or (not (contains? #{:hex :hex8} format))
+                (str/starts-with? color "#"))
+        {:color (str "#" (str/join (map #(let [h (str/lower (int->hex (int (round %))))]
+                                           (if (= 1 (count h)) (str "0" h) h))
+                                        [r g b])))
+         :opacity a}))))

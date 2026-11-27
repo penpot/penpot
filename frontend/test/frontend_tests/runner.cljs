@@ -90,9 +90,11 @@
    [frontend-tests.logic.path-helpers-test]
    [frontend-tests.logic.path-lifecycle-test]
    [frontend-tests.logic.path-tools-test]
+   [frontend-tests.logic.resize-booleans-test]
    [frontend-tests.logic.scale-selected-test]
    [frontend-tests.logic.sidebar-transform-coalescing-test]
    [frontend-tests.logic.update-position-test]
+   [frontend-tests.logic.wasm-modifiers-bool-test]
    [frontend-tests.logic.wasm-modifiers-nil-id-test]
    [frontend-tests.logic.wasm-pixel-snap-test]
    [frontend-tests.main-errors-test]
@@ -143,15 +145,23 @@
    [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.context-menu-test]
    [frontend-tests.tokens.copy-paste-props-test]
+   [frontend-tests.tokens.correction-test]
+   [frontend-tests.tokens.drain-test]
    [frontend-tests.tokens.export-modal-test]
    [frontend-tests.tokens.import-export-test]
+   [frontend-tests.tokens.leader-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
    [frontend-tests.tokens.logic.token-dimension-application-test]
    [frontend-tests.tokens.logic.token-remapping-test]
    [frontend-tests.tokens.logic.tokens-source-test]
    [frontend-tests.tokens.logic.tokens-status-test]
+   [frontend-tests.tokens.lookup-test]
+   [frontend-tests.tokens.progress-test]
+   [frontend-tests.tokens.propagation-test]
+   [frontend-tests.tokens.readers-test]
    [frontend-tests.tokens.referenced-token-value-test]
+   [frontend-tests.tokens.save-lock-test]
    [frontend-tests.tokens.shadow-form-test]
    [frontend-tests.tokens.style-dictionary-test]
    [frontend-tests.tokens.theme-create-modal-test]
@@ -211,6 +221,7 @@
    [frontend-tests.ui.viewport-texts-html-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
+   [frontend-tests.util-activity-test]
    [frontend-tests.util-clipboard-test]
    [frontend-tests.util-http-test]
    [frontend-tests.util-i18n-test]
@@ -336,12 +347,14 @@
    'frontend-tests.logic.path-helpers-test
    'frontend-tests.logic.path-lifecycle-test
    'frontend-tests.logic.path-tools-test
+   'frontend-tests.logic.resize-booleans-test
    'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.logic.scale-selected-test
    'frontend-tests.main.refs-test
    'frontend-tests.main-errors-test
    'frontend-tests.logic.sidebar-transform-coalescing-test
    'frontend-tests.logic.update-position-test
+   'frontend-tests.logic.wasm-modifiers-bool-test
    'frontend-tests.logic.wasm-modifiers-nil-id-test
    'frontend-tests.logic.wasm-pixel-snap-test
    'frontend-tests.plugins.comments-test
@@ -390,7 +403,15 @@
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.context-menu-test
    'frontend-tests.tokens.export-modal-test
+   'frontend-tests.tokens.correction-test
+   'frontend-tests.tokens.readers-test
+   'frontend-tests.tokens.propagation-test
+   'frontend-tests.tokens.save-lock-test
+   'frontend-tests.tokens.progress-test
+   'frontend-tests.tokens.leader-test
+   'frontend-tests.tokens.drain-test
    'frontend-tests.tokens.import-export-test
+   'frontend-tests.tokens.lookup-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
    'frontend-tests.tokens.logic.token-dimension-application-test
@@ -459,6 +480,7 @@
    'frontend-tests.ui.viewport-texts-html-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test
+   'frontend-tests.util-activity-test
    'frontend-tests.util-clipboard-test
    'frontend-tests.util-http-test
    'frontend-tests.util-i18n-test

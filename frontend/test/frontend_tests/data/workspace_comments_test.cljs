@@ -6,11 +6,15 @@
 
 (ns frontend-tests.data.workspace-comments-test
   (:require
+   [app.common.uuid :as uuid]
    [app.main.data.comments :as dcmt]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.edition :as dwe]
+   [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (t/deftest test-handle-interrupt-draft
@@ -82,3 +86,21 @@
             (fn [_]
               (t/is (false? @emitted?) "should not emit any events")
               (done)))))))
+
+(defn- ^:async retrieve-threads-outcome
+  "Runs the watch of `retrieve-comment-threads` with `rp/cmd!` failing with an
+  error of `type`: `:resolved` or `:rejected`."
+  [type]
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [_cmd _params]
+                                 (rx/throw (ex-info "http error" {:type type}))))}
+           (try
+             (await (async/observe (ptk/watch (dcmt/retrieve-comment-threads (uuid/next)) {} nil)))
+             :resolved
+             (catch js/Error _ :rejected)))))
+
+;; Scenario: the comment threads are fetched when a page opens while the
+;; backend restarts. Proves: no error page; other errors are reported.
+(t/deftest ^:async comment-threads-skip-an-unreachable-backend
+  (t/is (= :resolved (await (retrieve-threads-outcome :bad-gateway))))
+  (t/is (= :rejected (await (retrieve-threads-outcome :server)))))

@@ -8,6 +8,8 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.shapes :as gsh]
    [app.common.logic.shapes :as cls]
    [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
@@ -568,3 +570,31 @@
 
     ;; ==== Check
     (t/is (= (count applied-tokens-text') 3))))
+(defn- move-shapes
+  "`file` with the shapes `labels` moved 50 to the right, as moving them in
+  the workspace does."
+  [file labels]
+  (let [page    (thf/current-page file)
+        ids     (mapv #(:id (ths/get-shape file %)) labels)
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page page)
+                    (pcb/with-objects (:objects page))
+                    (cls/generate-update-shapes ids
+                                                #(gsh/move % (gpt/point 50 0))
+                                                (:objects page)
+                                                {}))]
+    (thf/apply-changes file changes)))
+
+(t/deftest moving-a-board-keeps-the-position-tokens-of-its-children
+  (let [file  (-> (setup-file)
+                  (tho/add-frame-with-child :board :child)
+                  (tht/apply-token-to-shape :board "token-dimensions" [:x] [:x] 100)
+                  (tht/apply-token-to-shape :child "token-dimensions" [:x] [:x] 100))
+        moved (move-shapes file [:board :child])
+        alone (move-shapes file [:child])]
+    (t/is (= {:x "token-dimensions"} (:applied-tokens (ths/get-shape moved :child)))
+          "the child stays at the same place in the board")
+    (t/is (empty? (:applied-tokens (ths/get-shape moved :board)))
+          "the board moved in its parent")
+    (t/is (empty? (:applied-tokens (ths/get-shape alone :child)))
+          "the child moved in the board")))

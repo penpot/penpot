@@ -6,16 +6,19 @@
 
 (ns app.worker.component-thumbnails
   "Renders component thumbnails on the worker WASM module from the shapes
-  of their mains, which the main thread sends. Sends each render back to
-  be shown, and uploads the ones asked for."
+  of their mains, which the main thread sends, set to the values of their
+  tokens. Sends each render back to be shown, and uploads the ones asked
+  for."
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.logic.tokens-propagation :as cltp]
    [app.common.math :as mth]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.thumbnails :as thc]
    [app.common.uri :as u]
    [app.config :as cf]
+   [app.main.fonts :as fonts]
    [app.render-wasm.api :as wasm.api]
    [app.util.http :as http]
    [app.util.webapi :as wapi]
@@ -135,9 +138,30 @@
          (rx/subs! add-render))
     subject))
 
+(defn- set-token-values
+  "`request` with the shapes of its main set to `:token-values`, the
+  resolved values of the tokens they apply: a main of another page can be
+  out of date until its page is opened. Rendered as they came when they
+  can't be set."
+  [{:keys [page-id root-id objects token-values] :as request}]
+  (if (empty? token-values)
+    request
+    (try
+      (assoc request :objects (cltp/correct-objects {:id page-id :objects objects}
+                                                    (cltp/values->resolved-tokens token-values)
+                                                    @fonts/fontsdb
+                                                    :ids [root-id]))
+      (catch :default cause
+        (log/wrn :hint "unable to set the token values of a component thumbnail"
+                 :root-id (str root-id) :cause cause)
+        request))))
+
 (defmethod impl/handler :thumbnails/render-component
   [message _]
-  (rx/push! requests (select-keys message [:file-id :page-id :root-id :objects :persist?]))
+  (fonts/register-custom-fonts (:custom-fonts message))
+  (rx/push! requests (-> (select-keys message [:file-id :page-id :root-id :objects :persist? :token-values])
+                         (set-token-values)
+                         (dissoc :token-values)))
   nil)
 
 (defmethod impl/handler :thumbnails/watch-components

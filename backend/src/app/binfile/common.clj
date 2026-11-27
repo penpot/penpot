@@ -781,6 +781,34 @@
         (cfo/detach-tokens-source data))
       data)))
 
+(defn get-tokens-source-lib
+  "The tokens lib of the tokens source of the file of `data`: its own, or the
+  one of the library it takes the tokens from. Nil when that library no
+  longer exists."
+  [cfg data]
+  (let [source-id (cfo/get-tokens-source data)]
+    (if (or (nil? source-id) (= source-id (:id data)))
+      (cfo/get-tokens-lib data)
+      (some-> (get-file cfg source-id :read-only? true :throw-if-not-exists? false)
+              :data
+              cfo/get-tokens-lib))))
+
+(defn assoc-page-tokens
+  "`page` of the file of `data` with what a reader needs to set its out of
+  date shapes: the tokens they apply (`:tokens`), the rem base they resolve
+  with (`:base-font-size`) and their values saved by the editors
+  (`:tokens-resolved`)."
+  [cfg data page]
+  (let [tokens   (cfo/get-pages-tokens data (get-tokens-source-lib cfg data) [page])
+        resolved (cfo/get-pages-resolved data [page])]
+    (cond-> page
+      (some? tokens)
+      (assoc :tokens tokens
+             :base-font-size (ctf/get-base-font-size data))
+
+      (some? resolved)
+      (assoc :tokens-resolved resolved))))
+
 (defn embed-assets
   [cfg data file-id]
   (let [library-ids (get-libraries cfg [file-id])

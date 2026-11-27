@@ -16,6 +16,7 @@
    [app.common.files.stats :as cfs]
    [app.common.files.tokens :as cfo]
    [app.common.logging :as l]
+   [app.common.logic.tokens-propagation :as cltp]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.time :as ct]
@@ -44,6 +45,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.notifications :as ntf]
    [app.rpc.permissions :as perms]
+   [app.util.blob :as blob]
    [app.util.events :as events]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
@@ -287,6 +289,46 @@
                    (-> (get-file-fragment cfg file-id fragment-id)
                        (rph/with-http-cache long-cache-duration))))))
 
+;; --- COMMAND QUERY: get-file-changes
+
+(def ^:private max-file-changes
+  "Changes a session gets back at most; with more it loads the file again."
+  200)
+
+(def ^:private sql:get-file-changes
+  "select revn, session_id, profile_id, changes
+     from file_change
+    where file_id = ?
+      and revn > ?
+      and changes is not null
+    order by revn asc")
+
+(def ^:private schema:get-file-changes
+  [:map {:title "get-file-changes"}
+   [:file-id ::sm/uuid]
+   [:revn {:min 0} ::sm/int]])
+
+(sv/defmethod ::get-file-changes
+  "The changes saved in the file after `revn`, for a session that missed
+  their notifications (a lost connection, a frozen tab). `:complete` is
+  false when they are too many or some aren't kept any more: the session
+  has to load the file again."
+  {::doc/added "2.14"
+   ::sm/params schema:get-file-changes}
+  [cfg {:keys [::rpc/profile-id file-id revn]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (check-read-permissions! conn profile-id file-id)
+                 (let [file   (db/get conn :file {:id file-id} {::db/columns [:revn :vern]})
+                       missed (- (:revn file) revn)
+                       rows   (when (<= 0 missed max-file-changes)
+                                (db/exec! conn [sql:get-file-changes file-id revn]))]
+                   {:revn (:revn file)
+                    :vern (:vern file)
+                    ;; Every revision up to the last one of the file
+                    :complete (= (range (inc revn) (inc (:revn file)))
+                                 (distinct (map :revn rows)))
+                    :changes (mapv #(update % :changes blob/decode) rows)}))))
+
 ;; --- COMMAND QUERY: get-project-files
 
 (def ^:private sql:project-files
@@ -458,9 +500,22 @@
                 :code :object-not-found
                 :hint "object not found"))
 
-    (cond-> (prune-thumbnails page)
-      (some? object-id)
-      (prune-objects object-id))))
+    (let [page       (bfc/assoc-page-tokens cfg (:data file) page)
+          resolved   (:tokens-resolved page)
+          object-ids (cond (uuid? object-id) [object-id]
+                           (some? object-id) (vec object-id))
+          out-of-date (and (some? resolved)
+                           (cltp/page-out-of-date? page
+                                                   (cltp/values->resolved-tokens resolved)
+                                                   :ids object-ids))]
+      (cond-> (prune-thumbnails page)
+        ;; An out of date page goes whole: the readers set it and then
+        ;; keep the objects
+        (and (some? object-id) (not out-of-date))
+        (prune-objects object-id)
+
+        out-of-date
+        (assoc :tokens-out-of-date true)))))
 
 (def schema:get-page
   [:map {:title "get-page"}

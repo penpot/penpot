@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.colorpicker.color-tokens
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
@@ -46,7 +47,7 @@
            (on-token-pill-click event token)))
         id-tooltip  (mf/use-id)
         resolved    (:resolved-value token)
-        color-value (dwta/value->color resolved)
+        color-value (cc/parse-css-color resolved)
         item-ref (mf/use-ref nil)]
     [:> tooltip* {:id id-tooltip
                   :style {:width "100%"}
@@ -77,7 +78,7 @@
            (on-token-pill-click event token)))
         resolved    (:resolved-value token)
         token-name  (:name token)
-        color-value (dwta/value->color resolved)]
+        color-value (cc/parse-css-color resolved)]
     [:div {:class (stl/css-case :color-token-item-grid true
                                 :color-token-selected-grid selected)}
      [:> swatch* {:background color-value

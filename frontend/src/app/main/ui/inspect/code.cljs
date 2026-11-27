@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.shape-tree :as ctst]
+   [app.common.uuid :as uuid]
    [app.config :as cfg]
    [app.main.data.event :as ev]
    [app.main.features :as features]
@@ -58,7 +59,8 @@
 (defn get-viewer-objects
   ([]
    (let [route      (deref refs/route)
-         page-id    (:page-id (:query-params route))]
+         page-id    (let [id (-> route :query-params :page-id)]
+                      (if (uuid? id) id (uuid/parse* id)))]
      (get-viewer-objects page-id)))
   ([page-id]
    (l/derived

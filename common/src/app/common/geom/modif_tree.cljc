@@ -10,30 +10,42 @@
    [app.common.files.helpers :as cfh]
    [app.common.types.modifiers :as ctm]))
 
+(defn- combine-modifiers
+  "`modifiers` added after `old-modifiers`, which may be nil."
+  [old-modifiers modifiers]
+  (if (nil? old-modifiers)
+    modifiers
+    (ctm/add-modifiers old-modifiers modifiers)))
+
 (defn add-modifiers
   "Add the given modifiers to the map of modifiers."
   [modif-tree id modifiers]
   (if (ctm/empty? modifiers)
     modif-tree
-    (let [old-modifiers
-          (dm/get-in modif-tree [id :modifiers])
-          new-modifiers
-          (ctm/add-modifiers old-modifiers modifiers)]
-      (cond-> modif-tree
-        (ctm/empty? new-modifiers)
-        (dissoc id)
-
-        (not (ctm/empty? new-modifiers))
-        (assoc-in [id :modifiers] new-modifiers)))))
+    (let [new-modifiers
+          (combine-modifiers (dm/get-in modif-tree [id :modifiers]) modifiers)]
+      (if (ctm/empty? new-modifiers)
+        (dissoc modif-tree id)
+        (assoc-in modif-tree [id :modifiers] new-modifiers)))))
 
 (defn merge-modif-tree
   "Merge two maps of modifiers into a single one"
   [modif-tree other-tree]
-  (reduce
-   (fn [modif-tree [id {:keys [modifiers]}]]
-     (add-modifiers modif-tree id modifiers))
-   modif-tree
-   other-tree))
+  (if (empty? other-tree)
+    modif-tree
+    (-> (reduce
+         (fn [tree [id {:keys [modifiers]}]]
+           (if (ctm/empty? modifiers)
+             tree
+             (let [entry         (get tree id)
+                   new-modifiers (combine-modifiers (:modifiers entry) modifiers)]
+               (if (ctm/empty? new-modifiers)
+                 (dissoc! tree id)
+                 (assoc! tree id (assoc entry :modifiers new-modifiers))))))
+         (transient (or modif-tree {}))
+         other-tree)
+        (persistent!)
+        (with-meta (meta modif-tree)))))
 
 (defn apply-structure-modifiers
   "Only applies the structure modifiers to the objects tree map"

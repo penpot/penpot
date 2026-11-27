@@ -6,12 +6,15 @@
 
 (ns frontend-tests.data.viewer-test
   (:require
+   [app.common.transit :as tr]
    [app.common.uuid :as uuid]
    [app.main.data.viewer :as dv]
+   [app.main.repo :as rp]
    [app.main.router :as rt]
    [beicon.v2.core :as rx]
    [cljs.test :as t]
    [frontend-tests.helpers.async :as async]
+   [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
 (def ^:private page-id
@@ -234,3 +237,90 @@
 (t/deftest ^:async select-prev-frame-stays-on-the-first-frame
   (t/is (empty? (await (watch-events dv/select-prev-frame
                                      (base-state {:frames [{} {} {}] :index 0}))))))
+
+;; --- Pointer-mapped files: each page in its own fragment
+
+(def ^:private pm-file-id (uuid/custom 6 0))
+(def ^:private page-one (uuid/custom 6 1))
+(def ^:private page-two (uuid/custom 6 2))
+(def ^:private page-names {page-one "One" page-two "Two"})
+
+(defn- fragment-page
+  "The page `id` its fragment holds; the id of the fragment is the page's."
+  [id]
+  {:id id :name (get page-names id) :objects {}})
+
+(defn- pointer-bundle
+  []
+  {:file {:id pm-file-id
+          :data {:pages [page-one page-two]
+                 :pages-index {page-one (tr/->Pointer page-one {})
+                               page-two (tr/->Pointer page-two {})}}}
+   :page-names page-names
+   :project {}
+   :team {:features []}
+   :share-links []
+   :libraries []
+   :users []
+   :permissions {}
+   :thumbnails {}})
+
+(defn- route-on
+  [page-id]
+  (let [query {:file-id (str pm-file-id) :page-id (str page-id) :section "interactions" :index "0"}]
+    {:route {:params {:query query} :query-params query}}))
+
+(defn- fragment-stub
+  "Stub of `rp/cmd!` answering the bundle and the fragments, and keeping in
+  `fetched` the ids of the fragments asked for."
+  [fetched]
+  (mock/stub
+   (fn [command & [params]]
+     (case command
+       :get-view-only-bundle (rx/of (pointer-bundle))
+       :get-file-fragment    (do (swap! fetched conj (:fragment-id params))
+                                 (rx/of {:data (fragment-page (:fragment-id params))}))))))
+
+(t/deftest ^:async a-pointer-mapped-file-fetches-only-the-page-it-shows
+  (let [fetched (atom [])
+        events  (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (fragment-stub fetched)}
+       (await (async/observe (ptk/watch (#'dv/fetch-bundle {:file-id pm-file-id :page-id page-two}) {} nil)
+                             :on-next #(swap! events conj %)))))
+    (let [state (ptk/update (last @events) (route-on page-two))
+          index (get-in state [:viewer :file :data :pages-index])]
+      (t/is (= [page-two] @fetched))
+      (t/is (= (fragment-page page-two) (get index page-two)))
+      (t/is (= {:id page-one :name "One"} (get index page-one))
+            "the other pages keep their names until they are fetched")
+      (t/is (= #{page-two} (set (keys (get-in state [:viewer :pages]))))))))
+
+(t/deftest ^:async a-page-is-fetched-the-first-time-it-is-shown
+  (let [fetched (atom [])
+        state   (merge (route-on page-two)
+                       {:current-file-id pm-file-id
+                        :viewer {:file {:id pm-file-id
+                                        :data {:pages [page-one page-two]
+                                               :pages-index {page-one (fragment-page page-one)
+                                                             page-two (#'dv/page-placeholder page-two (tr/->Pointer page-two {}) "Two")}}}
+                                 :pages {page-one {}}
+                                 :page-id page-one}})
+        show    (dv/show-page {:page-id page-two})
+        events  (atom [])]
+    (t/is (= state (ptk/update show state)) "it keeps showing the page it shows until it comes")
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (fragment-stub fetched)}
+       (await (async/observe (ptk/watch show state nil)
+                             :on-next #(swap! events conj %)))))
+    (t/is (= [page-two] @fetched))
+    (let [[page-fetched] @events
+          state' (ptk/update page-fetched state)]
+      (t/is (= (fragment-page page-two) (get-in state' [:viewer :file :data :pages-index page-two])))
+      (t/is (= [::dv/show-page] (map ptk/type (await (watch-events page-fetched state'))))
+            "it is shown when the route still asks for it")
+      (t/is (empty? (await (watch-events page-fetched (merge state' (route-on page-one)))))
+            "and not when the route moved on")
+      (t/is (= page-two (get-in (ptk/update show state') [:viewer :page-id]))))))

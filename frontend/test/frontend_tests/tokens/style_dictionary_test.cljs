@@ -184,3 +184,17 @@
                (t/is (= "px" (get-in resolved-tokens ["borderRadius.md" :unit])))
                (done))))))))
 
+
+(t/deftest resolve-font-family-given-as-a-string
+  (t/async
+    done
+    (let [tokens {"font.list"   {:name "font.list" :type :font-family :value ["Work Sans" "sans-serif"]}
+                  "font.string" {:name "font.string" :type :font-family :value "Work Sans, sans-serif"}
+                  "font.alias"  {:name "font.alias" :type :font-family :value "{font.string}"}}]
+      (-> (sd/resolve-tokens tokens)
+          (rx/sub!
+           (fn [resolved-tokens]
+             (t/is (= ["Work Sans" "sans-serif"] (get-in resolved-tokens ["font.list" :resolved-value])))
+             (t/is (= ["Work Sans" "sans-serif"] (get-in resolved-tokens ["font.string" :resolved-value])))
+             (t/is (= ["Work Sans" "sans-serif"] (get-in resolved-tokens ["font.alias" :resolved-value])))
+             (done)))))))

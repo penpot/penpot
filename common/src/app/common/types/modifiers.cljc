@@ -374,8 +374,20 @@
 
 (defn- increase-order
   [operations last-order]
-  (->> operations
-       (mapv #(update % :order + last-order))))
+  (if (or (zero? last-order) (c/empty? operations))
+    operations
+    (reduce (fn [result op] (conj result (update op :order + last-order)))
+            []
+            operations)))
+
+(defn- concat-structure
+  "`operations` followed by `other`, as a vector. Built with `conj`, which
+  is cheaper than a transient for the few operations a shape holds."
+  [operations other]
+  (cond
+    (c/empty? other)      (if (vector? operations) operations (vec operations))
+    (c/empty? operations) (if (vector? other) other (vec other))
+    :else                 (reduce conj (vec operations) other)))
 
 (defn add-modifiers
   [modifiers new-modifiers]
@@ -401,8 +413,8 @@
         (assoc  :last-order       (+ last-order new-last-order))
         (update :geometry-child   #(concat-geometry % new-geom-child merge-child?))
         (update :geometry-parent  #(concat-geometry % new-geom-parent merge-parent?))
-        (update :structure-parent #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-parent)))
-        (update :structure-child  #(d/concat-vec [] % (dm/get-prop new-modifiers :structure-child))))))
+        (update :structure-parent concat-structure (dm/get-prop new-modifiers :structure-parent))
+        (update :structure-child  concat-structure (dm/get-prop new-modifiers :structure-child)))))
 
 
 ;; These are convenience methods to create single operation modifiers without the builder
@@ -755,3 +767,135 @@
   (as-> shape $
     (reduce apply-modifier $ (dm/get-prop modifiers :structure-parent))
     (reduce apply-modifier $ (dm/get-prop modifiers :structure-child))))
+
+;; --- Applying modifiers to shapes
+
+(def transform-attrs
+  "Shape attributes that applying modifiers can change."
+  #{:selrect
+    :points
+    :x
+    :y
+    :r1
+    :r2
+    :r3
+    :r4
+    :shadow
+    :blur
+    :background-blur
+    :strokes
+    :width
+    :height
+    :content
+    :transform
+    :transform-inverse
+    :rotation
+    :flip-x
+    :flip-y
+    :grow-type
+    :position-data
+    :layout-gap
+    :layout-padding
+    :layout-item-h-sizing
+    :layout-item-max-h
+    :layout-item-max-w
+    :layout-item-min-h
+    :layout-item-min-w
+    :layout-item-v-sizing
+    :layout-padding-type
+    :layout-item-margin
+    :layout-item-margin-type
+    :layout-grid-cells
+    :layout-grid-columns
+    :layout-grid-rows
+    :fills
+    :fill-image})
+
+(defn- move-vector
+  "Vector that `modifiers` move a shape by, or nil when they do more than
+  move it."
+  [modifiers]
+  (when (and (some? modifiers) (only-move? modifiers))
+    (reduce (fn [vector op] (gpt/add vector (:vector op)))
+            (gpt/point 0 0)
+            (concat (:geometry-parent modifiers) (:geometry-child modifiers)))))
+
+(defn rigid-bool?
+  "True when `id` is a boolean of `objects` that moves as all its
+  descendants: `motion-of` gives the motion of a shape, nil when it has
+  none, and `same?` compares two motions. Its content is then its old
+  content moved, with no new calculation."
+  [objects id motion-of same?]
+  (boolean
+   (when (cfh/bool-shape? (get objects id))
+     (when-let [motion (motion-of id)]
+       (every? #(some-> (motion-of %) (same? motion))
+               (cfh/get-children-ids objects id))))))
+
+(defn moved-bool-ids
+  "Ids of the booleans in `object-modifiers` that only move, by the same
+  vector as all their descendants (`rigid-bool?`)."
+  [objects object-modifiers]
+  (let [vector-of #(move-vector (dm/get-in object-modifiers [% :modifiers]))]
+    (into #{}
+          (filter #(rigid-bool? objects % vector-of gpt/close?))
+          (keys object-modifiers))))
+
+(defn next-grow-type
+  "Grow type of a text with `current-grow-type` after scaling it by
+  `scalev`."
+  [current-grow-type scalev]
+  (cond
+    (= current-grow-type :fixed)
+    :fixed
+
+    (and (not (mth/close? (:y scalev) 1.0))
+         (or (= current-grow-type :auto-width)
+             (= current-grow-type :auto-height)))
+    :fixed
+
+    (and (not (mth/close? (:x scalev) 1.0))
+         (= current-grow-type :auto-width))
+    :auto-height
+
+    :else
+    current-grow-type))
+
+(defn- with-grow-type
+  "Add to `modifiers` of a text `shape` the grow type that follows its
+  resize to `width` and `height`."
+  [modifiers shape width height]
+  (if (cfh/text-shape? shape)
+    (let [{sr-width :width sr-height :height} (:selrect shape)
+          scalev (gpt/point (/ width sr-width) (/ height sr-height))
+          current-grow-type (dm/get-prop shape :grow-type)
+          new-grow-type (next-grow-type current-grow-type scalev)]
+      (cond-> modifiers
+        (not= new-grow-type current-grow-type)
+        (change-property :grow-type new-grow-type)))
+    modifiers))
+
+(defn size-modifiers
+  "Modifiers that resize `shape` to `size`, a map with its new `:width`,
+  its new `:height` or both. With both and the proportion locked the
+  height wins, as when changing the width and then the height."
+  [{:keys [proportion proportion-lock selrect] :as shape} {:keys [width height]}]
+  (let [{sr-width :width sr-height :height} selrect]
+    (cond
+      (and (some? width) (some? height))
+      (let [;; Avoid having shapes with zero size
+            height (if (< (mth/abs height) 0.01) 0.01 height)
+            width  (cond
+                     proportion-lock          (* height proportion)
+                     (< (mth/abs width) 0.01) 0.01
+                     :else                    width)]
+        (-> (change-size shape width height)
+            (with-grow-type shape width height)))
+
+      (some? width)
+      (-> (change-dimensions-modifiers shape :width width)
+          (with-grow-type shape width sr-height))
+
+      :else
+      (-> (change-dimensions-modifiers shape :height height)
+          (with-grow-type shape sr-width height)))))

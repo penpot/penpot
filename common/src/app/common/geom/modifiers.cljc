@@ -23,7 +23,8 @@
    [app.common.geom.shapes.tree-seq :as cgst]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.set :as set]))
 
 ;;#?(:cljs
 ;;   (defn modif->js
@@ -150,42 +151,121 @@
       (and has-modifiers? parent? (not root?))
       (set-children-modifiers children objects bounds parent transformed-parent-bounds ignore-constraints))))
 
+(defn- geometry-changed?
+  "True when `id` has geometry modifiers in `modif-tree`."
+  [modif-tree id]
+  (boolean (some-> (dm/get-in modif-tree [id :modifiers]) ctm/has-geometry?)))
+
+(defn- content-changed?
+  "True when `id` has geometry modifiers in `modif-tree`, or is a group or a
+  boolean with a descendant that has them: its bounds follow its children."
+  [objects modif-tree id]
+  (or (geometry-changed? modif-tree id)
+      (let [shape (get objects id)]
+        (and (cfh/group-like-shape? shape)
+             (boolean (some #(content-changed? objects modif-tree %) (:shapes shape)))))))
+
+(defn- children-changed?
+  "True when some of the shapes `ids` changed (`content-changed?`) in any of
+  the modifier trees `modif-trees`."
+  [objects modif-trees ids]
+  (boolean (some (fn [id] (some #(content-changed? objects % id) modif-trees)) ids)))
+
+(defn- move-flex-children
+  "Move the layout `children` of `parent` as much as `parent` moves, from
+  its bounds in `bounds` to `transformed-parent-bounds`."
+  [modif-tree children objects bounds parent transformed-parent-bounds]
+  (let [delta     (gpt/to-vec (gpo/origin @(get bounds (:id parent)))
+                              (gpo/origin @transformed-parent-bounds))
+        modifiers (ctm/move-modifiers delta)]
+    (->> children
+         (keep (d/getf objects))
+         (remove gco/invalid-geometry?)
+         (reduce (fn [modif-tree child]
+                   (cgt/add-modifiers modif-tree (:id child) modifiers))
+                 modif-tree))))
+
+(defn- resized?
+  "True when `id` has geometry modifiers in `modif-tree` that do more than
+  move it."
+  [modif-tree id]
+  (let [modifiers (dm/get-in modif-tree [id :modifiers])]
+    (and (some? modifiers)
+         (ctm/has-geometry? modifiers)
+         (not (ctm/only-move? (ctm/select-geometry modifiers))))))
+
+(declare ^:private set-modifiers-layout*)
+
 (defn- set-modifiers-layout
-  "Propagate modifiers to its children"
+  "Propagate modifiers to its children. With `settled`, a map with a
+  `:dirty` set of ids and a `:base` modif tree already applied to `bounds`,
+  the flex layouts not in `:dirty` are taken as already laid out: one is
+  laid out again only when it or its children change in either tree, and
+  when it only moves its children move with it."
   ([objects bounds ignore-constraints parent]
    (set-modifiers-layout objects bounds ignore-constraints {} parent))
   ([objects bounds ignore-constraints modif-tree parent]
-   (let [parent-id       (:id parent)
-         root?           (= uuid/zero parent-id)
-         modifiers       (-> (dm/get-in modif-tree [parent-id :modifiers])
-                             (ctm/select-geometry))
-         has-modifiers?  (ctm/child-modifiers? modifiers)
-         flex-layout?    (ctl/flex-layout? parent)
-         grid-layout?    (ctl/grid-layout? parent)
-         parent?         (or (cfh/group-like-shape? parent) (cfh/frame-shape? parent))
+   (set-modifiers-layout objects bounds ignore-constraints nil modif-tree parent))
+  ([objects bounds ignore-constraints settled modif-tree parent]
+   (let [parent-id    (:id parent)
+         modifiers    (dm/get-in modif-tree [parent-id :modifiers])
+         flex-layout? (ctl/flex-layout? parent)
+         grid-layout? (ctl/grid-layout? parent)]
+     ;; A shape that is not a layout passes on only its own modifiers
+     (if (and (nil? modifiers) (not flex-layout?) (not grid-layout?))
+       modif-tree
+       (set-modifiers-layout* objects bounds ignore-constraints settled modif-tree parent
+                              modifiers flex-layout? grid-layout?)))))
 
-         transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
+(defn- set-modifiers-layout*
+  "Body of `set-modifiers-layout` for a layout or a shape with modifiers."
+  [objects bounds ignore-constraints settled modif-tree parent modifiers flex-layout? grid-layout?]
+  (let [parent-id       (:id parent)
+        root?           (= uuid/zero parent-id)
+        modifiers       (ctm/select-geometry modifiers)
+        has-modifiers?  (ctm/child-modifiers? modifiers)
+        parent?         (or (cfh/group-like-shape? parent) (cfh/frame-shape? parent))
 
-         children-modifiers
-         (if (or flex-layout? grid-layout?)
-           (->> (:shapes parent)
-                (filter #(ctl/position-absolute? objects %)))
-           (:shapes parent))
+        transformed-parent-bounds (delay (gtr/transform-bounds @(get bounds parent-id) modifiers))
 
-         children-layout
-         (when (or flex-layout? grid-layout?)
-           (->> (:shapes parent)
-                (remove #(ctl/position-absolute? objects %))))]
+        children-modifiers
+        (if (or flex-layout? grid-layout?)
+          (->> (:shapes parent)
+               (filter #(ctl/position-absolute? objects %)))
+          (:shapes parent))
 
-     (cond-> modif-tree
-       (and has-modifiers? parent? (not root?))
-       (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
+        children-layout
+        (when (or flex-layout? grid-layout?)
+          (->> (:shapes parent)
+               (remove #(ctl/position-absolute? objects %))))
 
-       flex-layout?
-       (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds)
+        ;; :layout lays the flex children out, :move moves them and nil leaves them
+        flex-children
+        (when flex-layout?
+          (let [{:keys [dirty base]} settled]
+            (cond
+              (or (nil? settled)
+                  (contains? dirty parent-id)
+                  (resized? modif-tree parent-id)
+                  (resized? base parent-id)
+                  (children-changed? objects [modif-tree base] children-layout))
+              :layout
 
-       grid-layout?
-       (set-grid-layout-modifiers objects bounds parent transformed-parent-bounds)))))
+              (geometry-changed? modif-tree parent-id)
+              :move)))]
+
+    (cond-> modif-tree
+      (and has-modifiers? parent? (not root?))
+      (set-children-modifiers children-modifiers objects bounds parent transformed-parent-bounds ignore-constraints)
+
+      (= :layout flex-children)
+      (set-flex-layout-modifiers children-layout objects bounds parent transformed-parent-bounds)
+
+      (= :move flex-children)
+      (move-flex-children children-layout objects bounds parent transformed-parent-bounds)
+
+      grid-layout?
+      (set-grid-layout-modifiers objects bounds parent transformed-parent-bounds))))
 
 (defn propagate-modifiers-constraints
   ([objects bounds ignore-constraints shapes]
@@ -198,6 +278,24 @@
    (propagate-modifiers-layouts objects bounds ignore-constraints {} shapes))
   ([objects bounds ignore-constraints modif-tree shapes]
    (reduce #(set-modifiers-layout objects bounds ignore-constraints %1 %2) modif-tree shapes)))
+
+(defn- propagate-changed-layouts
+  "Like `propagate-modifiers-layouts`, but for flex layouts already laid
+  out: only those that change, or are in `dirty`, are laid out again.
+  `base` holds the modifiers already applied to `bounds`."
+  [objects bounds ignore-constraints dirty base modif-tree shapes]
+  (reduce #(set-modifiers-layout objects bounds ignore-constraints {:dirty dirty :base base} %1 %2)
+          modif-tree shapes))
+
+(defn- still-dirty
+  "The ids in `dirty`, and those with geometry changes in `modif-tree`, that
+  the pass over `shapes` did not lay out."
+  [dirty modif-tree shapes]
+  (let [processed (into #{} (map :id) shapes)]
+    (into (set/difference dirty processed)
+          (comp (filter #(geometry-changed? modif-tree %))
+                (remove processed))
+          (keys modif-tree))))
 
 (defn- calc-auto-modifiers
   "Calculates the modifiers to adjust the bounds for auto-width/auto-height shapes"
@@ -280,16 +378,31 @@
     (contains? #{:center :end :space-around :space-evenly :stretch} layout-justify-content)))
 
 (defn sizing-auto-modifiers
-  "Recalculates the layouts to adjust the sizing: auto new sizes"
-  [modif-tree sizing-auto-layouts objects bounds ignore-constraints]
+  "Recalculates the layouts to adjust the sizing: auto new sizes. `dirty`
+  holds the layouts to lay out again when a step reaches them. With
+  `changed-layout-ids` the layouts are taken as already laid out, so a
+  flex layout not in it, not dirty and without changes, in it or in its
+  children, keeps its size."
+  [modif-tree sizing-auto-layouts objects bounds ignore-constraints dirty changed-layout-ids]
 
-  (let [calculate-modifiers
-        (fn [[modif-tree bounds] layout-id]
+  (let [unchanged?
+        (fn [modif-tree dirty layout]
+          (and (some? changed-layout-ids)
+               (not (ctl/grid-layout? layout))
+               (not (contains? changed-layout-ids (:id layout)))
+               (not (contains? dirty (:id layout)))
+               (not (geometry-changed? modif-tree (:id layout)))
+               (not (children-changed? objects [modif-tree] (:shapes layout)))))
+
+        calculate-modifiers
+        (fn [[modif-tree bounds dirty :as result] layout-id]
           (let [layout (get objects layout-id)
-                auto-modifiers (calc-auto-modifiers objects bounds layout)]
+                auto-modifiers (when-not (unchanged? modif-tree dirty layout)
+                                 (calc-auto-modifiers objects bounds layout))]
 
-            (if (and (ctm/empty? auto-modifiers) (not (ctl/grid-layout? layout)))
-              [modif-tree bounds]
+            (if (and (or (nil? auto-modifiers) (ctm/empty? auto-modifiers))
+                     (not (ctl/grid-layout? layout)))
+              result
 
               (let [from-layout
                     (->> (cfh/get-parent-ids objects layout-id)
@@ -301,14 +414,15 @@
                       (cgst/resolve-tree #{layout-id} objects))
 
                     auto-modif-tree {layout-id {:modifiers auto-modifiers}}
-                    auto-modif-tree (propagate-modifiers-layouts objects bounds ignore-constraints auto-modif-tree shapes)
+                    auto-modif-tree (propagate-changed-layouts objects bounds ignore-constraints dirty nil auto-modif-tree shapes)
+                    dirty           (still-dirty dirty auto-modif-tree shapes)
 
                     bounds (cgb/transform-bounds-map bounds objects auto-modif-tree)
                     modif-tree (cgt/merge-modif-tree modif-tree auto-modif-tree)]
-                [modif-tree bounds]))))]
+                [modif-tree bounds dirty]))))]
     (->> sizing-auto-layouts
          (reverse)
-         (reduce calculate-modifiers [modif-tree bounds])
+         (reduce calculate-modifiers [modif-tree bounds dirty])
          (first))))
 
 (defn filter-layouts-ids
@@ -323,7 +437,10 @@
        (set)))
 
 (defn set-objects-modifiers
-  "Applies recursively the modifiers and calculate the layouts and constraints for all the items to be placed correctly"
+  "Applies recursively the modifiers and calculate the layouts and constraints for all the items to be placed correctly.
+
+  With `:changed-layout-ids`, the layouts are taken as already laid out
+  except those ids, so only the layouts that change are laid out again."
   ([modif-tree objects]
    (set-objects-modifiers modif-tree objects nil))
 
@@ -331,7 +448,7 @@
    (set-objects-modifiers nil modif-tree objects params))
 
   ([old-modif-tree modif-tree objects
-    {:keys [ignore-constraints snap-pixel? snap-precision snap-ignore-axis]
+    {:keys [ignore-constraints snap-pixel? snap-precision snap-ignore-axis changed-layout-ids]
      :or {ignore-constraints false
           snap-pixel? false
           snap-precision 1
@@ -370,8 +487,21 @@
          bounds-map
          (cgb/transform-bounds-map bounds-map objects modif-tree)
 
+         ;; Structure changes, like added children, need every layout
+         settled?
+         (and (some? changed-layout-ids)
+              (not-any? #(ctm/has-structure? (:modifiers %)) (vals modif-tree)))
+
          modif-tree-layout
-         (propagate-modifiers-layouts objects bounds-map ignore-constraints shapes-tree-layout)
+         (if settled?
+           (propagate-changed-layouts objects bounds-map ignore-constraints
+                                      changed-layout-ids modif-tree {} shapes-tree-layout)
+           (propagate-modifiers-layouts objects bounds-map ignore-constraints shapes-tree-layout))
+
+         dirty
+         (if settled?
+           (still-dirty changed-layout-ids modif-tree-layout shapes-tree-layout)
+           #{})
 
          modif-tree
          (cgt/merge-modif-tree modif-tree modif-tree-layout)
@@ -384,7 +514,8 @@
          sizing-auto-layouts (find-auto-layouts objects shapes-tree-layout)
 
          modif-tree
-         (sizing-auto-modifiers modif-tree sizing-auto-layouts objects bounds-map ignore-constraints)
+         (sizing-auto-modifiers modif-tree sizing-auto-layouts objects bounds-map ignore-constraints dirty
+                                (when settled? changed-layout-ids))
 
          modif-tree
          (if old-modif-tree

@@ -10,6 +10,8 @@
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
+   [app.common.logic.tokens-propagation :as cltp]
+   [app.common.logic.tokens-resolution :as ctr]
    [app.common.render-wasm.wasm :as wasm]
    [app.common.types.color :as cc]
    [app.common.uri :as u]
@@ -50,7 +52,7 @@
                :http-status status
                :http-body body})))
 
-(defn- request-data-for-thumbnail
+(defn- fetch-data-for-thumbnail
   [file-id revn strip-frames-with-thumbnails]
   (let [path    "api/main/methods/get-file-data-for-thumbnail"
         params   {:file-id file-id
@@ -63,6 +65,35 @@
     (->> (http/send! request)
          (rx/map http/conditional-decode-transit)
          (rx/mapcat handle-response))))
+
+(defn- correct-page
+  "Set the shapes of the thumbnail page to `resolved`, the resolved values of
+  their tokens: only the ones that may change the board of the thumbnail
+  when the page has one."
+  [{:keys [page] :as data} resolved]
+  (assoc-in data [:page :objects]
+            (cltp/correct-objects page resolved @fonts/fontsdb
+                                  :ids (some-> (:thumbnail-frame-id page) vector))))
+
+(defn- request-data-for-thumbnail
+  "Observable of the data of the thumbnail of the file, with the shapes set
+  to the current values of their tokens. The frames replaced by their stored
+  thumbnail keep it, unless the values differ from the ones saved in the
+  file: then the data is fetched again with every frame. The tokens resolve
+  with tokenscript when `tokenscript` is true, as in the main thread: the
+  worker doesn't have its flags."
+  [file-id revn strip-frames-with-thumbnails tokenscript]
+  (->> (fetch-data-for-thumbnail file-id revn strip-frames-with-thumbnails)
+       (rx/mapcat
+        (fn [{:keys [page] :as data}]
+          (->> (rx/from (ctr/resolve-page-for-reader page (boolean tokenscript)))
+               (rx/mapcat
+                (fn [resolved]
+                  (if (and strip-frames-with-thumbnails
+                           (ctr/differs-from-saved? page resolved))
+                    (->> (fetch-data-for-thumbnail file-id revn false)
+                         (rx/map #(correct-page % resolved)))
+                    (rx/of (correct-page data resolved))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SVG RENDERING (LEGACY RENDER)
@@ -98,8 +129,9 @@
       nil)))
 
 (defmethod impl/handler :thumbnails/generate-for-file
-  [{:keys [file-id revn] :as message} _]
-  (->> (request-data-for-thumbnail file-id revn true)
+  [{:keys [file-id revn tokenscript] :as message} _]
+  (fonts/register-custom-fonts (:custom-fonts message))
+  (->> (request-data-for-thumbnail file-id revn true tokenscript)
        (rx/map render-thumbnail)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,9 +139,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- render-thumbnail-with-wasm
-  [{:keys [file-id revn width] :as _message}]
+  [{:keys [file-id revn width tokenscript] :as _message}]
   (->> (rx/from @wwasm/module)
-       (rx/mapcat #(request-data-for-thumbnail file-id revn false))
+       (rx/mapcat #(request-data-for-thumbnail file-id revn false tokenscript))
        (rx/mapcat
         (fn [{:keys [page] :as _file}]
           (rx/create
@@ -153,4 +185,5 @@
 
 (defmethod impl/handler :thumbnails/generate-for-file-wasm
   [message _]
+  (fonts/register-custom-fonts (:custom-fonts message))
   (wwasm/submit #(render-thumbnail-with-wasm message)))

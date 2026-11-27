@@ -23,12 +23,14 @@
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
    [app.common.types.library :as ctl]
+   [app.common.types.objects-map :as omap]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.token :as cto]
+   [app.common.types.token-values :as cttv]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.common.types.typographies-list :as ctyl]
@@ -60,7 +62,14 @@
      [:attr :keyword]
      [:val ::sm/any]
      [:ignore-touched {:optional true} :boolean]
-     [:ignore-geometry {:optional true} :boolean]]]
+     [:ignore-geometry {:optional true} :boolean]
+     ;; Derived from other data, so it keeps the token values
+     [:derived {:optional true} :boolean]]]
+   [:set-token-values
+    [:map {:title "SetTokenValuesOperation"}
+     [:type [:= :set-token-values]]
+     ;; Token attribute to value, nil to mark it stale
+     [:values [:map-of :keyword ::sm/any]]]]
    [:set-touched
     [:map {:title "SetTouchedOperation"}
      [:type [:= :set-touched]]
@@ -435,6 +444,12 @@
      [:before-path [:maybe [:vector :string]]]
      [:before-group [:maybe :boolean]]]]
 
+   [:set-tokens-resolved
+    [:map {:title "SetTokensResolved"}
+     [:type [:= :set-tokens-resolved]]
+     ;; Token name to resolved value, nil to remove it
+     [:values [:map-of :string ::sm/any]]]]
+
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
      [:type [:= :set-base-font-size]]
@@ -471,9 +486,15 @@
 (def ^:dynamic *touched-changes*
   "A dynamic var that used for track changes that touch shapes on
   first processing phase of changes. Should be set to a hash-set
-  instance and will contain changes that caused the touched
-  modification."
+  instance and will contain the `touched-key` of the changes that
+  caused the touched modification."
   nil)
+
+(defn- touched-key
+  "The part of a change that `process-touched-change` reads. Hashing it
+  is much cheaper than hashing the whole change with its operations."
+  [{:keys [id page-id component-id]}]
+  {:id id :page-id page-id :component-id component-id})
 
 (def ^:dynamic *state*
   "A general purpose state to signal some out of order operations
@@ -510,6 +531,8 @@
         (ctkl/set-component-modified data component-id)
         data))))
 
+(declare ^:private process-change-items)
+
 (defn process-changes
   ([data items]
    (process-changes data items true))
@@ -521,7 +544,7 @@
      (check-changes items))
 
    (binding [*touched-changes* (volatile! #{})]
-     (let [result (reduce #(or (process-change %1 %2) %1) data items)]
+     (let [result (process-change-items data items)]
        (reduce process-touched-change result @*touched-changes*)))))
 
 (defn- get-frame-descendant-ids
@@ -666,7 +689,8 @@
   ;; NOTE: we only perform hard validation on backend
   #?(:clj (validate-shape obj page-id))
 
-  (let [update-container #(ctst/add-shape id obj % frame-id parent-id index ignore-touched)]
+  (let [obj              (cttv/mark-placement-stale obj)
+        update-container #(ctst/add-shape id obj % frame-id parent-id index ignore-touched)]
 
     (when *state*
       (swap! *state* collect-shape-media-refs obj page-id))
@@ -675,26 +699,103 @@
       (d/update-in-when data [:pages-index page-id] update-container)
       (d/update-in-when data [:components component-id] update-container))))
 
+(defn- untouching-sets?
+  "True when `operations` are all `:set` operations that ignore touched and
+  don't change the type of the shape."
+  [operations]
+  (every? #(and (= :set (:type %))
+                (:ignore-touched %)
+                (not= :type (:attr %)))
+          operations))
+
+(defn- process-shape-operations
+  "`shape` with the operations of `change` applied. The `:set` operations
+  that ignore touched are applied in one step."
+  [shape {:keys [page-id operations] :as change}]
+  (let [shape    (cttv/update-after-operations shape
+                                               (if (untouching-sets? operations)
+                                                 (ctn/set-shape-attrs-ignoring-touched shape operations)
+                                                 (reduce process-operation shape operations))
+                                               operations)
+        touched? (-> shape meta ::ctn/touched)]
+    ;; NOTE: processing operation functions can assign
+    ;; the ::ctn/touched metadata on shapes, in this case we
+    ;; need to report them for to be used in the second
+    ;; phase of changes procesing
+    (when touched? (some-> *touched-changes* (vswap! conj (touched-key change))))
+
+    (when (and *state* page-id)
+      (swap! *state* collect-shape-media-refs shape page-id))
+
+    ;; NOTE: we only perform hard validation on backend
+    #?(:clj (validate-shape shape page-id))
+
+    shape))
+
+(defn- layout-children-stale
+  "`objects` with the margin tokens of the children of the shapes in
+  `updated`, a map of id to updated shape, and the sizes the layout held,
+  marked stale when their layout differs from the one in `old-objects`."
+  [objects old-objects updated]
+  (reduce-kv (fn [objects id shape]
+               (if (= (:layout shape) (dm/get-in old-objects [id :layout]))
+                 objects
+                 (reduce (fn [objects child-id]
+                           (d/update-when objects child-id
+                                          #(cttv/mark-stale % (into cto/spacing-margin-keys
+                                                                    (cttv/layout-held-attrs %)))))
+                         objects
+                         (:shapes shape))))
+             objects
+             updated))
+
 (defn- process-operations
-  [objects {:keys [page-id id operations] :as change}]
+  [objects {:keys [id] :as change}]
   (if-let [shape (get objects id)]
-    (let [shape    (reduce process-operation shape operations)
-          touched? (-> shape meta ::ctn/touched)]
-      ;; NOTE: processing operation functions can assign
-      ;; the ::ctn/touched metadata on shapes, in this case we
-      ;; need to report them for to be used in the second
-      ;; phase of changes procesing
-      (when touched? (some-> *touched-changes* (vswap! conj change)))
-
-      (when (and *state* page-id)
-        (swap! *state* collect-shape-media-refs shape page-id))
-
-      ;; NOTE: we only perform hard validation on backend
-      #?(:clj (validate-shape shape page-id))
-
-      (assoc objects id shape))
-
+    (let [shape' (process-shape-operations shape change)]
+      (-> objects
+          (assoc id shape')
+          (layout-children-stale objects {id shape'})))
     objects))
+
+(defn- page-mod-obj?
+  [change]
+  (and (= :mod-obj (:type change))
+       (some? (:page-id change))))
+
+(defn- process-mod-obj-run
+  "Apply `changes`, consecutive :mod-obj changes of the page `page-id`,
+  assoc'ing all the shapes they update into the page objects at once."
+  [data page-id changes]
+  (d/update-in-when
+   data [:pages-index page-id :objects]
+   (fn [objects]
+     (let [updated
+           (reduce (fn [updated {:keys [id] :as change}]
+                     (if-let [shape (or (get updated id) (get objects id))]
+                       (assoc! updated id (process-shape-operations shape change))
+                       updated))
+                   (transient {})
+                   changes)
+           updated (persistent! updated)]
+       (-> objects
+           (omap/assoc-all updated)
+           (layout-children-stale objects updated))))))
+
+(defn- process-change-items
+  "Apply `items` to `data`. Consecutive :mod-obj changes of one page are
+  applied as one run."
+  [data items]
+  (loop [data  data
+         items (seq items)]
+    (if-let [change (first items)]
+      (if (page-mod-obj? change)
+        (let [page-id     (:page-id change)
+              same-run?   #(and (page-mod-obj? %) (= page-id (:page-id %)))
+              [run items] (split-with same-run? items)]
+          (recur (process-mod-obj-run data page-id run) items))
+        (recur (or (process-change data change) data) (next items)))
+      data)))
 
 (defmethod process-change :mod-obj
   [data {:keys [page-id component-id] :as change}]
@@ -721,7 +822,7 @@
 
         (if (not= old-shapes new-shapes)
           (do
-            (some-> *touched-changes* (vswap! conj change))
+            (some-> *touched-changes* (vswap! conj (touched-key change)))
             (update objects parent-id assoc :shapes new-shapes))
           objects)))
 
@@ -869,7 +970,11 @@
                                         (d/vec-without-nils)))))))
 
           (update-parent-id [objects id]
-            (d/update-when objects id assoc :parent-id parent-id))
+            (d/update-when objects id
+                           (fn [shape]
+                             (cond-> (assoc shape :parent-id parent-id)
+                               (not= (:parent-id shape) parent-id)
+                               (cttv/mark-placement-stale)))))
 
           ;; Updates the frame-id references that might be outdated
           (update-frame-id [frame-id objects id]
@@ -1160,6 +1265,18 @@
 
 ;; === Design Tokens configuration
 
+(defmethod process-change :set-tokens-resolved
+  [data {:keys [values]}]
+  (let [resolved (reduce-kv (fn [resolved token-name value]
+                              (if (nil? value)
+                                (dissoc resolved token-name)
+                                (assoc resolved token-name value)))
+                            (or (:tokens-resolved data) {})
+                            values)]
+    (if (empty? resolved)
+      (dissoc data :tokens-resolved)
+      (assoc data :tokens-resolved resolved))))
+
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
   (ctf/set-base-font-size data base-font-size))
@@ -1195,6 +1312,10 @@
                       (:val op)
                       :ignore-touched (:ignore-touched op)
                       :ignore-geometry (:ignore-geometry op)))
+
+(defmethod process-operation :set-token-values
+  [shape op]
+  (cttv/set-values shape (:values op)))
 
 (defmethod process-operation :set-touched
   [shape op]

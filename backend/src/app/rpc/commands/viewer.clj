@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.files.helpers :as cfh]
+   [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
    [app.config :as cf]
@@ -225,10 +226,23 @@
                   (-> (update :data remove-not-allowed-pages (:pages perms))
                       (assoc-in [:data :components]
                                 (select-keys (:components (:data realized-data))
-                                             (referenced-component-ids realized-data (:pages perms)))))
+                                             (referenced-component-ids realized-data (:pages perms))))))
 
-                  :always
-                  (update :data select-keys view-only-data-keys))
+        ;; The tokens of the out of date shapes, their saved values and the page names
+        [tokens resolved page-names]
+        (let [data  (:data (fdata/realize-pointers cfg file))
+              lib   (bfc/get-tokens-source-lib cfg data)
+              names (d/update-vals (:pages-index data) :name)]
+          (if (= :share-link (:type perms))
+            (let [pages (vals (:pages-index data))]
+              [(cfo/get-pages-tokens data lib pages)
+               (cfo/get-pages-resolved data pages)
+               names])
+            [(cfo/get-active-tokens data lib)
+             (not-empty (:tokens-resolved data))
+             names]))
+
+        file    (update file :data select-keys view-only-data-keys)
 
         libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
@@ -282,6 +296,9 @@
     {:users members
      :profiles members
      :fonts fonts
+     :tokens tokens
+     :tokens-resolved resolved
+     :page-names page-names
      :project project
      :share-links links
      :libraries libs

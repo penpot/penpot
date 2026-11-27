@@ -20,7 +20,7 @@
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.guides :as dwgu]
    [app.main.data.workspace.interactions :as dwi]
-   [app.main.data.workspace.pages :as dwpg]
+   [app.main.data.workspace.tokens.correction :as-alias dwtc]
    [app.main.repo :as rp]
    [app.main.router :as-alias rt]
    [app.main.store :as st]
@@ -317,8 +317,9 @@
         (js/Promise.
          (fn [resolve _]
            (->> st/stream
-                (rx/filter (ptk/type? ::dwpg/initialized))
-                (rx/filter #(= (deref %) id))
+                ;; Resolve once the page holds the values of its tokens
+                (rx/filter (ptk/type? ::dwtc/tokens-ready))
+                (rx/filter #(= (:page-id (deref %)) id))
                 (rx/take 1)
                 (rx/subs! #(resolve nil)))
            (st/emit! (dcm/go-to-workspace :page-id id))))))

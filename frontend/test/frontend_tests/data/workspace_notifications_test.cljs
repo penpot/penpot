@@ -15,6 +15,8 @@
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.notifications :as dwntf]
+   [app.main.data.workspace.pages :as-alias dwpg]
+   [app.main.repo :as rp]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -78,6 +80,125 @@
 (t/deftest ^:async ordinary-file-change-does-not-notify
   (let [events (await (watch-file-change (file-change-msg {})))]
     (t/is (= [::dch/commit] (mapv ptk/type events)))))
+
+(defn- ^:async watch-event
+  [event state]
+  (let [events (atom [])]
+    (await (async/observe (ptk/watch event state (rx/empty))
+                          :on-next #(swap! events conj %)))
+    @events))
+
+;; Scenario: a change arrives twice, notified and fetched again after a lost
+;; connection. Proves: it is applied once.
+(t/deftest ^:async a-change-that-arrives-twice-is-applied-once
+  (let [msg    (file-change-msg {})
+        first  (dwntf/handle-file-change msg)
+        state  (ptk/update first {})
+        again  (dwntf/handle-file-change msg)
+        state' (ptk/update again state)]
+    (t/is (= [::dch/commit] (mapv ptk/type (await (watch-event first state)))))
+    (t/is (empty? (await (watch-event again state'))))
+    (t/testing "another revision of the file is applied"
+      (let [next (dwntf/handle-file-change (assoc msg :revn 2))
+            _    (ptk/update next state')]
+        (t/is (= [::dch/commit] (mapv ptk/type (await (watch-event next state')))))))))
+;; --- Missed changes
+
+(defn- ^:async resync-requests
+  "The requests of the changes missed that a resync of `file-id` makes on
+  `state`, after `events` update it."
+  [state file-id events]
+  (let [requests (atom [])
+        state    (reduce #(ptk/update %2 %1) state events)
+        resync   (#'dwntf/resync-file file-id)
+        state    (ptk/update resync state)]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [cmd params]
+                             (swap! requests conj [cmd params])
+                             (rx/of {:complete true :changes [] :vern 0})))}
+       (await (async/observe (or (ptk/watch resync state (rx/empty)) (rx/empty))))))
+    @requests))
+
+(defn- set-revn
+  [file-id revn]
+  #(assoc-in % [:files file-id :revn] revn))
+
+;; Scenario: the session is at revision 10 when the connection opens again,
+;; and a change notified from then on (13) arrives before the fetch.
+;; Proves: the fetch starts at 10, so the changes missed are not skipped.
+(t/deftest ^:async the-missed-changes-are-fetched-from-the-reconnection
+  (let [file-id (uuid/next)
+        state   {:files {file-id {:id file-id :revn 10}}}]
+    (t/is (= [[:get-file-changes {:file-id file-id :revn 10}]]
+             (await (resync-requests state file-id
+                                     [(#'dwntf/mark-resync file-id)
+                                      (set-revn file-id 13)
+                                      (#'dwntf/mark-resync file-id)]))))
+    (t/testing "without a mark it starts at the last revision"
+      (t/is (= [[:get-file-changes {:file-id file-id :revn 13}]]
+               (await (resync-requests state file-id [(set-revn file-id 13)])))))))
+
+(defn- ^:async resync-results
+  "What a resync of `file-id` on `state`, after `events` update it, does
+  when the fetch answers `rows`: `:reload`, or the revisions it applies."
+  [state file-id events rows]
+  (let [state  (reduce #(ptk/update %2 %1) state events)
+        resync (#'dwntf/resync-file file-id)
+        state  (ptk/update resync state)
+        events (atom [])]
+    (await
+     (mock/with-mocks*
+       {rp/cmd! (mock/stub (fn [_ _] (rx/of {:complete true :changes rows :vern 0})))}
+       (await (async/observe (->> (ptk/watch resync state (rx/empty))
+                                  ;; The missed changes, checked on the state
+                                  (rx/mapcat #(ptk/watch % state (rx/empty)))
+                                  ;; Each change applied, as its commit
+                                  (rx/mapcat #(if (ptk/type? ::dwntf/handle-file-change %)
+                                                (ptk/watch % state (rx/empty))
+                                                (rx/of %))))
+                             :on-next #(swap! events conj %)))))
+    (mapv #(if (dch/commit? %) (:file-revn (deref %)) :reload)
+          @events)))
+
+(defn- missed-row
+  [session-id revn]
+  {:revn revn :session-id session-id :changes []})
+
+;; Scenario: the session is at revision 10 when the connection opens again,
+;; a change notified from then on (13) is applied, and the fetch answers 11,
+;; 12 and 13. Proves: 11 and 12 are not applied after 13; the file reloads.
+(t/deftest ^:async missed-changes-older-than-an-applied-one-reload-the-file
+  (let [file-id (uuid/next)
+        other   (uuid/next)
+        state   {:files {file-id {:id file-id :revn 10}} :session-id (uuid/next)}
+        live    (dwntf/handle-file-change (file-change-msg {:file-id file-id :session-id other :revn 13}))]
+    (t/is (= [:reload]
+             (await (resync-results state file-id
+                                    [(#'dwntf/mark-resync file-id) live (set-revn file-id 13)]
+                                    (mapv #(missed-row other %) [11 12 13])))))))
+
+;; Scenario: the fetch after a reconnection answers changes newer than the
+;; ones applied, with one of this session among them. Proves: the others are
+;; applied in order and the file is not reloaded.
+(t/deftest ^:async missed-changes-newer-than-the-applied-ones-are-applied
+  (let [file-id (uuid/next)
+        other   (uuid/next)
+        self    (uuid/next)
+        state   {:files {file-id {:id file-id :revn 10}} :session-id self}
+        live    (dwntf/handle-file-change (file-change-msg {:file-id file-id :session-id other :revn 10}))]
+    (t/is (= [11 13]
+             (await (resync-results state file-id
+                                    [live (#'dwntf/mark-resync file-id)]
+                                    [(missed-row other 11) (missed-row self 12) (missed-row other 13)]))))))
+
+;; Scenario: the tab comes back while it shows an earlier version of the
+;; file. Proves: nothing is fetched to apply on top of that version.
+(t/deftest ^:async no-missed-changes-are-fetched-in-a-version-preview
+  (let [file-id (uuid/next)
+        state   {:files {file-id {:id file-id :revn 4}}
+                 :workspace-global {:preview-id (uuid/next)}}]
+    (t/is (empty? (await (resync-requests state file-id [(#'dwntf/mark-resync file-id)]))))))
 
 (defn- restored-events
   "Events the watch of `handle-file-restored` emits for `msg` on `state`."
@@ -260,3 +381,21 @@
     (t/is (= [{:type :unsubscribe-file :file-id file-a}]
              (filterv #(= :unsubscribe-file (:type %)) (:sent switch))))
     (t/is (= 1 (:handled switch)) "only the new file's message is handled")))
+
+;; Scenario: a page of the open file is opened. Proves: the other sessions
+;; of the file are told the page.
+(t/deftest ^:async opening-a-page-tells-the-other-sessions
+  (let [team-id (uuid/next)
+        file-id (uuid/next)
+        page-id (uuid/next)
+        result  (await
+                 (subscription-messages
+                  team-id
+                  (^:async fn [store _]
+                    (ptk/emit! store
+                               (dwntf/initialize team-id file-id)
+                               #(assoc % :current-file-id file-id :current-page-id page-id)
+                               (ptk/data-event ::dwpg/initialized page-id))
+                    (await (async/settle)))))]
+    (t/is (= [{:type :presence-update :file-id file-id}]
+             (filterv #(= :presence-update (:type %)) (:sent result))))))

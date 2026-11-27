@@ -47,6 +47,19 @@
 
 (register! :builtin cfnt/local-fonts)
 
+(defn custom-fonts
+  "The fonts of the team, which the workers don't know: they come in the
+  messages that set the shapes to the values of their font tokens."
+  []
+  (into [] (filter #(= :custom (:backend %))) (vals @fontsdb)))
+
+(defn register-custom-fonts
+  "Registers in a worker `fonts`, the fonts of the team as the main thread
+  has them (`custom-fonts`); nil keeps the ones it has."
+  [fonts]
+  (when (some? fonts)
+    (register! :custom fonts)))
+
 (when (contains? cf/flags :google-fonts-provider)
   (register! :google cfnt/catalog))
 

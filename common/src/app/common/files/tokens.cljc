@@ -902,3 +902,59 @@
        :active-set-ids active-set-ids})
     {:active-theme-ids #{}
      :active-set-ids #{}}))
+
+;; --- Tokens of some pages
+
+(defn page-token-names
+  "Names of the tokens that the shapes of `page` apply, and the token of its
+  background."
+  [{:keys [objects background-token]}]
+  (cond-> (into #{}
+                (mapcat (comp vals :applied-tokens))
+                (vals objects))
+    (some? background-token) (conj background-token)))
+
+(defn- value-references
+  "Names of the tokens that `value` references, also inside the values of
+  composite tokens."
+  [value]
+  (into #{}
+        (comp (filter string?)
+              (mapcat cto/find-token-value-references))
+        (tree-seq coll? seq value)))
+
+(defn get-active-tokens
+  "The active tokens of `tokens-lib` (with the tokens status of `file-data`):
+  enough to resolve the values of every page. A map of token name to
+  `{:name :type :value}`."
+  [file-data tokens-lib]
+  (let [tokens-status (get-tokens-status file-data)]
+    (when (and (some? tokens-lib) (some? tokens-status))
+      (not-empty
+       (update-vals (get-tokens-in-active-sets tokens-status tokens-lib)
+                    #(select-keys % [:name :type :value]))))))
+
+(defn get-pages-tokens
+  "The active tokens of `tokens-lib` (with the tokens status of `file-data`)
+  that the shapes of `pages` apply, and the tokens their values reference:
+  enough to resolve the values of those pages. A map of token name to
+  `{:name :type :value}`."
+  [file-data tokens-lib pages]
+  (when-let [active (get-active-tokens file-data tokens-lib)]
+    (loop [pending (into [] (comp (mapcat page-token-names) (distinct)) pages)
+           result  {}]
+      (if-let [token-name (peek pending)]
+        (let [pending (pop pending)
+              token   (get active token-name)]
+          (if (or (nil? token) (contains? result token-name))
+            (recur pending result)
+            (recur (into pending (value-references (:value token)))
+                   (assoc result token-name token))))
+        (not-empty result)))))
+
+(defn get-pages-resolved
+  "The resolved values saved in `file-data` of the tokens that the shapes of
+  `pages` apply: enough to set those pages, without the rest of the tokens."
+  [file-data pages]
+  (when-let [resolved (:tokens-resolved file-data)]
+    (not-empty (select-keys resolved (into #{} (mapcat page-token-names) pages)))))

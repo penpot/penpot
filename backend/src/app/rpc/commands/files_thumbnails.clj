@@ -180,7 +180,9 @@
             obj-ids   (map #(thc/fmt-object-id (:id file) page-id % "frame") frame-ids)
             thumbs    (get-object-thumbnails conn id obj-ids)]
 
-        (cond-> (update page :objects filter-objects frame-id)
+        ;; The tokens of the page and their values saved by the editors,
+        ;; so the thumbnail sets the shapes that are out of date
+        (cond-> (bfc/assoc-page-tokens cfg data (update page :objects filter-objects frame-id))
           ;; If we have frame, we need to specify it on the page level
           (some? frame-id)
           (assoc :thumbnail-frame-id frame-id)

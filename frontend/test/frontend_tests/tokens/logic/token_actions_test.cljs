@@ -21,14 +21,12 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
-   [app.main.store :as st]
    [app.util.i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
    [frontend-tests.helpers.async :as async]
-   [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
@@ -135,8 +133,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius})]]
+                                       :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -160,12 +157,10 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius})
+                                       :token (toht/get-token file "borderRadius.sm")})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "borderRadius.md")
-                                       :on-update-shape dwta/update-shape-radius})]]
+                                       :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -188,15 +183,13 @@
             events [;; Apply "borderRadius.sm" to all border radius attributes
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3 :r4}
                                        :token (toht/get-token file "borderRadius.sm")
-                                       :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius})
+                                       :shape-ids [(:id rect-1)]})
                     ;; Apply single `:r1` attribute to same shape
                     ;; while removing other attributes from the border-radius set
                     ;; but keep `:r4` for testing purposes
                     (dwta/apply-token {:attributes #{:r1 :r2 :r3}
                                        :token (toht/get-token file "borderRadius.md")
-                                       :shape-ids [(:id rect-1)]
-                                       :on-update-shape dwta/update-shape-radius})]]
+                                       :shape-ids [(:id rect-1)]})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -220,12 +213,10 @@
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:r3 :r4}
-                                       :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius-for-corners})
+                                       :token (toht/get-token file "borderRadius.sm")})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:r1 :r2 :r3 :r4}
-                                       :token (toht/get-token file "borderRadius.sm")
-                                       :on-update-shape dwta/update-shape-radius})]]
+                                       :token (toht/get-token file "borderRadius.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -274,20 +265,16 @@
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:fill}
-                                       :token (toht/get-token file "color.primary")
-                                       :on-update-shape dwta/update-fill})
+                                       :token (toht/get-token file "color.primary")})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:stroke-color}
-                                       :token (toht/get-token file "color.primary")
-                                       :on-update-shape dwta/update-stroke-color})
+                                       :token (toht/get-token file "color.primary")})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:fill}
-                                       :token (toht/get-token file "color.secondary")
-                                       :on-update-shape dwta/update-fill})
+                                       :token (toht/get-token file "color.secondary")})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:stroke-color}
-                                       :token (toht/get-token file "color.secondary")
-                                       :on-update-shape dwta/update-stroke-color})]]
+                                       :token (toht/get-token file "color.secondary")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -348,7 +335,8 @@
            (let [file' (ths/get-file-from-state new-state)
                  page' (get-in file' [:data :pages-index page-id])]
              (t/is (= "#ff0000" (:background page')))
-             (t/is (= "canvas.bg" (:background-token page'))))))))))
+             (t/is (= "canvas.bg" (:background-token page')))))
+         tohs/stop-on-undo-commit)))))
 
 (t/deftest test-apply-dimensions
   (t/testing "applies dimensions token and updates the shapes width and height"
@@ -365,8 +353,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
-                                       :token (toht/get-token file "dimensions.sm")
-                                       :on-update-shape dwta/apply-dimensions-token})]]
+                                       :token (toht/get-token file "dimensions.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -399,8 +386,7 @@
             frame-2 (cths/get-shape file :frame-2)
             events [(dwta/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
                                        :attributes #{:p1 :p2 :p3 :p4}
-                                       :token (toht/get-token file "padding.sm")
-                                       :on-update-shape dwta/update-layout-padding})]]
+                                       :token (toht/get-token file "padding.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -440,12 +426,10 @@
             token (toht/get-token file "spacing.negative")
             events [(dwta/apply-token {:shape-ids [(:id frame-1)]
                                        :attributes #{:p1 :p2 :p3 :p4}
-                                       :token token
-                                       :on-update-shape dwta/update-layout-padding})
+                                       :token token})
                     (dwta/apply-token {:shape-ids [(:id frame-1)]
                                        :attributes #{:row-gap :column-gap}
-                                       :token token
-                                       :on-update-shape dwta/update-layout-gap})]]
+                                       :token token})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -469,8 +453,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:width :height}
-                                       :token (toht/get-token file "sizing.sm")
-                                       :on-update-shape dwta/apply-sizing-token})]]
+                                       :token (toht/get-token file "sizing.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -513,16 +496,13 @@
             rect-3 (cths/get-shape file :rect-3)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:opacity}
-                                       :token (toht/get-token file "opacity.float")
-                                       :on-update-shape dwta/update-opacity})
+                                       :token (toht/get-token file "opacity.float")})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
                                        :attributes #{:opacity}
-                                       :token (toht/get-token file "opacity.percent")
-                                       :on-update-shape dwta/update-opacity})
+                                       :token (toht/get-token file "opacity.percent")})
                     (dwta/apply-token {:shape-ids [(:id rect-3)]
                                        :attributes #{:opacity}
-                                       :token (toht/get-token file "opacity.invalid")
-                                       :on-update-shape dwta/update-opacity})]]
+                                       :token (toht/get-token file "opacity.invalid")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -558,8 +538,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:rotation}
-                                       :token (toht/get-token file "rotation.medium")
-                                       :on-update-shape dwta/update-rotation})]]
+                                       :token (toht/get-token file "rotation.medium")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -590,8 +569,7 @@
             rect-without-stroke (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-with-stroke) (:id rect-without-stroke)]
                                        :attributes ctt/per-side-stroke-width-keys
-                                       :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape dwta/update-stroke-width-side})]]
+                                       :token (toht/get-token file "stroke-width.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -715,8 +693,7 @@
             rect (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect)]
                                        :attributes #{:stroke-width-top}
-                                       :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape dwta/update-stroke-width-side})]]
+                                       :token (toht/get-token file "stroke-width.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -756,8 +733,7 @@
             rect (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect)]
                                        :attributes #{:stroke-width-top}
-                                       :token (toht/get-token file "stroke-width.sm")
-                                       :on-update-shape dwta/update-stroke-width-side})]]
+                                       :token (toht/get-token file "stroke-width.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1007,8 +983,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes ctt/per-side-stroke-width-keys
-                                       :token (toht/get-token file "dimensions.md")
-                                       :on-update-shape dwta/update-stroke-width-side})]]
+                                       :token (toht/get-token file "dimensions.md")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1059,8 +1034,7 @@
                       ;; Second: apply token-lg to all 4 sides
                       (let [events2 [(dwta/apply-token {:shape-ids [(:id rect1)]
                                                         :attributes ctt/per-side-stroke-width-keys
-                                                        :token (toht/get-token file1 "stroke-width.lg")
-                                                        :on-update-shape dwta/update-stroke-width})]]
+                                                        :token (toht/get-token file1 "stroke-width.lg")})]]
                         (tohs/run-store-async
                          (ths/setup-store file1) done events2
                          (fn [state2]
@@ -1077,8 +1051,7 @@
          store (constantly nil)
          [(dwta/apply-token {:shape-ids [(:id rect-1)]
                              :attributes #{:stroke-width-top}
-                             :token (toht/get-token file "stroke-width.sm")
-                             :on-update-shape dwta/update-stroke-width-side})]
+                             :token (toht/get-token file "stroke-width.sm")})]
          step2)))))
 
 (t/deftest test-detach-token-from-single-side
@@ -1126,8 +1099,7 @@
          store (constantly nil)
          [(dwta/apply-token {:shape-ids [(:id rect-1)]
                              :attributes ctt/per-side-stroke-width-keys
-                             :token (toht/get-token file "stroke-width.sm")
-                             :on-update-shape dwta/update-stroke-width})]
+                             :token (toht/get-token file "stroke-width.sm")})]
          step2)))))
 
 (t/deftest test-detach-tokens-by-attribute
@@ -1178,8 +1150,7 @@
             rect-1 (cths/get-shape file :rect-1)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
                                        :attributes #{:shadow}
-                                       :token (toht/get-token file "shadow.sm")
-                                       :on-update-shape dwta/update-shadow})]]
+                                       :token (toht/get-token file "shadow.sm")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1211,8 +1182,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:font-size}
-                                       :token (toht/get-token file "heading-size")
-                                       :on-update-shape dwta/update-font-size})]]
+                                       :token (toht/get-token file "heading-size")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1250,8 +1220,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:line-height}
-                                       :token (toht/get-token file "big-height")
-                                       :on-update-shape dwta/update-line-height})]]
+                                       :token (toht/get-token file "big-height")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1289,8 +1258,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:letter-spacing}
-                                       :token (toht/get-token file "wide-spacing")
-                                       :on-update-shape dwta/update-letter-spacing})]]
+                                       :token (toht/get-token file "wide-spacing")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1328,8 +1296,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:font-family}
-                                       :token (toht/get-token file "primary-font")
-                                       :on-update-shape dwta/update-font-family})]]
+                                       :token (toht/get-token file "primary-font")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1346,7 +1313,8 @@
                                         (:styles))]
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
-             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs)))
+             (t/is (= "Arial" (:font-family style-text-blocks))
+                   "a family written as a string is applied like a list of one")
              (t/testing "WASM text mocks were exercised"
                (t/is (pos? (thw/call-count :set-shape-text-content)))
                (t/is (pos? (thw/call-count :get-text-dimensions))))))
@@ -1367,8 +1335,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:text-case}
-                                       :token (toht/get-token file "uppercase-case")
-                                       :on-update-shape dwta/update-text-case})]]
+                                       :token (toht/get-token file "uppercase-case")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1402,8 +1369,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:text-decoration}
-                                       :token (toht/get-token file "underline-decoration")
-                                       :on-update-shape dwta/update-text-decoration})]]
+                                       :token (toht/get-token file "underline-decoration")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1437,8 +1403,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:font-weight}
-                                       :token (toht/get-token file "font-weight")
-                                       :on-update-shape dwta/update-font-weight})]]
+                                       :token (toht/get-token file "font-weight")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1487,8 +1452,7 @@
                       (rx/take 1)))]
     (ptk/emit! store (dwta/apply-token {:shape-ids [(cthi/id :text-1)]
                                         :attributes #{:font-weight}
-                                        :token (toht/get-token file token-name)
-                                        :on-update-shape dwta/update-font-weight-interactive}))
+                                        :token (toht/get-token file token-name)}))
     (await resized)))
 
 (t/deftest ^:async test-apply-font-weight-without-matching-variant
@@ -1496,9 +1460,9 @@
                     (add-font-weight-token "font-weight.thin" "100"))
         store   (ths/setup-store file)
         emitted (atom [])]
-    (await (mock/with-mocks*
-             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
-             (await (apply-font-weight-token store file "font-weight.thin"))))
+    ;; The warning goes to the store with the events of the application
+    (rx/subs! #(swap! emitted conj %) (ptk/input-stream store))
+    (await (apply-font-weight-token store file "font-weight.thin"))
 
     (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
       (t/testing "keeps the token's weight and uses the closest variant of the font"
@@ -1522,9 +1486,9 @@
                     (add-font-weight-token "font-weight.light-italic" "300 italic"))
         store   (ths/setup-store file)
         emitted (atom [])]
-    (await (mock/with-mocks*
-             {st/emit! (mock/stub (fn [& events] (swap! emitted into events) nil))}
-             (await (apply-font-weight-token store file "font-weight.light-italic"))))
+    ;; The warning goes to the store with the events of the application
+    (rx/subs! #(swap! emitted conj %) (ptk/input-stream store))
+    (await (apply-font-weight-token store file "font-weight.light-italic"))
 
     (let [styles (text-styles (cths/get-shape (ths/get-file-from-state @store) :text-1))]
       (t/is (= "300" (:font-weight styles)))
@@ -1543,8 +1507,7 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/toggle-token {:shape-ids [(:id rect-1) (:id rect-2)]
-                                        :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
-                                                           :on-update-shape dwta/update-shape-radius}
+                                        :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}
                                         :token (toht/get-token file "borderRadius.md")})]]
         (tohs/run-store-async
          store done events
@@ -1930,8 +1893,7 @@
             store (ths/setup-store file)
             events [(dwta/apply-token {:shape-ids [(cthi/id :rect-1)]
                                        :attributes #{:fill}
-                                       :token (toht/get-token file "color.primary")
-                                       :on-update-shape dwta/update-fill})]]
+                                       :token (toht/get-token file "color.primary")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -1971,8 +1933,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:typography}
-                                       :token (toht/get-token file "typography.heading")
-                                       :on-update-shape dwta/update-typography})]]
+                                       :token (toht/get-token file "typography.heading")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -2025,8 +1986,7 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:typography}
-                                       :token (toht/get-token file "typography")
-                                       :on-update-shape dwta/update-typography})]]
+                                       :token (toht/get-token file "typography")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -2072,8 +2032,7 @@
                                        :token (toht/get-token file "fontSize")})
                     (dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:typography}
-                                       :token (toht/get-token file "typography")
-                                       :on-update-shape dwta/update-typography})]]
+                                       :token (toht/get-token file "typography")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -2103,12 +2062,10 @@
             text-1 (cths/get-shape file :text-1)
             events [(dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:typography}
-                                       :token (toht/get-token file "typography")
-                                       :on-update-shape dwta/update-typography})
+                                       :token (toht/get-token file "typography")})
                     (dwta/apply-token {:shape-ids [(:id text-1)]
                                        :attributes #{:font-size}
-                                       :token (toht/get-token file "fontSize")
-                                       :on-update-shape dwta/update-font-size})]]
+                                       :token (toht/get-token file "fontSize")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
@@ -2168,16 +2125,13 @@
             store (ths/setup-store file)
             events [(dwta/apply-token {:shape-ids [(cthi/id :text-1)]
                                        :attributes #{:font-size}
-                                       :token (toht/get-token file "heading-size")
-                                       :on-update-shape dwta/update-font-size})
+                                       :token (toht/get-token file "heading-size")})
                     (dwta/apply-token {:shape-ids [(cthi/id :text-2)]
                                        :attributes #{:line-height}
-                                       :token (toht/get-token file "big-height")
-                                       :on-update-shape dwta/update-line-height})
+                                       :token (toht/get-token file "big-height")})
                     (dwta/apply-token {:shape-ids [(cthi/id :text-3)]
                                        :attributes #{:letter-spacing}
-                                       :token (toht/get-token file "wide-spacing")
-                                       :on-update-shape dwta/update-letter-spacing})]]
+                                       :token (toht/get-token file "wide-spacing")})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]

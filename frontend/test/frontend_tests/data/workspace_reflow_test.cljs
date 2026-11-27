@@ -10,8 +10,11 @@
   promise view of the settle signal lives in `app.plugins.reflow`; these tests
   use it because it is the wait the plugin API ships."
   (:require
+   [app.common.files.changes-builder :as pcb]
+   [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.reflow :as wrf]
+   [app.main.data.workspace.reflow.signals :as wrfs]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwtxt]
@@ -455,3 +458,32 @@
           (.then (fn []
                    (stop-pipeline! store)
                    (done)))))))
+
+(t/deftest the-signals-read-from-the-changes-match-the-comparison
+  (let [page-id  (uuid/next)
+        text-id  (uuid/next)
+        frame-id (uuid/next)
+        rect-id  (uuid/next)
+        shape    (fn [id type attrs]
+                   (merge (cts/setup-shape {:id id :type type :name (name type)
+                                            :x 0 :y 0 :width 10 :height 10
+                                            :parent-id uuid/zero :frame-id uuid/zero})
+                          attrs))
+        objects  {text-id  (shape text-id :text {:grow-type :auto-width :content {:type "root"}})
+                  frame-id (shape frame-id :frame {})
+                  rect-id  (shape rect-id :rect {})}
+        ids      [text-id frame-id rect-id]
+        update   (fn [obj]
+                   (condp = (:id obj)
+                     text-id  (assoc obj :content {:type "root" :children []} :x 5)
+                     frame-id (assoc obj :hidden true)
+                     (assoc obj :x 20)))
+        changes  (-> (pcb/empty-changes nil page-id)
+                     (pcb/with-objects objects)
+                     (pcb/update-shapes ids update {:ignore-touched true}))]
+    (doseq [features [#{"render-wasm/v1"} #{}]]
+      (let [state    {:current-page-id page-id :features features}
+            compared (wrfs/reflow-ids state page-id objects (pcb/lookup-objects changes) ids nil)]
+        (t/is (= compared (wrfs/reflow-ids-of-changes state page-id objects changes ids nil)))
+        (t/is (= {:layout-ids [frame-id] :text-ids [text-id]} compared)
+              "a hidden frame relays out and a changed text is measured again")))))

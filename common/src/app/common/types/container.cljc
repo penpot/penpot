@@ -16,6 +16,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :refer [schema:plugin-data]]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as cttx]
@@ -636,6 +637,29 @@
                               changed-groups)]
     changed-groups))
 
+(defn- geometry-attr?
+  "True when `attr`, of the sync `group`, is geometry for a shape of `type`:
+  it never touches the shape by itself."
+  [type attr group]
+  (and (or (= group :geometry-group)
+           ;; :content in paths are also considered geometric
+           (and (= group :content-group)
+                (= type :path)))
+       ;; TODO: the check of :width and :height probably may be
+       ;; removed after the check added in
+       ;; data/workspace/modifiers/check-delta function.
+       (not (#{:width :height} attr))))
+
+(defn- equal-attr?
+  "True when `val` and `shape-val` are the same value of `attr`. For
+  geometric attributes, there are cases in that the value changes slightly
+  (e.g. when rounding to pixel, or when recalculating text positions in
+  different zoom levels): changes smaller than 1 pixel are ignored."
+  [attr val shape-val geometry?]
+  (if geometry?
+    (gsh/close-attrs? attr val shape-val 1)
+    (gsh/close-attrs? attr val shape-val)))
+
 (defn set-shape-attr
   "Assign attribute to shape with touched logic.
 
@@ -652,55 +676,43 @@
             (= attr :position-data))
 
         is-geometry?
-        (and (or (= group :geometry-group)   ;; never triggers touched by itself
-                 (and (= group :content-group)
-                      (= (:type shape) :path)))
-             ;; :content in paths are also considered geometric
-             (not (#{:width :height} attr)))
+        (geometry-attr? type attr group)
 
-        ;; TODO: the check of :width and :height probably may be
-        ;; removed after the check added in
-        ;; data/workspace/modifiers/check-delta function.
         in-copy?
         (ctk/in-component-copy? shape)
 
-        ;; For geometric attributes, there are cases in that the value changes
-        ;; slightly (e.g. when rounding to pixel, or when recalculating text
-        ;; positions in different zoom levels). To take this into account, we
-        ;; ignore geometric changes smaller than 1 pixel.
         equal?
-        (if is-geometry?
-          (gsh/close-attrs? attr val shape-val 1)
-          (gsh/close-attrs? attr val shape-val))
+        (equal-attr? attr val shape-val is-geometry?)
 
         touched?
         (and group
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
-        content-diff-type
-        (when (and (= type :text) (= attr :content))
-          (cttx/get-diff-type (:content shape) val))
-
-        token-groups
-        (if (= attr :applied-tokens)
-          (get-token-groups shape val)
-          #{})
-
+        ;; Touched groups only apply to copies, and comparing text
+        ;; contents is costly, so they are computed only when needed.
         groups
-        (cond-> token-groups
-          (and group (not equal?))
-          (set/union #{group} content-diff-type))]
+        (when (and in-copy?
+                   (not ignore?)
+                   (not (and ignore-geometry is-geometry?)))
+          (let [content-diff-type
+                (when (and (= type :text) (= attr :content))
+                  (cttx/get-diff-type (:content shape) val))
+
+                token-groups
+                (if (= attr :applied-tokens)
+                  (get-token-groups shape val)
+                  #{})]
+            (cond-> token-groups
+              (and group (not equal?))
+              (set/union #{group} content-diff-type))))]
 
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.
       ;; In some cases we need to ignore touched only if the attribute is
       ;; geometric (position, width or transformation).
-      (and in-copy?
-           (not-empty groups)
-           (not ignore?)
-           (not (and ignore-geometry is-geometry?)))
+      (not-empty groups)
       (-> (update :touched (fn [touched]
                              (reduce #(ctk/set-touched-group %1 %2)
                                      touched
@@ -715,3 +727,25 @@
 
       :always
       (vary-meta assoc ::touched touched?))))
+
+(defn set-shape-attrs-ignoring-touched
+  "`shape` with `operations`, `:set` operations that ignore touched, applied
+  in one step (`cts/set-attrs`): what `set-shape-attr` does for each of them,
+  with the touched mark of the last one."
+  [shape operations]
+  (let [type (get shape :type)]
+    (loop [operations (seq operations)
+           attrs      []
+           pending    {}
+           touched?   nil]
+      (if-let [{:keys [attr val ignore-geometry]} (first operations)]
+        (let [group     (ctk/resolve-sync-group type attr)
+              geometry? (geometry-attr? type attr group)
+              shape-val (if (contains? pending attr) (get pending attr) (get shape attr))]
+          (recur (next operations)
+                 (conj attrs [attr val])
+                 (assoc pending attr val)
+                 (and group
+                      (not (equal-attr? attr val shape-val geometry?))
+                      (not (and ignore-geometry geometry?)))))
+        (vary-meta (cts/set-attrs shape attrs) assoc ::touched touched?)))))

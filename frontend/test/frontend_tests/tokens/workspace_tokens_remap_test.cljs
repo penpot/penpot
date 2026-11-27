@@ -17,11 +17,15 @@
    [app.main.data.workspace.tokens.remapping :as remap]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
+   [frontend-tests.helpers.wasm :as thw]
    [frontend-tests.tokens.helpers.state :as tohs]
    [frontend-tests.tokens.helpers.tokens :as toht]))
 
 (t/use-fixtures :each
-  {:before cthi/reset-idmap!})
+  {:before (fn []
+             (cthi/reset-idmap!)
+             (thw/setup-wasm-mocks!))
+   :after  thw/teardown-wasm-mocks!})
 
 (def token-set-name "remap-test-set")
 (def token-theme-name "remap-test-theme")

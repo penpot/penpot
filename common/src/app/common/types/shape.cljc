@@ -46,6 +46,24 @@
 ;; Marker protocol
 (defprotocol IShape)
 
+(defprotocol IShapeAttrs
+  (-set-attrs [shape attrs]
+    "`shape` with `attrs`, pairs of attribute and value, set in one step."))
+
+(defn set-attrs
+  "`shape` with `attrs`, a seq of [attribute value] pairs, set in order; a
+  nil value removes the attribute. Shapes that implement `IShapeAttrs` do it
+  in one step."
+  [shape attrs]
+  (if #?(:cljs (implements? IShapeAttrs shape) :clj false)
+    (-set-attrs shape attrs)
+    (reduce (fn [shape [attr val]]
+              (if (nil? val)
+                (dissoc shape attr)
+                (assoc shape attr val)))
+            shape
+            attrs)))
+
 (cr/defrecord Shape [id name type x y width height rotation selrect points
                      transform transform-inverse parent-id frame-id flip-x flip-y]
   IShape)
@@ -306,6 +324,11 @@
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
    [:applied-tokens {:optional true} cto/schema:applied-tokens]
+   ;; The resolved values the shape was set to for its applied tokens
+   [:token-values {:optional true}
+    [:map-of {:gen/max 3}
+     [:keyword {:gen/elements [:fill :r1 :opacity :font-family :typography]}]
+     [:any {:gen/elements [1 0.5 "#ff0000" "uppercase" ["Inter"] {:font-size 12}]}]]]
    [:plugin-data {:optional true} ctpg/schema:plugin-data]
 
    ;; `rotation`, `flip-x` and `flip-y` are fields of the `Shape` record (see
@@ -595,7 +618,7 @@
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :background-blur :grow-type :applied-tokens
-    :plugin-data})
+    :token-values :plugin-data})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform

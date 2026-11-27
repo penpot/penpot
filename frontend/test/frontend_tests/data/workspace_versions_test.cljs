@@ -273,6 +273,62 @@
       (finally
         (rx/dispose! sub)))))
 
+(defn- plugin-restore
+  "Start a plugin restore of a version on `stream`. Returns the atoms of
+  what it resolves and rejects, and the subscription to end."
+  [stream]
+  (let [file-id  (uuid/next)
+        resolved (atom [])
+        rejected (atom [])
+        state    {:current-file-id file-id}
+        event    (versions/restore-version-from-plugin file-id (uuid/next)
+                                                       #(swap! resolved conj %)
+                                                       #(swap! rejected conj %))]
+    {:resolved resolved
+     :rejected rejected
+     :sub      (rx/subs! (fn [_]) (fn [_]) (ptk/watch event state stream))}))
+
+;; Scenario: the current page is checked while a plugin restores a version.
+;; Proves: the promise resolves when the page of the restored file holds
+;; its token values, not on a check of the page before.
+(t/deftest a-plugin-restore-resolves-once-the-restored-page-is-ready
+  (let [stream (rx/subject)
+        answer (rx/subject)]
+    (with-redefs [refs/persistence (atom {:status :saved})
+                  rp/cmd!          (mock/stub (fn [_ _] answer))]
+      (let [{:keys [resolved sub]} (plugin-restore stream)
+            ready                  #(rx/push! stream (ptk/data-event :app.main.data.workspace.tokens.correction/tokens-ready {}))]
+        (try
+          (ready)
+          (t/is (empty? @resolved) "not before the restore answers")
+          (rx/push! answer {})
+          (rx/end! answer)
+          (ready)
+          (t/is (empty? @resolved) "not before the restored file loads")
+          (rx/push! stream (ptk/data-event ::dw/bundle-fetched nil))
+          (ready)
+          (t/is (= 1 (count @resolved)))
+          (finally
+            (rx/dispose! sub)))))))
+
+;; Scenario: the current page is checked and then the restore fails.
+;; Proves: the plugin promise is rejected, not resolved.
+(t/deftest a-failed-plugin-restore-is-not-resolved-by-a-check-of-the-page
+  (let [stream (rx/subject)
+        answer (rx/subject)]
+    (with-redefs [refs/persistence (atom {:status :saved})
+                  rp/cmd!          (mock/stub (fn [_ _] answer))]
+      (let [{:keys [resolved rejected sub]} (plugin-restore stream)]
+        (rx/push! stream (ptk/data-event :app.main.data.workspace.tokens.correction/tokens-ready {}))
+        (rx/error! answer (ex-info "Restore failed" {:type :internal}))
+        ;; The rejection waits for the live file to be back
+        (t/async done
+          (tm/schedule 20 (fn []
+                            (t/is (empty? @resolved))
+                            (t/is (= 1 (count @rejected)))
+                            (rx/dispose! sub)
+                            (done))))))))
+
 ;; The snapshot RPC commands require the `file-id` (they use it to prune the
 ;; partitions of `file_change`), so every workspace version event sends the
 ;; one of the file that is open.

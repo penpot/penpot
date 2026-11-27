@@ -10,12 +10,16 @@
    [app.common.data :as d]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as log]
+   [app.common.logic.tokens-propagation :as cltp]
+   [app.common.logic.tokens-resolution :as ctr]
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.types.components-list :as ctkl]
    [app.common.uri :as u]
+   [app.config :as cf]
    [app.main.data.fonts :as df]
    [app.main.features :as features]
+   [app.main.fonts :as fonts]
    [app.main.render :as render]
    [app.main.repo :as repo]
    [app.main.store :as st]
@@ -125,26 +129,43 @@
                :embed embed
                :skip-children skip-children}]]))))))
 
+(defn- resolve-page
+  "Observable of the objects of `page`, a page fetched with `params`, with
+  the shapes set to the current values of their tokens. When they differ
+  from the ones saved in the file, the backend may have kept only the
+  objects of a page that is out of date, so the whole page is fetched to set
+  it."
+  [page params object-ids]
+  (->> (rx/from (ctr/resolve-page-for-reader page (contains? cf/flags :tokenscript)))
+       (rx/mapcat
+        (fn [resolved]
+          (if (ctr/refetch-whole? page resolved)
+            (->> (repo/cmd! :get-page (dissoc params :object-id))
+                 (rx/map #(cltp/reader-objects % resolved @fonts/fontsdb object-ids true)))
+            (rx/of (cltp/reader-objects page resolved @fonts/fontsdb object-ids false)))))))
+
 (defn- fetch-objects-bundle
   [& {:keys [file-id page-id share-id object-id] :as options}]
   (ptk/reify ::fetch-objects-bundle
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (get state :features)]
+      (let [features   (get state :features)
+            object-ids (if (uuid? object-id) [object-id] (vec object-id))
+            params     {:file-id file-id
+                        :page-id page-id
+                        :share-id share-id
+                        :object-id (if (uuid? object-id)
+                                     object-id
+                                     (set object-id))
+                        :features features}]
         (->> (rx/zip
               (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
-              (repo/cmd! :get-page {:file-id file-id
-                                    :page-id page-id
-                                    :share-id share-id
-                                    :object-id (if (uuid? object-id)
-                                                 object-id
-                                                 (set object-id))
-                                    :features features}))
+              (repo/cmd! :get-page params))
              (rx/tap (fn [[fonts]]
                        (when (seq fonts)
                          (st/emit! (df/fonts-fetched fonts)))))
              (rx/observe-on :async)
-             (rx/map (comp :objects second))
+             (rx/mapcat (fn [[_ page]] (resolve-page page params object-ids)))
              (rx/map (fn [objects]
                        (let [objects (render/adapt-objects-for-shape objects object-id)]
                          #(assoc % :objects objects)))))))))

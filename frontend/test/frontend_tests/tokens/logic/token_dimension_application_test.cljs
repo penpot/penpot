@@ -49,11 +49,10 @@
                                  {:frame-params {:layout :flex}})))
 
 (defn- apply-token
-  [file token-name shape-label attributes on-update-shape]
+  [file token-name shape-label attributes]
   (dwta/apply-token {:shape-ids [(cthi/id shape-label)]
                      :attributes attributes
-                     :token (toht/get-token file token-name)
-                     :on-update-shape on-update-shape}))
+                     :token (toht/get-token file token-name)}))
 
 (defn- run-events
   "Runs `events` on a workspace showing `file`, then calls `check` with
@@ -70,10 +69,10 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "dimension.md" :rect #{:x :y} dwta/apply-dimensions-token)
-        (apply-token file "dimension.md" :rect #{:r1} dwta/apply-dimensions-token)
-        (apply-token file "dimension.md" :rect-2 #{:stroke-width-left} dwta/apply-dimensions-token)
-        (apply-token file "dimension.md" :rect-3 #{:r1 :r2 :r3 :r4} dwta/apply-dimensions-token)]
+       [(apply-token file "dimension.md" :rect #{:x :y})
+        (apply-token file "dimension.md" :rect #{:r1})
+        (apply-token file "dimension.md" :rect-2 #{:stroke-width-left})
+        (apply-token file "dimension.md" :rect-3 #{:r1 :r2 :r3 :r4})]
        (fn [file file']
          (let [rect    (cths/get-shape file :rect)
                rect'   (cths/get-shape file' :rect)
@@ -107,8 +106,8 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "dimension.md" :layout #{:p1 :p3} dwta/apply-dimensions-token)
-        (apply-token file "dimension.md" :layout #{:row-gap} dwta/apply-dimensions-token)]
+       [(apply-token file "dimension.md" :layout #{:p1 :p3})
+        (apply-token file "dimension.md" :layout #{:row-gap})]
        (fn [file file']
          (let [layout  (cths/get-shape file :layout)
                layout' (cths/get-shape file' :layout)]
@@ -131,9 +130,8 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "dimension.md" :layout-child #{:m1 :m2 :m3 :m4} dwta/apply-dimensions-token)
-        (apply-token file "dimension.md" :layout-child #{:layout-item-min-w :layout-item-max-h}
-                     dwta/apply-dimensions-token)]
+       [(apply-token file "dimension.md" :layout-child #{:m1 :m2 :m3 :m4})
+        (apply-token file "dimension.md" :layout-child #{:layout-item-min-w :layout-item-max-h})]
        (fn [_ file']
          (let [child' (cths/get-shape file' :layout-child)]
            (t/testing "sets the margins"
@@ -152,8 +150,7 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "dimension.negative" :layout-child #{:layout-item-min-w}
-                     dwta/apply-dimensions-token)]
+       [(apply-token file "dimension.negative" :layout-child #{:layout-item-min-w})]
        (fn [_ file']
          (t/is (= 0 (:layout-item-min-w (cths/get-shape file' :layout-child)))))
        done))))
@@ -164,9 +161,9 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "spacing.md" :layout #{:p1 :p2 :p3 :p4} dwta/apply-spacing-token)
-        (apply-token file "spacing.md" :layout-child #{:m2 :m4} dwta/apply-spacing-token)
-        (dwta/apply-spacing-token 16 [(cthi/id :rect)] #{:width})]
+       [(apply-token file "spacing.md" :layout #{:p1 :p2 :p3 :p4})
+        (apply-token file "spacing.md" :layout-child #{:m2 :m4})
+        (apply-token file "spacing.md" :rect #{:width})]
        (fn [file file']
          (t/testing "sets the paddings of the board"
            (t/is (= {:p1 16 :p2 16 :p3 16 :p4 16}
@@ -213,8 +210,8 @@
     (let [file (setup-file)]
       (run-events
        file
-       [(apply-token file "sizing.lg" :rect-2 #{:width} dwta/apply-sizing-token)
-        (dwta/apply-sizing-token 120 [(cthi/id :rect-3)] #{:x})]
+       [(apply-token file "sizing.lg" :rect-2 #{:width})
+        (apply-token file "sizing.lg" :rect-3 #{:x})]
        (fn [file file']
          (let [rect-2  (cths/get-shape file :rect-2)
                rect-2' (cths/get-shape file' :rect-2)

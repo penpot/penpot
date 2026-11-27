@@ -32,6 +32,24 @@
   (-> (js/Promise.resolve nil)
       (.then (fn [_] (f)))))
 
+(defn next-task
+  "Observable that emits nil and completes in a new task, after the browser
+  has had the chance to paint and handle input. Unlike a zero timer, it is
+  not throttled in hidden tabs."
+  []
+  (rx/create
+   (fn [subs]
+     (let [channel (js/MessageChannel.)
+           port    (.-port1 channel)]
+       (set! (.-onmessage port)
+             (fn [_]
+               (.close port)
+               (rx/push! subs nil)
+               (rx/end! subs)))
+       (.postMessage (.-port2 channel) nil)
+       (fn []
+         (.close port))))))
+
 (defn interval
   [ms func]
   (let [sem (js/setInterval #(func) ms)]

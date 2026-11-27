@@ -39,7 +39,7 @@
     :add-typography :mod-typography :del-typography
     :set-tokens-lib :set-token :set-token-set :set-token-theme :set-tokens-status
     :set-own-tokens-status :rename-token-set-group :move-token-set
-    :move-token-set-group :set-base-font-size :set-tokens-source})
+    :move-token-set-group :set-base-font-size :set-tokens-source :set-tokens-resolved})
 
 (defn- index-change?
   [{:keys [type]}]

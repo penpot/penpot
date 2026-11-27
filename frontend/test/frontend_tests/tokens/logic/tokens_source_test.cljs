@@ -6,13 +6,20 @@
 
 (ns frontend-tests.tokens.logic.tokens-source-test
   (:require
+   [app.common.files.changes-builder :as pcb]
+   [app.common.files.tokens :as cfo]
+   [app.common.logic.tokens-propagation :as cltp]
    [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.config :as cf]
+   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.tokens.correction :as dwtc]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
@@ -97,7 +104,9 @@
           "Setting the library as tokens source resolves `red` from the library")
 
     (ptk/emit! store (dwtl/set-tokens-source (:id file)))
-    (await (async/settle))
+    ;; The change goes through the propagation, after the tokens resolve
+    (await (async/wait-for-store store #(contains? (active-set-ids store) (cthi/id :local-set))
+                                 "the local set is active again"))
     (t/is (contains? (active-set-ids store) (cthi/id :local-set))
           "Going back to the local tokens keeps the local set active")
     (await (async/wait-for-store store #(= "#7b2222" (fill-color store))
@@ -141,3 +150,100 @@
 
     (rx/dispose! store)))
 
+
+(t/deftest ^:async a-tokens-source-loaded-after-the-page-sets-it
+  (let [library (setup-library)
+        file    (-> (setup-file)
+                    (update :data cfo/set-tokens-source (:id library))
+                    (update-in [:data :tokens-status]
+                               ctos/set-tokens-status #{} #{(cthi/id :library-set)}))
+        store   (ths/setup-store file)]
+    (ptk/emit! store
+               (dwtc/initialize (:id file))
+               (dwtc/check-page {:opening? true}))
+    (await (async/settle))
+    (t/is (= "#7b2222" (fill-color store)) "without the library there are no tokens to set")
+
+    ;; The workspace loads the libraries after the page opens
+    (ptk/emit! store
+               #(assoc-in % [:files (:id library)] library)
+               (ptk/data-event :app.main.data.workspace/all-libraries-resolved {:file-id (:id file)}))
+    (await (async/wait-for #(= "#00ff00" (fill-color store))
+                           "the page is set once the library arrives"
+                           {:max-ticks 300}))
+    (t/is (= "#00ff00" (fill-color store)))
+
+    (ptk/emit! store (dwtc/finalize))
+    (rx/dispose! store)))
+
+;; --- Lazy propagation of library tokens
+
+(defn- setup-file-with-pages
+  "`setup-file` with a second page holding a rectangle and a main component
+  that apply `red`. The first page stays the current one."
+  []
+  (let [file          (setup-file)
+        first-page-id (cthf/current-page-id file)]
+    (-> file
+        (cthf/add-sample-page :page2)
+        (ctho/add-rect :rect2)
+        (ctht/apply-token-to-shape :rect2 "red" [:fill] [:fill] "#7b2222")
+        (ctho/add-simple-component :component1 :main-root :main-child)
+        (ctht/apply-token-to-shape :main-root "red" [:fill] [:fill] "#7b2222")
+        (vary-meta assoc :current-page-id first-page-id))))
+
+(defn- page2-fill
+  [store label]
+  (let [file (ths/get-file-from-state @store)]
+    (-> (cths/get-shape file label :page-label :page2) :fills first :fill-color)))
+
+(defn- page2-read-fill
+  "Fill of `label` on the second page as a reader sets it, with the resolved
+  values saved in the file."
+  [store label]
+  (let [data    (:data (ths/get-file-from-state @store))
+        page    (dsh/get-page data (cthi/id :page2))
+        objects (cltp/correct-objects page
+                                      (cltp/values->resolved-tokens (:tokens-resolved data))
+                                      {})]
+    (-> (get objects (cthi/id label)) :fills first :fill-color)))
+
+(t/deftest ^:async lazy-library-change-then-flag-off
+  (let [library (setup-library)
+        file    (setup-file-with-pages)
+        store   (ths/setup-store file {:libraries [library]})
+        flags   cf/flags
+        token   (ctob/get-token (ctht/get-tokens-lib library) (cthi/id :library-set) (cthi/id :library-red))
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-library-data (:data library))
+                    (pcb/set-token (cthi/id :library-set) (cthi/id :library-red)
+                                   (assoc token :value "#0000ff")))]
+    (await (use-library-tokens store library))
+    (await (async/wait-for #(= "#00ff00" (page2-fill store :rect2))
+                           "without the flag every page is set" {:max-ticks 200}))
+
+    (set! cf/flags (conj flags :lazy-token-propagation))
+    (ptk/emit! store (dwl/ext-library-changed (:id library) nil 1 (:redo-changes changes)))
+    (await (async/wait-for #(= "#0000ff" (fill-color store))
+                           "the current page is set"
+                           {:max-ticks 300}))
+
+    (t/testing "a reader sees the other page set"
+      (await (async/wait-for #(= "#0000ff" (page2-read-fill store :rect2))
+                             "the resolved values are saved"
+                             {:max-ticks 300}))
+      (t/is (= "#0000ff" (page2-read-fill store :rect2))))
+
+    (t/is (= "#00ff00" (page2-fill store :rect2)) "the other pages wait")
+    (t/is (= "#00ff00" (page2-fill store :main-root)) "their main components too")
+
+    (set! cf/flags flags)
+    (ptk/emit! store
+               #(assoc % :current-page-id (cthi/id :page2))
+               (dwtc/check-page {:opening? true}))
+    (await (async/wait-for #(= "#0000ff" (page2-fill store :rect2))
+                           "with the flag off again, opening the page sets it"
+                           {:max-ticks 300}))
+    (t/is (= "#0000ff" (page2-fill store :rect2)))
+
+    (rx/dispose! store)))

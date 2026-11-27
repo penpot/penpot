@@ -172,3 +172,25 @@
   (t/is (false? (dtui/invitation-link-copyable? false true :editor)))
   (t/is (false? (dtui/invitation-link-copyable? false false :editor)))
   (t/is (false? (dtui/invitation-link-copyable? false false :viewer))))
+
+(defn- ^:async fetch-members-outcome
+  "Runs the watch of `fetch-members` with `rp/cmd!` failing with an error of
+  `type`: `:resolved` or `:rejected`."
+  [type]
+  (await (mock/with-mocks*
+           {rp/cmd! (mock/stub (fn [_cmd _params]
+                                 (rx/throw (ex-info "http error" {:type type}))))}
+           (try
+             (await (async/observe (ptk/watch (dtm/fetch-members)
+                                              {:current-team-id (uuid/next)}
+                                              nil)))
+             :resolved
+             (catch js/Error _ :rejected)))))
+
+;; Scenario: the members are fetched again while the backend restarts.
+;; Proves: the workspace keeps the members it had instead of showing an error
+;; page; other errors still reach the error reporting.
+(t/deftest ^:async fetch-members-skips-an-unreachable-backend
+  (t/is (= :resolved (await (fetch-members-outcome :bad-gateway))))
+  (t/is (= :resolved (await (fetch-members-outcome :offline))))
+  (t/is (= :rejected (await (fetch-members-outcome :server)))))

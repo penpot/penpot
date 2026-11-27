@@ -304,3 +304,51 @@
   (t/is (= 0.25 (c/reduce-range 0.3 4)))
   (t/is (= 0.0  (c/reduce-range 0.0 10))))
 
+
+
+;; --- CSS color parsing
+
+;; Expected values produced by tinycolor2, which Style Dictionary uses.
+(def ^:private css-colors
+  [["#FF0000" {:color "#ff0000" :opacity 1}]
+   ["#f00" {:color "#ff0000" :opacity 1}]
+   ["#ff000080" {:color "#ff0000" :opacity 0.5019607843137255}]
+   ["#f008" {:color "#ff0000" :opacity 0.5333333333333333}]
+   ["ff0000" nil]
+   ["red" {:color "#ff0000" :opacity 1}]
+   ["Red" {:color "#ff0000" :opacity 1}]
+   ["  blue " {:color "#0000ff" :opacity 1}]
+   ["transparent" {:color "#000000" :opacity 0}]
+   ["rgb(255, 0, 0)" {:color "#ff0000" :opacity 1}]
+   ["rgb(100%, 50%, 0%)" {:color "#ff8000" :opacity 1}]
+   ["rgba(10,20,30,0.5)" {:color "#0a141e" :opacity 0.5}]
+   ["rgba(10,20,30,50%)" {:color "#0a141e" :opacity 1}]
+   ["rgba(10 20 30 / 0.5)" nil]
+   ["hsl(120, 100%, 50%)" {:color "#00ff00" :opacity 1}]
+   ["hsl(120, 1, 0.5)" {:color "#00ff00" :opacity 1}]
+   ["hsla(240,50%,50%,0.3)" {:color "#4040bf" :opacity 0.3}]
+   ["hsv(0,100%,100%)" {:color "#ff0000" :opacity 1}]
+   ["hsl(1.0, 0.5, 0.25)" {:color "#602020" :opacity 1}]
+   ["rgb(300,-5,12.6)" {:color "#ff000d" :opacity 1}]
+   ["#abc" {:color "#aabbcc" :opacity 1}]
+   ["#ABCDEF12" {:color "#abcdef" :opacity 0.07058823529411765}]
+   ["burntsienna" {:color "#ea7e5d" :opacity 1}]
+   ["rebeccapurple" {:color "#663399" :opacity 1}]
+   ["notacolor" nil]
+   ["#12" nil]
+   ["1111" nil]
+   ["rgb(0.5,0.5,0.5)" {:color "#010101" :opacity 1}]
+   ["hsl(200, 30%, 0.01)" {:color "#020303" :opacity 1}]
+   ["rgba(0,0,0,1.5)" {:color "#000000" :opacity 1}]
+   ["rgb(10,20,30) extra" {:color "#0a141e" :opacity 1}]
+   ["" nil]])
+
+(t/deftest parse-css-color-like-tinycolor
+  (doseq [[input expected] css-colors]
+    (let [result (c/parse-css-color input)]
+      (t/testing input
+        (if (nil? expected)
+          (t/is (nil? result))
+          (do
+            (t/is (= (:color expected) (:color result)))
+            (t/is (mth/close? (:opacity expected) (:opacity result) 1e-9))))))))

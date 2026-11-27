@@ -1,0 +1,63 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/_utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+
+.overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-index-loaders);
+  background-color: var(--color-overlay-default);
+  cursor: progress;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  min-inline-size: px2rem(364);
+  padding: var(--sp-xxxl);
+  border-radius: $br-8;
+  border: $b-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-primary);
+}
+
+.title {
+  @include use-typography("title-small");
+
+  color: var(--color-foreground-primary);
+}
+
+.bar {
+  block-size: px2rem(4);
+  border-radius: $br-8;
+  overflow: hidden;
+  background-color: var(--color-background-quaternary);
+}
+
+// The work has no measurable progress, so the fill slides through the bar
+.bar-fill {
+  inline-size: 40%;
+  block-size: 100%;
+  border-radius: $br-8;
+  background-color: var(--color-accent-primary);
+  animation: bar-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes bar-slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}

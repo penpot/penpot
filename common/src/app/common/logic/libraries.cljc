@@ -38,6 +38,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.text :as txt]
    [app.common.types.token :as cto]
+   [app.common.types.token-values :as cttv]
    [app.common.types.typography :as cty]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -1846,7 +1847,8 @@
 
 (defn- update-tokens
   "Token synchronization algorithm. Copy the applied tokens that have changed
-   in the origin shape to the dest shape (applying or removing as necessary).
+   in the origin shape to the dest shape (applying or removing as necessary),
+   with the values the origin shape was set to.
 
    Only the given token attributes are synced."
   [changes container dest-shape orig-shape token-attrs]
@@ -1861,26 +1863,52 @@
                                      (dissoc dest-tokens' token-attr)
                                      (assoc dest-tokens' token-attr orig-token)))))
                              dest-tokens
-                             token-attrs)]
-    (if (= dest-tokens dest-tokens')
+                             token-attrs)
+
+        ;; The values travel with the tokens: the copy gets the origin's
+        values       (when (or (cttv/assigned? orig-shape) (cttv/assigned? dest-shape))
+                       (into {}
+                             (keep (fn [token-attr]
+                                     (when (contains? dest-tokens' token-attr)
+                                       (let [value (get-in orig-shape [:token-values token-attr])]
+                                         (when (not= value (get-in dest-shape [:token-values token-attr]))
+                                           [token-attr value])))))
+                             token-attrs))
+        old-values   (into {}
+                           (map (fn [attr] [attr (get-in dest-shape [:token-values attr])]))
+                           (keys values))
+
+        redo-ops     (cond-> []
+                       (not= dest-tokens dest-tokens')
+                       (conj {:type :set
+                              :attr :applied-tokens
+                              :val dest-tokens'
+                              :ignore-touched true})
+                       (seq values)
+                       (conj {:type :set-token-values
+                              :values values}))
+        undo-ops     (cond-> []
+                       (not= dest-tokens dest-tokens')
+                       (conj {:type :set
+                              :attr :applied-tokens
+                              :val dest-tokens
+                              :ignore-touched true})
+                       (seq values)
+                       (conj {:type :set-token-values
+                              :values old-values}))]
+    (if (empty? redo-ops)
       changes
       (-> changes
           (update :redo-changes conj (make-change
                                       container
                                       {:type :mod-obj
                                        :id (:id dest-shape)
-                                       :operations [{:type :set
-                                                     :attr :applied-tokens
-                                                     :val dest-tokens'
-                                                     :ignore-touched true}]}))
+                                       :operations redo-ops}))
           (update :undo-changes conj (make-change
                                       container
                                       {:type :mod-obj
                                        :id (:id dest-shape)
-                                       :operations [{:type :set
-                                                     :attr :applied-tokens
-                                                     :val dest-tokens
-                                                     :ignore-touched true}]}))
+                                       :operations undo-ops}))
           (pcb/apply-changes-local)))))
 
 (defn- generate-update-tokens

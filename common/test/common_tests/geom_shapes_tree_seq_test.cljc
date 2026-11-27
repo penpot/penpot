@@ -6,6 +6,7 @@
 
 (ns common-tests.geom-shapes-tree-seq-test
   (:require
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes.tree-seq :as gts]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -115,3 +116,51 @@
           result   (gts/resolve-subtree frame-id frame-id objects)]
       (t/is (= 1 (count result)))
       (t/is (= frame-id (:id (first result)))))))
+
+;; ---- Order of the walks against the lazy definitions
+
+(defn- reference-subtree
+  "`gts/resolve-subtree` defined over `gts/get-children-seq`."
+  [from-id to-id objects]
+  (concat (->> (gts/get-children-seq from-id objects)
+               (reduce (fn [result shape]
+                         (if (= (:id shape) to-id)
+                           (reduced (conj result shape))
+                           (conj result shape)))
+                       []))
+          (rest (gts/get-children-seq to-id objects))))
+
+(defn- nested-boards
+  "Objects of a tree of boards three levels deep, three children each,
+  where every other board lays out its children in reverse."
+  []
+  (let [counter (volatile! 0)
+        add     (fn add [objects parent-id depth]
+                  (let [id      (uuid/custom 0 (vswap! counter inc))
+                        reverse (odd? @counter)
+                        shape   (-> (make-shape id :frame parent-id)
+                                    (assoc :layout :flex
+                                           :layout-flex-dir (if reverse :row-reverse :row)))
+                        objects (-> objects
+                                    (assoc id shape)
+                                    (update-in [parent-id :shapes] conj id))]
+                    (if (< depth 3)
+                      (reduce (fn [objects _] (add objects id (inc depth))) objects (range 3))
+                      objects)))]
+    (add {uuid/zero (make-shape uuid/zero :frame uuid/zero)} uuid/zero 0)))
+
+(t/deftest walks-keep-the-order-of-the-lazy-definitions
+  (let [objects (nested-boards)
+        ids     (remove #{uuid/zero} (keys objects))
+        ids-of  #(mapv :id %)]
+    (t/testing "resolve-subtree, for every shape and each of its ancestors"
+      (doseq [to-id   ids
+              from-id (remove #{uuid/zero} (cfh/get-parent-ids objects to-id))]
+        (t/is (= (ids-of (reference-subtree from-id to-id objects))
+                 (ids-of (gts/resolve-subtree from-id to-id objects))))))
+
+    (t/testing "resolve-tree, for every shape"
+      (doseq [id ids]
+        (t/is (= (ids-of (mapcat #(gts/get-children-seq % objects)
+                                 (gts/search-common-roots #{id} objects)))
+                 (ids-of (gts/resolve-tree #{id} objects))))))))

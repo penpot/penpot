@@ -42,6 +42,7 @@
    [app.common.test-helpers.shapes :as cths]
    [app.main.data.changes :as dch]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.data.workspace.transforms :as dwt]
@@ -430,6 +431,15 @@
   (set! st/state (:state original-store))
   (set! st/stream (:stream original-store)))
 
+(defn- stop-watcher
+  "Stop the propagation watcher of the last variant: the thumbnail updates
+  it leaves waiting would otherwise run after the test, without the no-op
+  thumbnails."
+  []
+  (let [{:keys [current-file-id current-page-id]} @st/state]
+    (when (and current-file-id current-page-id)
+      (st/emit! (dwpg/finalize-page current-file-id current-page-id)))))
+
 (defn- run-variant
   "Set up one variant on the global store and run its ops. `setup` returns a
    situation (file + roles). Restores the global store (a preceding namespace may
@@ -475,7 +485,8 @@
        (let [variants (tm/enumerate operation)]
          (letfn [(run-next [vs]
                    (if (empty? vs)
-                     (inner-done)
+                     (do (stop-watcher)
+                         (inner-done))
                      (run-variant
                       setup
                       ;; a variant is a composed operation; flatten to its ordered leaf

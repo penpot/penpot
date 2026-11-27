@@ -8,6 +8,7 @@
   "A penpot notification service for file cooperative edition."
   (:require
    [app.binfile.common :as bfc]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
@@ -394,11 +395,13 @@
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (bfc/check-file-exists cfg file-id)
   (files/check-read-permissions! cfg profile-id file-id)
-  (let [psub (::file-subscription @state)
-        fch  (sp/chan :buf (sp/dropping-buffer 64)
-                      :xf  (remove #(= (:session-id %) session-id)))]
+  (let [psub     (::file-subscription @state)
+        fch      (sp/chan :buf (sp/dropping-buffer 64)
+                          :xf  (remove #(= (:session-id %) session-id)))
+        ;; Tells the other sessions whether this one can save changes
+        can-edit (boolean (files/has-edit-permissions? cfg profile-id file-id))]
 
-    (let [subs {:file-id file-id :channel fch :topic file-id}]
+    (let [subs {:file-id file-id :channel fch :topic file-id :can-edit can-edit}]
       (swap! state assoc ::file-subscription subs))
 
     (start-relay wsp fch
@@ -410,10 +413,13 @@
                              (= :disconnect type))
                      (mbus/pub! (::mbus/msgbus cfg)
                                 :topic file-id
-                                :message {:type :presence
-                                          :file-id file-id
-                                          :session-id session-id
-                                          :profile-id profile-id}))))
+                                :message (d/without-nils
+                                          {:type :presence
+                                           :file-id file-id
+                                           :session-id session-id
+                                           :profile-id profile-id
+                                           :can-edit can-edit
+                                           :page-id (-> @state ::file-subscription :page-id)})))))
 
     ;; Close previous subscription if exists
     (when-let [ch (:channel psub)]
@@ -429,12 +435,28 @@
                :message {:type :join-file
                          :file-id file-id
                          :session-id session-id
-                         :profile-id profile-id})))
+                         :profile-id profile-id
+                         :can-edit can-edit})))
 
 (defmethod handle-message :unsubscribe-file
   [cfg {:keys [::ws/id] :as wsp} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
   (close-file-subscription cfg wsp file-id))
+
+(defmethod handle-message :presence-update
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id page-id]}]
+  (let [subs (::file-subscription @state)]
+    (when (= file-id (:file-id subs))
+      (swap! state assoc-in [::file-subscription :page-id] page-id)
+      (mbus/pub! msgbus
+                 :topic file-id
+                 :message (d/without-nils
+                           {:type :presence
+                            :file-id file-id
+                            :session-id session-id
+                            :profile-id profile-id
+                            :can-edit (:can-edit subs)
+                            :page-id page-id})))))
 
 (defmethod handle-message :keepalive
   [_ _ _]

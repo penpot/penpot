@@ -12,6 +12,7 @@
   "type": "module",
   "dependencies": {
     "@penpot/svgo": "penpot/svgo#3.3.0",
+    "@tokens-studio/sd-transforms": "2.0.3",
     "archiver": "8.0.0",
     "cookies": "^0.9.2",
     "date-fns": "^4.4.0",
@@ -21,6 +22,8 @@
     "playwright": "1.65.1",
     "raw-body": "^4.0.0",
     "source-map-support": "^0.5.21",
+    "style-dictionary": "5.5.5",
+    "tinycolor2": "^1.6.0",
     "undici": "^8.12.4",
     "xml-js": "^1.6.11",
     "xregexp": "^5.1.3"
