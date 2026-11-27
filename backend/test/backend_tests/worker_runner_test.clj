@@ -22,10 +22,14 @@
    [backend-tests.helpers :as th]
    [clojure.string :as str]
    [clojure.test :as t]
-   [integrant.core :as ig])
+   [integrant.core :as ig]
+   [promesa.exec :as px])
   (:import
+   io.lettuce.core.RedisConnectionException
+   io.lettuce.core.RedisReadOnlyException
    io.prometheus.client.Collector$MetricFamilySamples
-   io.prometheus.client.Collector$MetricFamilySamples$Sample))
+   io.prometheus.client.Collector$MetricFamilySamples$Sample
+   java.lang.AutoCloseable))
 
 (t/use-fixtures :once th/state-init)
 
@@ -566,3 +570,108 @@
     (t/is (= 2 (count (get-events job-id))))
     (th/db-force-delete :job {:id job-id})
     (t/is (= [] (get-events job-id)))))
+
+(defn- read-only-connection
+  "A connection that stays on a store demoted to replica: every BLPOP answers
+  READONLY, the way Lettuce raises that error reply."
+  [closed]
+  (reify
+    rds/IDefaultConnection
+    (-blpop [_ _keys _timeout]
+      (throw (RedisReadOnlyException. "READONLY You can't write against a read only replica.")))
+
+    AutoCloseable
+    (close [_]
+      (reset! closed true))))
+
+(defn- mk-read-only-cfg
+  [conn]
+  {::rds/client   (get th/*system* :app.redis/client)
+   ::mtx/metrics  (get th/*system* :app.metrics/metrics)
+   ::rds/conn     conn
+   ::wrkr/queue   "test"
+   ::wrk/tenant   (cf/get :tenant)
+   ::wrkr/timeout (ct/duration {:millis 200})})
+
+(t/deftest runner-waits-before-retrying-a-read-only-store
+  (let [sleeps (atom [])
+        cfg    (with-redefs [px/sleep #(swap! sleeps conj %)]
+                 (run-one (mk-read-only-cfg (read-only-connection (atom false)))))]
+    (try
+      (t/is (= [(ct/duration {:millis 200})] @sleeps))
+      (finally
+        (some-> cfg ::rds/conn rds/close)))))
+
+(t/deftest runner-replaces-a-read-only-connection
+  (let [closed (atom false)
+        cfg    (run-one (mk-read-only-cfg (read-only-connection closed)))]
+    (try
+      (t/testing "the connection to the replica is closed"
+        (t/is (true? @closed)))
+      (t/testing "the next pop goes through a new connection"
+        (t/is (= "PONG" (some-> cfg ::rds/conn rds/ping))))
+      (finally
+        (some-> cfg ::rds/conn rds/close)))))
+
+(t/deftest runner-keeps-the-connection-when-reconnect-fails
+  (let [connect  rds/connect
+        attempts (atom 0)
+        closed   (atom false)
+        replica  (read-only-connection closed)]
+    (with-redefs [rds/connect (fn [cfg & opts]
+                                (if (= 1 (swap! attempts inc))
+                                  (throw (RedisConnectionException. "Unable to connect"))
+                                  (apply connect cfg opts)))
+                  px/sleep    (fn [_])]
+      (let [cfg (run-one (mk-read-only-cfg replica))]
+        (t/testing "the connection to the replica stays in use for the retry"
+          (t/is (false? @closed))
+          (t/is (identical? replica (::rds/conn cfg))))
+
+        (let [cfg (run-one cfg)]
+          (try
+            (t/testing "the retry replaces the connection"
+              (t/is (true? @closed))
+              (t/is (= "PONG" (some-> cfg ::rds/conn rds/ping))))
+            (finally
+              (some-> cfg ::rds/conn rds/close))))))))
+
+(defn- idle-connection
+  "A connection to a healthy store with an empty queue: every BLPOP finds
+  nothing and returns nil."
+  [popped closed]
+  (reify
+    rds/IDefaultConnection
+    (-blpop [_ _keys _timeout]
+      (deliver popped true)
+      (Thread/sleep 10)
+      nil)
+
+    AutoCloseable
+    (close [_]
+      (reset! closed true))))
+
+(t/deftest runner-thread-closes-the-replacement-connection-on-shutdown
+  (let [replica-closed (atom false)
+        primary-closed (atom false)
+        popped         (promise)
+        conns          (atom [(read-only-connection replica-closed)
+                              (idle-connection popped primary-closed)])]
+    (with-redefs [rds/connect (fn [_cfg & _opts]
+                                (ffirst (swap-vals! conns rest)))
+                  px/sleep    (fn [_])]
+      (let [thread (@#'wrkr/start-thread
+                    (assoc (mk-read-only-cfg nil) ::wrkr/id "test-runner"))]
+        (try
+          (t/testing "the loop pops through the replacement connection"
+            (t/is (true? (deref popped 5000 false))))
+          (t/testing "the connection to the replica is closed on reconnect"
+            (t/is (true? @replica-closed)))
+          (finally
+            (.interrupt ^Thread thread)
+            (.join ^Thread thread 5000)))
+
+        (t/testing "the thread stops on interrupt"
+          (t/is (false? (.isAlive ^Thread thread))))
+        (t/testing "the replacement connection is closed on shutdown"
+          (t/is (true? @primary-closed)))))))
