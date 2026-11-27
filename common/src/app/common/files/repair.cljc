@@ -628,6 +628,73 @@
         (pcb/with-library-data file-data)
         (pcb/update-component (:id component) repair-component))))
 
+(defn- find-claiming-main
+  "Return `[page main]` for a shape, on any page of the file, that is a main
+  of `component`; nil if there is none."
+  [file-data component]
+  (some (fn [page]
+          (when-let [main (d/seek #(and (ctk/main-instance? %)
+                                        (= (:component-id %) (:id component))
+                                        (= (:component-file %) (:id file-data)))
+                                  (ctn/shapes-seq page))]
+            [page main]))
+        (ctpl/pages-seq file-data)))
+
+(defn- detach-copies
+  "Return `changes` with every copy of `component`, and its subtree, detached
+  on every page of the file: they become plain shapes and survive the removal
+  of the component, with no dangling references."
+  [changes file-data component]
+  (reduce
+   (fn [changes page]
+     (let [objects   (:objects page)
+           shape-ids (->> (ctn/shapes-seq page)
+                          (filter #(and (= (:component-id %) (:id component))
+                                        (= (:component-file %) (:id file-data))))
+                          (mapcat #(cfh/get-children-ids-with-self objects (:id %)))
+                          vec)]
+       (if (empty? shape-ids)
+         changes
+         (let [detach (-> (pcb/empty-changes nil (:id page))
+                          (pcb/with-file-data file-data)
+                          (pcb/update-shapes shape-ids ctk/detach-shape))]
+           (-> changes
+               (update :redo-changes into (:redo-changes detach))
+               (update :undo-changes #(concat (:undo-changes detach) %)))))))
+   changes
+   (ctpl/pages-seq file-data)))
+
+(defmethod repair-error :component-main-not-found
+  [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
+  ;; An earlier repair of the same pass may have fixed the component, so read
+  ;; it again from the current data.
+  (let [component  (ctkl/get-component file-data (:id component))
+        fixed?     (or (nil? component)
+                       (some? (ctf/get-component-root file-data component)))
+        [page main] (when-not fixed?
+                      (find-claiming-main file-data component))]
+
+    (log/debug :hint "repairing component :component-main-not-found" :id (:id component) :name (:name component))
+    (cond
+      fixed?
+      (pcb/empty-changes nil)
+
+      (some? main)
+      (do
+        (log/debug :hint "  -> relink main" :main-instance-id (:id main) :main-instance-page (:id page))
+        (-> (pcb/empty-changes nil)
+            (pcb/with-library-data file-data)
+            (pcb/update-component (:id component)
+                                  #(assoc % :main-instance-id (:id main) :main-instance-page (:id page)))))
+
+      :else
+      (do
+        (log/debug :hint "  -> remove component without main")
+        (-> (detach-copies (pcb/empty-changes nil) file-data component)
+            (update :redo-changes conj {:type :del-component
+                                        :id (:id component)
+                                        :skip-undelete? true}))))))
+
 (defmethod repair-error :invalid-text-touched
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape

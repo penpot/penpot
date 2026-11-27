@@ -371,7 +371,9 @@
   (if (not (:deleted component))
     (-> file-data
         (get-component-page component)
-        (ctn/get-shape (:main-instance-id component)))
+        ;; A live component may carry a missing :main-instance-id, so read the
+        ;; shape without the assert that `ctn/get-shape` has.
+        (ctst/get-shape (:main-instance-id component)))
     (ctk/get-deleted-component-root component)))
 
 (defn get-component-shape

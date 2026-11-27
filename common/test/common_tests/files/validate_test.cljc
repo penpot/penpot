@@ -18,6 +18,8 @@
    validated."
   (:require
    [app.common.files.validate :as cfv]
+   [app.common.test-helpers.components :as thc]
+   [app.common.test-helpers.compositions :as tho]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.types.file :as ctf]
@@ -79,6 +81,23 @@
                   :deleted          true
                   :main-instance-id (uuid/next)
                   :main-instance-page (uuid/next)})))))
+
+(defn- remove-main
+  "Remove the main root `root-label` and its child `child-label` from the
+  page objects and from the root shape's children, leaving the component
+  in place."
+  [file page-label root-label child-label]
+  (ctf/update-file-data
+   file
+   (fn [file-data]
+     (ctpl/update-page
+      file-data
+      (thi/id page-label)
+      (fn [page]
+        (-> page
+            (update :objects dissoc (thi/id root-label) (thi/id child-label))
+            (update-in [:objects uuid/zero :shapes]
+                       (fn [ids] (filterv #(not= % (thi/id root-label)) ids)))))))))
 
 ;; ----------------------------------------------------------------
 ;; 1. Feature gate
@@ -299,6 +318,67 @@
       (let [errors (cfv/validate-file-affected file {} changes)]
         (t/is (seq errors))
         (t/is (some #(= :component-nil-objects-not-allowed (:code %)) errors))))))
+
+;; ----------------------------------------------------------------
+;; 6b. Live component whose main is missing
+;; ----------------------------------------------------------------
+
+(defn- main-not-found-errors
+  [errors]
+  (filterv #(= :component-main-not-found (:code %)) errors))
+
+(t/deftest validate-component-main-not-found
+  (t/testing "validate-file reports a live component whose main was removed"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (tho/add-simple-component :component1 :root1 :child1)
+                     (remove-main :page1 :root1 :child1))
+          errors (cfv/validate-file file {})]
+      (t/is (= [:component-main-not-found] (mapv :code errors)))
+      (t/is (= (thi/id :component1) (:id (:shape (first errors)))))))
+
+  (t/testing "validate-file-affected reports it for a mod-component change"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1)
+                      (remove-main :page1 :root1 :child1))
+          changes [{:type :mod-component :id (thi/id :component1)}]
+          errors  (cfv/validate-file-affected file {} changes)]
+      (t/is (= [:component-main-not-found] (mapv :code errors)))))
+
+  (t/testing "a main on another page than the component's page is reported"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (tho/add-simple-component :component1 :root1 :child1)
+                     (thf/add-sample-page :page2)
+                     (thc/update-component :component1 :main-instance-page (thi/id :page2)))
+          errors (cfv/validate-file file {})]
+      (t/is (= 1 (count (main-not-found-errors errors))))))
+
+  (t/testing "a component whose page does not exist is reported"
+    (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                     (tho/add-simple-component :component1 :root1 :child1)
+                     (thc/update-component :component1 :main-instance-page (uuid/next)))
+          errors (cfv/validate-file file {})]
+      (t/is (= 1 (count (main-not-found-errors errors))))))
+
+  (t/testing "a component with no main id or page is reported, not thrown"
+    (doseq [params [{:main-instance-id nil}
+                    {:main-instance-page nil}]]
+      (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                       (tho/add-simple-component :component1 :root1 :child1)
+                       (thc/update-component :component1 params))
+            errors (cfv/validate-file file {})]
+        (t/is (some #(= :component-main-not-found (:code %)) errors)
+              (pr-str params)))))
+
+  (t/testing "a healthy file reports nothing"
+    (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                   (tho/add-simple-component :component1 :root1 :child1))]
+      (t/is (nil? (cfv/validate-file file {})))))
+
+  (t/testing "a deleted component is not reported"
+    (let [file (-> (thf/sample-file :file1 :page-label :page1)
+                   (tho/add-simple-component :component1 :root1 :child1)
+                   (thc/update-component :component1 :deleted true :objects {}))]
+      (t/is (empty? (main-not-found-errors (cfv/validate-file file {})))))))
 
 ;; ----------------------------------------------------------------
 ;; 7. restore-component – scopes BOTH :id (component) and :page-id
