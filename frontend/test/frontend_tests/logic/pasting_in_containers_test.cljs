@@ -98,6 +98,113 @@
                       (or ignore-label?  (str/starts-with? (cthi/label (:id %)) "<no-label"))))
         first)))
 
+(defn- flex-frame-file
+  "Sample file with a flex frame holding two rects, plus two rects at the
+  root to be copied. The flex frame is the only selection target."
+  [flex-dir]
+  (-> (cthf/sample-file :file1)
+      (ctho/add-frame :frame-flex {:name "frame-flex"
+                                   :layout :flex
+                                   :layout-flex-dir flex-dir
+                                   :layout-justify-content :start
+                                   :layout-align-items :start
+                                   :x 0 :y 0 :width 300 :height 100})
+      (cths/add-sample-shape :child-a {:type :rect
+                                       :name "child-a"
+                                       :parent-label :frame-flex
+                                       :x 0 :y 0 :width 50 :height 50})
+      (cths/add-sample-shape :child-b {:type :rect
+                                       :name "child-b"
+                                       :parent-label :frame-flex
+                                       :x 60 :y 0 :width 50 :height 50})
+      (cths/add-sample-shape :pasted-x {:type :rect
+                                        :name "pasted-x"
+                                        :x 500 :y 500 :width 50 :height 50})
+      (cths/add-sample-shape :pasted-y {:type :rect
+                                        :name "pasted-y"
+                                        :x 600 :y 500 :width 50 :height 50})))
+
+(t/deftest paste-into-flex-layout-row-goes-to-the-end
+  "Pasting into a row flex layout adds the shapes at the end of the visual
+  list instead of at the beginning (issue #11814)."
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (flex-frame-file :row)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          frame    (cths/get-shape file :frame-flex)
+          pasted-x (cths/get-shape file :pasted-x)
+          pasted-y (cths/get-shape file :pasted-y)
+          features #{}
+          version  67
+
+          pdata    (thp/simulate-copy-shape #{(:id pasted-x) (:id pasted-y)}
+                                            (:objects page)
+                                            {(:id file) file}
+                                            page file features version)
+
+          events
+          [(dws/select-shape (:id frame))
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'    (ths/get-file-from-state new-state)
+               frame'   (cths/get-shape file' :frame-flex)
+               shapes'  (map #(cths/get-shape-by-id file' %) (:shapes frame'))]
+
+           ;; ==== Check
+           ;; Children are stored in reverse visual order in a row layout, so
+           ;; the pasted shapes must be the first ones in the list to be
+           ;; drawn at the end of the row.
+           (t/is (= 4 (count shapes')))
+           (t/is (= #{"pasted-x" "pasted-y"}
+                    (into #{} (map :name) (take 2 shapes'))))))))))
+
+(t/deftest paste-into-reverse-flex-layout-goes-to-the-end
+  "Pasting into a reversed flex layout adds the shapes at the end of the
+  visual list instead of at the beginning (issue #11814)."
+  (t/async
+    done
+    (let [;; ==== Setup
+          file     (flex-frame-file :row-reverse)
+          store    (ths/setup-store file)
+
+          ;; ==== Action
+          page     (cthf/current-page file)
+          frame    (cths/get-shape file :frame-flex)
+          pasted   (cths/get-shape file :pasted-x)
+          features #{}
+          version  67
+
+          pdata    (thp/simulate-copy-shape #{(:id pasted)}
+                                            (:objects page)
+                                            {(:id file) file}
+                                            page file features version)
+
+          events
+          [(dws/select-shape (:id frame))
+           (dw/paste-shapes pdata)]]
+
+      (ths/run-store
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'    (ths/get-file-from-state new-state)
+               frame'   (cths/get-shape file' :frame-flex)
+               shapes'  (map #(cths/get-shape-by-id file' %) (:shapes frame'))]
+
+           ;; ==== Check
+           ;; In a reversed layout children are drawn in list order, so the
+           ;; pasted shape must be the last one in the list.
+           (t/is (= 3 (count shapes')))
+           (t/is (= "pasted-x" (:name (last shapes'))))))))))
+
 (t/deftest copy-shape-to-frame
   "Coping a rect into a frame results in a copy of the rect inside the frame"
   (t/async
