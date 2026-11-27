@@ -326,11 +326,13 @@ const createTokenWithValue = async (
   });
 };
 
+// Section test ids use the token type key, which can differ from the label
+const SECTION_IDS = { dimension: "dimensions" };
+
 const unfoldTokenType = async (tokensTabPanel, type) => {
   const kebabClaseType = type.toLocaleLowerCase().replace(/\s/g, "-");
-  const typeParentWrapper = tokensTabPanel.getByTestId(
-    `section-${kebabClaseType}`,
-  );
+  const sectionId = SECTION_IDS[kebabClaseType] ?? kebabClaseType;
+  const typeParentWrapper = tokensTabPanel.getByTestId(`section-${sectionId}`);
   const typeSectionButton = typeParentWrapper
     .getByRole("button", {
       name: type,
