@@ -32,6 +32,7 @@
             (p/let [path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type))
                     node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
+              (bw/wait-for-images page)
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})
                 :jpeg (bw/screenshot node {:omit-background? false :type type :path path})
@@ -57,6 +58,7 @@
     (p/let [params {:file-id file-id
                     :page-id page-id
                     :share-id share-id
+                    :embed true
                     :object-id (mapv :id objects)
                     :route "objects"
                     :skip-children skip-children}

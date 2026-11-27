@@ -125,6 +125,7 @@
    [frontend-tests.plugins.value-objects-test]
    [frontend-tests.plugins.wait-for-save-test]
    [frontend-tests.render-dimensions-test]
+   [frontend-tests.render-export-images-test]
    [frontend-tests.render-wasm.call-test]
    [frontend-tests.render-wasm.fonts-test]
    [frontend-tests.render-wasm.modifiers-test]
@@ -440,6 +441,7 @@
    'frontend-tests.ui.mcp-authorize-test
    'frontend-tests.ui.routes-test
    'frontend-tests.render-dimensions-test
+   'frontend-tests.render-export-images-test
    'frontend-tests.text-editor-paste-guard-test
    'frontend-tests.ui.settings-password-schema-test
    'frontend-tests.ui.settings-shortcuts-test

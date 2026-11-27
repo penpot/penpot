@@ -44,7 +44,8 @@
         height     (dm/get-prop selrect :height)
 
         has-image? (or (some? metadata)
-                       (some? image))
+                       (some? image)
+                       (some :fill-image fills))
 
         uri        (cond
                      (some? metadata)
@@ -53,7 +54,7 @@
                      (some? image)
                      (cf/resolve-file-media image))
 
-        uris       (into [uri]
+        uris       (into (cond-> [] (some? uri) (conj uri))
                          (comp
                           (keep :fill-image)
                           (map cf/resolve-file-media))
@@ -136,21 +137,24 @@
                    [:> :image image-props])
                  [:> :rect props])))
 
-           (when ^boolean has-image?
+           (when (some? uri)
              (let [tf (-> image :transform)
                    img-x (if (some? tf) (* (get tf :x 0) width) 0)
                    img-y (if (some? tf) (* (get tf :y 0) height) 0)
                    img-w (if (some? tf) (* (get tf :width 1) width) width)
                    img-h (if (some? tf) (* (get tf :height 1) height) height)]
                [:g
-                ;; We add this shape to add a padding so the patter won't repeat
+                ;; We add this shape to add a padding so the pattern won't repeat
                 ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
+                ;;
+                ;; Nested image fills need the enlarged pattern, but only a
+                ;; legacy/top-level image needs this additional padding image.
                 [:rect {:x 0
                         :y 0
                         :width (* width no-repeat-padding)
                         :height (* height no-repeat-padding)
                         :fill "none"}]
-                [:image {:href uri
+                [:image {:href (get embed uri uri)
                          :preserveAspectRatio "none"
                          :x img-x
                          :y img-y
