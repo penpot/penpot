@@ -62,6 +62,7 @@ jobs:
     uses: ./.github/workflows/build-docker-admin-console.yml
     secrets:
       ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
     with:
       gh_ref: "staging"
       force: ${{ inputs.force || false }}

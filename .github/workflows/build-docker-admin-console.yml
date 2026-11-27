@@ -69,6 +69,10 @@ on:
       ORG_WORKFLOW_TOKEN:
         description: 'Token with Actions write access on the admin-console repo'
         required: true
+      DOCKER_REGISTRY:
+        required: false
+      PREVIEW_REGISTRY_URL:
+        required: false
 
 permissions: {}
 
@@ -140,12 +144,13 @@ jobs:
         id: image
         env:
           RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+          REGISTRY: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
         run: |
           gh run download "$RUN_ID" --repo "$REPO" \
             --name admin-console-build-key --dir ./build-key
-          IMAGE=$(cat ./build-key/build-key.txt)
-          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
-          echo "::notice title=admin-console image::$IMAGE"
+          BUILD_KEY=$(cat ./build-key/build-key.txt)
+          echo "image=${REGISTRY}/admin-console:${BUILD_KEY}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=admin-console build key::${BUILD_KEY}"
 
       - name: Report result
         if: always() && steps.dispatch.outputs.run_id != ''
