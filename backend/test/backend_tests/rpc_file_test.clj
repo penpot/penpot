@@ -2230,10 +2230,7 @@
           out  (th/command! data)]
       (t/is (th/success? out)))
 
-    (th/run-task! :delete-object
-                  {:object :file
-                   :deleted-at (ct/now)
-                   :id (:id file-1)})
+    (th/run-pending-jobs)
 
     ;; Check that file media object references are marked all for deletion
     (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
@@ -2246,7 +2243,7 @@
       (t/is (= (:id file-2) (:file-id (get rows 1))))
       (t/is (nil? (:deleted-at (get rows 1)))))
 
-    (th/run-task! :objects-gc {})
+    (th/run-task! :objects-gc {:skip-delay true})
 
     (let [rows (th/db-exec! ["SELECT * FROM file_media_object ORDER BY created_at ASC"])]
       (t/is (= 1 (count rows)))
@@ -2340,10 +2337,10 @@
                                              ::rpc/profile-id (:id profile)
                                              :id (:id file)})
                                [:result :revn])]
-          (th/run-task! :delete-object
-                        {:object :file
-                         :deleted-at (ct/now)
-                         :id (:id library)})
+          (t/is (th/success? (th/command! {::th/type :delete-file
+                                           ::rpc/profile-id (:id profile)
+                                           :id (:id library)})))
+          (th/run-pending-jobs)
 
           ;; The task swallows absorption errors, so verify the persisted result.
           ;; Absorption runs inside the job, and the job only gets the
@@ -2521,12 +2518,14 @@
                                       :project-id (:id proj)})
         _         (th/link-file-to-library* {:file-id (:id dependent)
                                              :library-id (:id library)})
-        revn      (:revn (th/db-get :file {:id (:id dependent)}))]
+        revn      (:revn (th/db-get :file {:id (:id dependent)}))
+        deadline  (ct/now)]
     ;; What the old RPC did: drop the relations before queueing.
     (th/db-delete! :file-library-rel {:library-file-id (:id library)})
+    (th/db-update! :file {:deleted-at deadline} {:id (:id library)})
     (th/run-task! :delete-object {:object :file
                                   :id (:id library)
-                                  :deleted-at (ct/now)
+                                  :deleted-at deadline
                                   :file-ids [(:id dependent)]})
     (t/is (> (:revn (th/db-get :file {:id (:id dependent)} {::db/remove-deleted false}))
              revn))))
@@ -2852,6 +2851,150 @@
           (t/is (= 1 (count rows)))
           (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
           (t/is (nil? (:deleted-at row1))))))))
+
+(defn- get-trash-deadlines
+  [profile]
+  (let [out (th/command! {::th/type :get-team-deleted-files
+                          ::rpc/profile-id (:id profile)
+                          :team-id (:default-team-id profile)})]
+    (t/is (th/success? out))
+    (into {} (map (juxt :id :will-be-deleted-at)) (:result out))))
+
+(defn- run-trash-command
+  [type profile ids]
+  (let [out (th/command! {::th/type type
+                          ::rpc/profile-id (:id profile)
+                          :team-id (:default-team-id profile)
+                          :ids ids})]
+    (t/is (th/success? out))
+    (let [[event result] (last (th/consume-sse (:result out)))]
+      (t/is (= :end event))
+      result)))
+
+(defn- get-deletion-date
+  [table where]
+  (:deleted-at (th/db-get table where {::db/remove-deleted false})))
+
+(t/deftest restore-before-project-cascade-keeps-unrequested-files-in-trash
+  (let [profile (th/create-profile* 1 {:is-active true})
+        project (th/create-project* 1 {:profile-id (:id profile)
+                                       :team-id (:default-team-id profile)})
+        params  {:profile-id (:id profile) :project-id (:id project)}
+        first-id (:id (th/create-file* 1 params))
+        other-id (:id (th/create-file* 2 params))]
+    (t/is (th/success? (th/command! {::th/type :delete-project
+                                     ::rpc/profile-id (:id profile)
+                                     :id (:id project)})))
+    (let [deadline (get-deletion-date :project {:id (:id project)})]
+      (t/is (nil? (get-deletion-date :file {:id first-id})))
+      (t/is (nil? (get-deletion-date :file {:id other-id})))
+      (t/is (= {first-id deadline other-id deadline} (get-trash-deadlines profile)))
+
+      (t/is (= #{first-id} (run-trash-command :restore-deleted-team-files profile #{first-id})))
+      (t/is (= {other-id deadline} (get-trash-deadlines profile)))
+      (th/run-pending-jobs)
+      (t/is (nil? (get-deletion-date :project {:id (:id project)})))
+      (t/is (nil? (get-deletion-date :file {:id first-id})))
+      (t/is (nil? (get-deletion-date :file-data {:file-id first-id :id first-id})))
+      (t/is (= deadline (get-deletion-date :file {:id other-id})))
+      (t/is (= deadline (get-deletion-date :file-data {:file-id other-id :id other-id}))))))
+
+(t/deftest expired-project-prevents-restore-even-with-a-later-file-deadline
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        project  (th/create-project* 1 {:profile-id (:id profile)
+                                        :team-id (:default-team-id profile)})
+        params   {:profile-id (:id profile) :project-id (:id project)}
+        first-id (:id (th/create-file* 1 params))
+        later-id (:id (th/create-file* 2 params))]
+    (t/is (th/success? (th/command! {::th/type :delete-project
+                                     ::rpc/profile-id (:id profile)
+                                     :id (:id project)})))
+    (let [deadline (get-deletion-date :project {:id (:id project)})
+          later    (ct/plus deadline (ct/duration {:days 1}))]
+      (th/db-update! :file {:deleted-at later} {:id later-id})
+      (t/is (= {first-id deadline later-id deadline} (get-trash-deadlines profile)))
+      (binding [ct/*clock* (ct/fixed-clock deadline)]
+        (t/testing "at the deadline, before the project job"
+          (t/is (empty? (get-trash-deadlines profile)))
+          (t/is (= #{} (run-trash-command :restore-deleted-team-files profile #{first-id later-id})))
+          (t/is (= deadline (get-deletion-date :project {:id (:id project)})))
+          (t/is (= later (get-deletion-date :file {:id later-id}))))
+        (t/testing "repeating a deletion does not reopen the restore window"
+          (t/is (th/success? (th/command! {::th/type :delete-project
+                                           ::rpc/profile-id (:id profile)
+                                           :id (:id project)})))
+          (t/is (= deadline (get-deletion-date :project {:id (:id project)})))
+          (t/is (empty? (get-trash-deadlines profile))))
+        (th/run-pending-jobs)
+        (t/testing "at the deadline, after the project job"
+          (t/is (empty? (get-trash-deadlines profile)))
+          (t/is (= #{} (run-trash-command :restore-deleted-team-files profile #{first-id later-id})))
+          (t/is (= deadline (get-deletion-date :project {:id (:id project)})))
+          (t/is (= deadline (get-deletion-date :file {:id later-id})))
+          (t/is (= deadline (get-deletion-date :file-data {:file-id later-id :id later-id}))))))))
+
+(t/deftest live-project-deadline-does-not-extend-expired-or-purged-files
+  (let [profile   (th/create-profile* 1 {:is-active true})
+        project   (th/create-project* 1 {:profile-id (:id profile)
+                                         :team-id (:default-team-id profile)})
+        params    {:profile-id (:id profile) :project-id (:id project)}
+        expired   (:id (th/create-file* 1 params))
+        purged    (:id (th/create-file* 2 params))
+        available (:id (th/create-file* 3 params))
+        now       (ct/inst "2025-10-31T00:00:00Z")
+        earlier   (ct/minus now (ct/duration {:days 1}))]
+    (th/db-update! :file {:deleted-at earlier} {:id expired})
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (t/is (th/success? (th/command! {::th/type :delete-project
+                                       ::rpc/profile-id (:id profile)
+                                       :id (:id project)})))
+      (t/is (= #{purged} (run-trash-command :permanently-delete-team-files profile #{purged})))
+      (let [deadline (get-deletion-date :project {:id (:id project)})]
+        (t/testing "before the cascade"
+          (t/is (= {available deadline} (get-trash-deadlines profile)))
+          (t/is (= #{} (run-trash-command :restore-deleted-team-files profile #{expired purged})))
+          (t/is (= deadline (get-deletion-date :project {:id (:id project)}))))
+        (th/run-pending-jobs)
+        (t/testing "after the cascade"
+          (t/is (= {available deadline} (get-trash-deadlines profile)))
+          (t/is (= #{} (run-trash-command :restore-deleted-team-files profile #{expired purged})))
+          (t/is (= earlier (get-deletion-date :file {:id expired})))
+          (t/is (= now (get-deletion-date :file {:id purged})))
+          (t/is (= now (get-deletion-date :file-data {:file-id purged :id purged})))
+          (t/is (= deadline (get-deletion-date :project {:id (:id project)}))))))))
+
+(t/deftest queued-file-deletion-does-not-remark-a-restored-file
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)}))]
+    (t/is (th/success? (th/command! {::th/type :delete-file
+                                     ::rpc/profile-id (:id profile)
+                                     :id file-id})))
+    (t/is (= #{file-id} (run-trash-command :restore-deleted-team-files profile #{file-id})))
+    (th/run-pending-jobs)
+    (t/is (nil? (get-deletion-date :file {:id file-id})))
+    (t/is (nil? (get-deletion-date :file-data {:file-id file-id :id file-id})))
+    (t/is (= #{file-id} (run-trash-command :permanently-delete-team-files profile #{file-id})))
+    (th/run-pending-jobs)
+    (t/is (some? (get-deletion-date :file {:id file-id})))
+    (t/is (= (get-deletion-date :file {:id file-id})
+             (get-deletion-date :file-data {:file-id file-id :id file-id})))))
+
+(t/deftest queued-file-deletion-does-not-replace-a-later-deletion
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile)
+                                         :project-id (:default-project-id profile)}))
+        delete  {::th/type :delete-file ::rpc/profile-id (:id profile) :id file-id}
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+    (binding [ct/*clock* (ct/fixed-clock now)]
+      (t/is (th/success? (th/command! delete)))
+      (t/is (= #{file-id} (run-trash-command :restore-deleted-team-files profile #{file-id}))))
+    (binding [ct/*clock* (ct/fixed-clock (ct/plus now (ct/duration {:days 1})))]
+      (t/is (th/success? (th/command! delete)))
+      (let [deadline (get-deletion-date :file {:id file-id})]
+        (th/run-pending-jobs)
+        (t/is (= deadline (get-deletion-date :file {:id file-id})))
+        (t/is (= deadline (get-deletion-date :file-data {:file-id file-id :id file-id})))))))
 
 (t/deftest get-file-stats-empty-file
   (let [profile (th/create-profile* 1 {:is-active true})

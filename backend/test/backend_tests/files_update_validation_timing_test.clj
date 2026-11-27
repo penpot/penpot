@@ -136,7 +136,7 @@
         cfg     (test-cfg metrics)
         commit  (fn [name]
                   {:commit-id (uuid/next)
-                   :changes [{:type :mod-page :id (uuid/next) :name name}]})
+                   :redo-changes [{:type :mod-page :id (uuid/next) :name name}]})
         commits [(commit "a") (commit "b") (commit "bad") (commit "c")]]
     (binding [cf/flags all-flags
               pmap/*tracked* (pmap/create-tracked)]
@@ -147,7 +147,7 @@
                                                                                 :code :referential-integrity}))))
                     val/validate-file-schema-affected! (fn [_ _] nil)]
         (let [file    (@#'files-update/process-changes-and-validate
-                       cfg (test-file) (into [] (mapcat :changes) commits) commits nil)
+                       cfg (test-file) (into [] (mapcat :redo-changes) commits) commits nil)
               timings @(::files-update/validation-timings cfg)]
           (t/is (= (mapv :commit-id (subvec commits 2))
                    (:commit-ids (::files-update/rejected file))))

@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   // Opening a wasm workspace backfills :position-data for text shapes, persisting the file.
   await WasmWorkspacePage.mockRPC(
     page,
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "text-editor/update-file.json",
   );
 });

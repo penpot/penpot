@@ -1,1 +1,4 @@
-{"~:revn":15,"~:lagged":[]}
+{
+  "~:edit-matches-request": true,
+  "~:recovery": { "~:mode": "~:none" }
+}

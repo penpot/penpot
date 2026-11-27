@@ -24,17 +24,20 @@
 
 (defn local-commit
   "Builds a synthetic local commit event for `file-id`: a page edit as redo,
-  no undo, from the `:local` source."
-  [file-id]
-  (ptk/data-event ::dch/commit
-                  {:id (uuid/next)
-                   :file-id file-id
-                   :file-revn 0
-                   :file-vern 0
-                   :source :local
-                   :features #{}
-                   :redo-changes [{:type :mod-page :id (uuid/next) :name "Edited"}]
-                   :undo-changes []}))
+  no undo, from the `:local` source. Pass `:redo-changes` / `:undo-changes`
+  to build a commit with the exact lists a test needs."
+  ([file-id] (local-commit file-id {}))
+  ([file-id {:keys [redo-changes undo-changes]}]
+   (ptk/data-event ::dch/commit
+                   {:id (uuid/next)
+                    :file-id file-id
+                    :file-revn 0
+                    :file-vern 0
+                    :source :local
+                    :features #{}
+                    :redo-changes (or redo-changes
+                                      [{:type :mod-page :id (uuid/next) :name "Edited"}])
+                    :undo-changes (or undo-changes [])})))
 
 (defn with-persistence
   "Async fixture for the persistence tests: mocks the transport, flash, the
@@ -51,14 +54,16 @@
   asserting it."
   [f & [respond]]
   (let [file-id   (uuid/next)
+        session-id (uuid/next)
         response  (rx/subject)
         failures  (atom [])
         requests  (atom [])
         requests$ (rx/subject)
         tasks     (atom #{})
         store     (ptk/store {:state {:current-file-id file-id
+                                      :session-id session-id
                                       :permissions {:can-edit true}
-                                      :files {file-id {:id file-id :revn 0}}}
+                                      :files {file-id {:id file-id :revn 0 :vern 0}}}
                               :on-error #(t/is false (str %))})]
     (mock/with-mocks*
       {rp/cmd!          (mock/stub (fn [cmd params]
@@ -75,7 +80,7 @@
        st/ongoing-tasks tasks}
       (try
         (ptk/emit! store (dps/initialize-persistence))
-        (await (f {:file-id file-id :response response :failures failures
+        (await (f {:file-id file-id :session-id session-id :response response :failures failures
                    :requests requests :requests$ requests$ :store store
                    :tasks tasks}))
         (finally
@@ -155,7 +160,7 @@
 (defn open-file-with-library
   "`open-file` that also loads library `lib-id` with `lib-data`."
   [file-id lib-id page-id data lib-data]
-  (comp #(assoc-in % [:files lib-id] {:id lib-id :revn 0 :data lib-data})
+  (comp #(assoc-in % [:files lib-id] {:id lib-id :revn 0 :vern 0 :data lib-data})
         (open-file file-id page-id data)))
 
 (defn shape-attr
@@ -176,11 +181,43 @@
      :redo-changes redo-changes
      :tags #{}}))
 
+(defn save-response
+  "An ordinary accepted save with no predecessors after the sent revision."
+  ([revn] (save-response revn 0))
+  ([revn vern]
+   {:revn revn
+    :vern vern
+    :saved-revn (inc revn)
+    :written [{:id (uuid/next) :revn (inc revn) :kind :edit}]
+    :edit-matches-request true
+    :recovery {:mode :none}}))
+
+(defn recovery
+  "Ordered predecessor identities, without the changes from those rows."
+  [mode since rows]
+  {:mode mode
+   :since since
+   :until (:revn (peek rows))
+   :required (mapv #(select-keys % [:id :revn]) rows)})
+
+(defn written-row
+  [kind row]
+  (assoc (select-keys row [:id :revn]) :kind kind))
+
 (defn rejection
   "A save answer that rejects `commit-ids`, the first one failing
   validation."
   [& commit-ids]
   {:revn 0
+   :vern 0
+   :written []
+   :recovery {:mode :none}
    :rejected {:commit-ids (vec commit-ids)
               :failed-commit-id (first commit-ids)
               :error {:type :validation :code :referential-integrity}}})
+
+(defn partial-rejection
+  "A save that wrote its accepted prefix and rejected the remaining commits."
+  [revn & commit-ids]
+  (merge (dissoc (save-response revn) :edit-matches-request)
+         (select-keys (apply rejection commit-ids) [:rejected])))

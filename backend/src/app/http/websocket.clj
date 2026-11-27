@@ -181,11 +181,9 @@
       true)))
 
 (defn- file-readable?
-  "Non-throwing mirror of the `:subscribe-file` gates: the file must
-  still exist (a soft-deleted row grants nothing) and the profile must
-  read it. Same `sql:get-minimal-file` as the subscribe gate, with the
-  existence failure turned into a boolean — the fresh answer is the
-  decision."
+  "Checks the same gates as `:subscribe-file`: the file must still exist
+   and the profile must be able to read it. A missing file returns false;
+   lookup errors propagate so callers can choose how to handle them."
   [cfg profile-id file-id]
   (and (some? (bfc/get-minimal-file cfg file-id
                                     {::db/throw-if-not-exists false}))
@@ -203,30 +201,40 @@
                        {::sql/columns [:id :deleted-at]}))
        (teams/has-read-permissions? cfg profile-id team-id)))
 
+(defn- stop-file-relay
+  [msgbus {:keys [channel confirmation]}]
+  (when confirmation
+    (sp/close! confirmation))
+  (sp/close! channel)
+  (mbus/purge! msgbus [channel]))
+
 (defn close-file-subscription
   "Tears down the file subscription held by the connection `wsp`, if it
   is subscribed to `file-id`.
 
   Announces the departure so the remaining participants drop the
-  presence of this session, closes the relay channel (which in turn
-  stops the `:subscribe-file` go-loop, because `take!` on a closed
-  channel returns nil) and removes the subscription from the bus.
+   presence of this session, closes the relay channel and removes the
+   subscription from the bus.
 
-  Does nothing when the connection is subscribed to a different file,
-  so it is safe to call for a subscription that is already gone."
-  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} file-id]
-  (let [subs (::file-subscription @state)]
-    (when (= (:file-id subs) file-id)
-      (mbus/pub! msgbus
-                 :topic file-id
-                 :message {:type :leave-file
-                           :file-id file-id
-                           :session-id session-id
-                           :profile-id profile-id})
-      (let [ch (:channel subs)]
-        (sp/close! ch)
-        (mbus/purge! msgbus [ch])
-        (swap! state dissoc ::file-subscription)))))
+   A caller that did asynchronous work supplies the expected channel,
+   so it cannot close a replacement subscription to the same file."
+  ([cfg wsp file-id]
+   (close-file-subscription cfg wsp file-id nil))
+  ([{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} file-id expected-channel]
+   (locking state
+     (when-let [subs (::file-subscription @state)]
+       (when (and (= (:file-id subs) file-id)
+                  (or (nil? expected-channel)
+                      (identical? (:channel subs) expected-channel)))
+         (swap! state dissoc ::file-subscription)
+         (stop-file-relay msgbus subs)
+         (mbus/pub! msgbus
+                    :topic file-id
+                    :message {:type :leave-file
+                              :file-id file-id
+                              :session-id session-id
+                              :profile-id profile-id})
+         true)))))
 
 (defn close-team-subscription
   "Tears down the team subscription held by the connection `wsp`, if it
@@ -256,10 +264,9 @@
   together, with priority on the tick: when both hold something, the tick
   wins, so a steady stream of messages can never push the re-check away.
   A single tick channel covers a whole cadence and message turns reuse
-  it, so busy files don't churn timers; the cadence holds under load
-  because nothing moves the tick. Closing the channel ends the loop
-  either way, because a take on a closed channel is always ready
-  with nil.
+   it, so busy files don't churn timers; the cadence holds under load
+   because nothing moves the tick. A closed channel returns nil when
+   its buffer is empty, ending the relay.
 
   `on-forward` runs for every forwarded message, which is how the file
   relay announces presence."
@@ -320,7 +327,6 @@
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::profile-id ::session-id]} _]
   (l/trace :fn "handle-message" :event "close" :conn-id id)
   (let [psub (::profile-subscription @state)
-        fsub (::file-subscription @state)
         tsub (::team-subscription @state)
         msg  {:type :disconnect
               :profile-id profile-id
@@ -337,10 +343,11 @@
       (mbus/purge! msgbus [ch]))
 
     ;; Close file subscription if exists
-    (when-let [{:keys [topic channel]} fsub]
-      (sp/close! channel)
-      (mbus/purge! msgbus [channel])
-      (mbus/pub! msgbus :topic topic :message msg))))
+    (locking state
+      (when-let [{:keys [topic] :as fsub} (::file-subscription @state)]
+        (swap! state dissoc ::file-subscription)
+        (stop-file-relay msgbus fsub)
+        (mbus/pub! msgbus :topic topic :message msg)))))
 
 (defn- get-team-organization-id
   "Returns the id of the organization that owns `team-id`, or nil when
@@ -389,47 +396,91 @@
       (sp/close! ch)
       (mbus/purge! (::mbus/msgbus cfg) [ch]))))
 
+(defn- start-file-relay
+  [{:keys [::mbus/msgbus] :as cfg} {:keys [::profile-id ::session-id] :as wsp} file-id channel]
+  (start-relay wsp channel
+               #(file-readable? cfg profile-id file-id)
+               #(close-file-subscription cfg wsp file-id channel)
+               (fn [{:keys [type]}]
+                 (when (contains? #{:join-file :leave-file :disconnect} type)
+                   (mbus/pub! msgbus
+                              :topic file-id
+                              :message {:type :presence
+                                        :file-id file-id
+                                        :session-id session-id
+                                        :profile-id profile-id})))))
+
+(defn- publish-file-join
+  [{:keys [::mbus/msgbus]} {:keys [::profile-id ::session-id]} file-id]
+  (mbus/pub! msgbus
+             :topic file-id
+             :message {:type :join-file
+                       :file-id file-id
+                       :session-id session-id
+                       :profile-id profile-id}))
+
+(defn- active-file-channel?
+  [state channel]
+  (and (identical? channel (get-in @state [::file-subscription :channel]))
+       (not (sp/closed? channel))))
+
+(defn- confirm-file-subscription
+  [cfg {:keys [::profile-id ::ws/state ::ws/output-ch ::ws/close-ch] :as wsp}
+   {:keys [file-id channel confirmation]} subscription-id]
+  (sp/go
+    (try
+      (if (and (true? (sp/take! confirmation))
+               (active-file-channel? state channel)
+               ;; Unlike periodic revalidation, confirmation must fail closed.
+               (file-readable? cfg profile-id file-id))
+        (locking state
+          (when (and (active-file-channel? state channel)
+                     (not (some-> close-ch sp/closed?)))
+            (start-file-relay cfg wsp file-id channel)
+            (publish-file-join cfg wsp file-id)
+            ;; Do not wait for output space with teardown locked out.
+            (sp/offer! output-ch {:type :file-subscription-ready
+                                  :topic file-id
+                                  :subscription-id subscription-id})))
+        (close-file-subscription cfg wsp file-id channel))
+      (catch InterruptedException cause
+        (close-file-subscription cfg wsp file-id channel)
+        (throw cause))
+      (catch Throwable cause
+        (close-file-subscription cfg wsp file-id channel)
+        (l/error :hint "cannot confirm a websocket file subscription"
+                 :file-id file-id
+                 :profile-id profile-id
+                 :cause cause)))))
+
 (defmethod handle-message :subscribe-file
-  [cfg {:keys [::ws/id ::ws/state ::session-id ::profile-id] :as wsp} {:keys [file-id] :as params}]
+  [{:keys [::mbus/msgbus] :as cfg} {:keys [::ws/id ::ws/state ::session-id ::profile-id] :as wsp}
+   {:keys [file-id subscription-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
+  (when (and (contains? params :subscription-id) (not (uuid? subscription-id)))
+    (ex/raise :type :validation
+              :code :invalid-subscription-id
+              :hint "subscription-id must be a UUID"))
   (bfc/check-file-exists cfg file-id)
   (files/check-read-permissions! cfg profile-id file-id)
-  (let [psub (::file-subscription @state)
-        fch  (sp/chan :buf (sp/dropping-buffer 64)
-                      :xf  (remove #(= (:session-id %) session-id)))]
-
-    (let [subs {:file-id file-id :channel fch :topic file-id}]
-      (swap! state assoc ::file-subscription subs))
-
-    (start-relay wsp fch
-                 #(file-readable? cfg profile-id file-id)
-                 #(close-file-subscription cfg wsp file-id)
-                 (fn [{:keys [type]}]
-                   (when (or (= :join-file type)
-                             (= :leave-file type)
-                             (= :disconnect type))
-                     (mbus/pub! (::mbus/msgbus cfg)
-                                :topic file-id
-                                :message {:type :presence
-                                          :file-id file-id
-                                          :session-id session-id
-                                          :profile-id profile-id}))))
-
-    ;; Close previous subscription if exists
-    (when-let [ch (:channel psub)]
-      (sp/close! ch)
-      (mbus/purge! (::mbus/msgbus cfg) [ch]))
-
-    ;; Subscribe to file topic
-    (mbus/sub! (::mbus/msgbus cfg) :topic file-id :chan fch)
-
-    ;; Notifify the rest of participants of the new connection.
-    (mbus/pub! (::mbus/msgbus cfg)
-               :topic file-id
-               :message {:type :join-file
-                         :file-id file-id
-                         :session-id session-id
-                         :profile-id profile-id})))
+  (let [channel      (sp/chan :buf (sp/dropping-buffer 64)
+                              :xf  (remove #(= (:session-id %) session-id)))
+        confirmation (when subscription-id (sp/chan :buf 1))
+        subs         {:file-id file-id :channel channel :topic file-id
+                      :confirmation confirmation}]
+    (locking state
+      (let [[previous] (swap-vals! state assoc ::file-subscription subs)]
+        (when-let [prev-subs (::file-subscription previous)]
+          (stop-file-relay msgbus prev-subs)))
+      (if confirmation
+        (do
+          (mbus/subscribe-confirmed msgbus file-id channel confirmation)
+          (confirm-file-subscription cfg wsp subs subscription-id)
+          nil)
+        (do
+          (start-file-relay cfg wsp file-id channel)
+          (mbus/sub! msgbus :topic file-id :chan channel)
+          (publish-file-join cfg wsp file-id))))))
 
 (defmethod handle-message :unsubscribe-file
   [cfg {:keys [::ws/id] :as wsp} {:keys [file-id] :as params}]
@@ -500,11 +551,10 @@
         (let [subs (some-> wsp ::ws/state deref)
               fsub (get subs ::file-subscription)
               tsub (get subs ::team-subscription)]
-          (when (and fsub
-                     (not (file-readable? cfg profile-id
-                                          (:file-id fsub))))
-            (close-file-subscription cfg wsp (:file-id fsub))
-            (vswap! closed inc))
+          (when-let [{:keys [file-id channel]} fsub]
+            (when (and (not (file-readable? cfg profile-id file-id))
+                       (close-file-subscription cfg wsp file-id channel))
+              (vswap! closed inc)))
           (when (and tsub
                      (not (team-readable? cfg profile-id
                                           (:team-id tsub))))

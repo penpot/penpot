@@ -201,6 +201,7 @@
               initialized (atom [])
               at-reject  (atom nil)
               store      (ptk/store {:state (cond-> {:current-file-id file-id
+                                                     :current-page-id (uuid/next)
                                                      :files {file-id backup}}
                                               preview?
                                               (assoc :files {file-id snapshot}

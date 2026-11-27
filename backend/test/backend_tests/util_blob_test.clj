@@ -104,3 +104,18 @@
         encoded (blob/encode-str data {:version 3})
         decoded (blob/decode-str encoded)]
     (t/is (= data decoded))))
+
+(t/deftest bounded-decode-counts-the-entire-serialized-value
+  (let [data  {:name (apply str (repeat 20000 "x"))}
+        blobs (mapv #(blob/encode data {:version %}) [1 3 4 5])]
+    (doseq [[version encoded] (map vector [1 3 4 5] blobs)]
+      (t/testing (str "blob version " version)
+        (let [decode (requiring-resolve 'app.util.blob/decode-bounded)
+              result (decode encoded 30000)
+              size   (:uncompressed-size result)]
+          (t/is (= data (:data result)))
+          (t/is (< 20000 size 30000))
+          (t/is (= result (decode encoded size)))
+          (t/is (thrown-with-msg? clojure.lang.ExceptionInfo
+                                  #"uncompressed size exceeds limit"
+                                  (decode encoded (dec size)))))))))

@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
   // Opening a wasm workspace backfills :position-data for text shapes, persisting the file.
   await WasmWorkspacePage.mockRPC(
     page,
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "text-editor/update-file.json",
   );
 });
@@ -426,8 +426,8 @@ test("Keeps component visible when focusing after creating it", async ({
   await workspace.setupEmptyFile();
   await workspace.mockRPC(/get\-file\?/, "workspace/get-file-not-empty.json");
   await workspace.mockRPC(
-    "update-file?id=*",
-    "workspace/update-file-create-rect.json",
+    "update-file-v2?id=*",
+    "workspace/update-file-empty.json",
   );
 
   await workspace.goToWorkspace({

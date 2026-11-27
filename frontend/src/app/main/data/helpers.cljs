@@ -55,6 +55,19 @@
   (let [current-file-data (lookup-file-data state)] ;; Tokens status is always in the current file
     (cfo/get-tokens-status current-file-data)))
 
+(defn get-token-resolution-input
+  "Comparable token input, preserving active set precedence but not metadata."
+  [tokens-status tokens-lib]
+  (if (and tokens-status tokens-lib)
+    (into []
+          (keep (fn [[_ tokens]]
+                  (when (seq tokens)
+                    (into {}
+                          (map (fn [[name token]] [name (select-keys token [:name :type :value])]))
+                          tokens))))
+          (cfo/get-active-token-sets tokens-status tokens-lib))
+    []))
+
 (defn get-page
   [fdata page-id]
   (dm/get-in fdata [:pages-index page-id]))

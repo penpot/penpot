@@ -16,7 +16,7 @@ const setupFile = async (workspacePage) => {
   );
 
   await workspacePage.mockRPC(
-    /update\-file\?/,
+    /\/api\/main\/methods\/update-file-v2\?/,
     "workspace/update-file-empty.json",
   );
 

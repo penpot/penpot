@@ -6,6 +6,9 @@
 
 (ns backend-tests.http-websocket-test
   (:require
+   [app.binfile.common :as bfc]
+   [app.common.features :as cfeat]
+   [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
@@ -14,12 +17,16 @@
    [app.http.websocket :as ws]
    [app.msgbus :as mbus]
    [app.nitrate :as nitrate]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.rpc.commands.files-update :as files-update]
    [app.rpc.commands.teams :as teams]
    [app.rpc.notifications :as ntf]
+   [app.util.blob :as blob]
    [app.util.websocket :as util-ws]
    [backend-tests.helpers :as th]
+   [clojure.string :as str]
    [clojure.test :as t]
    [promesa.exec.csp :as sp]))
 
@@ -272,11 +279,354 @@
 
 (defn- publisher!
   "Returns a fn that publishes `message` on `topic` through the system
-  msgbus, the same path `send-notifications!` uses."
+  msgbus, the same path as save notifications."
   []
   (let [msgbus (::mbus/msgbus th/*system*)]
     (fn [topic message]
       (mbus/pub! msgbus :topic topic :message message))))
+
+(defn- save-params
+  [profile file session-id revn]
+  {::rpc/profile-id (:id profile)
+   :id (:id file) :session-id session-id :revn revn :vern 0
+   :features cfeat/supported-features})
+
+(defn- set-shape-attr
+  [page-id shape-id attr value]
+  {:type :mod-obj :page-id page-id :id shape-id
+   :operations [{:type :set :attr attr :val value}]})
+
+(defn- get-broken-file-fixture
+  [i]
+  (let [profile (th/create-profile* i {:is-active true})
+        file    (th/create-file* i {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared true})
+        page-id (first (get-in file [:data :pages]))
+        shape   (uuid/next)
+        out     (th/command! (assoc (save-params profile file (uuid/next) 0)
+                                    ::th/type :update-file
+                                    :skip-validate true
+                                    :changes [(th/add-rect-change page-id shape)
+                                              (set-shape-attr page-id shape :frame-id (uuid/next))]))]
+    (t/is (th/success? out))
+    {:file file :profile profile :page-id page-id :shape shape :revn 1}))
+
+(defn- opt-in-save
+  [{:keys [profile file]} session-id revn changes]
+  (th/command! (assoc (save-params profile file session-id revn)
+                      ::th/type :update-file-v2
+                      :repair-in-response true
+                      :commits [{:commit-id (uuid/next) :changes changes}])))
+
+(defn- await-topic
+  [conn topic]
+  (let [publish (publisher!)
+        probe   (uuid/next)
+        msg     (poll-published! (:output conn) #(publish topic {:type probe}) probe 500)]
+    (t/is (= probe (:type msg)))))
+
+(defn- close-save-subscriptions
+  [{:keys [id wsp state output]}]
+  (when-let [file-id (get-in @state [::ws/file-subscription :file-id])]
+    (ws/close-file-subscription th/*system* wsp file-id))
+  (when-let [team-id (get-in @state [::ws/team-subscription :team-id])]
+    (ws/close-team-subscription th/*system* wsp team-id))
+  (ws/unregister-connection id)
+  (sp/close! output))
+
+(t/deftest saves-mark-library-deltas-after-sharing-an-open-file
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        profile-id (:id profile)
+        team-id    (:default-team-id profile)
+        file       (th/create-file* 1 {:profile-id profile-id :project-id (:default-project-id profile)})
+        file-id    (:id file)
+        page-id    (first (get-in file [:data :pages]))
+        saver      (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+        peer       (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+        library    (subscribe (open-registered-connection profile-id) :subscribe-team {:team-id team-id})
+        session-id (get-in saver [:wsp ::ws/session-id])]
+    (try
+      (await-topic saver file-id)
+      (await-topic peer file-id)
+      (await-topic library team-id)
+      (t/is (false? (:is-shared file)))
+      (t/is (true? (get-in (th/command! {::th/type :set-file-shared
+                                         ::rpc/profile-id profile-id
+                                         :id file-id
+                                         :is-shared true})
+                           [:result :is-shared])))
+      (doseq [[revn method opt-in] [[0 :update-file false]
+                                    [1 :update-file-v2 false]
+                                    [2 :update-file-v2 true]]]
+        (t/testing (str method ", repair-in-response: " opt-in)
+          (let [rect     (th/add-rect-change page-id (uuid/next))
+                changes  [{:type :mod-page :id page-id :name (str "Page " revn)} rect]
+                params   (cond-> (assoc (save-params profile file session-id revn) ::th/type method)
+                           (= :update-file method)
+                           (assoc :changes changes)
+
+                           (= :update-file-v2 method)
+                           (assoc :commits [{:commit-id (uuid/next)
+                                             :changes changes}])
+
+                           opt-in
+                           (assoc :repair-in-response true))
+                out      (th/command! params)
+                file-msg (poll-msg! (:output peer) :file-change 1000)
+                team-msg (poll-msg! (:output library) :library-change 1000)]
+            (t/is (th/success? out))
+            (t/is (= (inc revn) (:revn file-msg) (:revn team-msg)))
+            (t/is (= session-id (:session-id file-msg) (:session-id team-msg)))
+            (t/is (true? (:library-change file-msg)))
+            (t/is (= changes (:changes file-msg)))
+            (t/is (= [rect] (:changes team-msg)))
+            (t/is (not (contains? team-msg :library-change))))))
+      (t/is (nil? (poll-msg! (:output saver) :file-change revocation-timeout-ms)))
+      (finally
+        (close-save-subscriptions saver)
+        (close-save-subscriptions peer)
+        (close-save-subscriptions library)))))
+
+(t/deftest private-files-and-page-only-edits-do-not-publish-library-deltas
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        profile-id (:id profile)
+        team-id    (:default-team-id profile)
+        file       (th/create-file* 1 {:profile-id profile-id :project-id (:default-project-id profile)})
+        file-id    (:id file)
+        page-id    (first (get-in file [:data :pages]))
+        peer       (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+        library    (subscribe (open-registered-connection profile-id) :subscribe-team {:team-id team-id})
+        fixture    {:profile profile :file file}
+        session-id (uuid/next)]
+    (try
+      (await-topic peer file-id)
+      (await-topic library team-id)
+      (t/testing "A library edit in a private file"
+        (let [changes [(th/add-rect-change page-id (uuid/next))]
+              out     (opt-in-save fixture session-id 0 changes)
+              msg     (poll-msg! (:output peer) :file-change 1000)]
+          (t/is (th/success? out))
+          (t/is (= changes (:changes msg)))
+          (t/is (not (contains? msg :library-change)))
+          (t/is (nil? (poll-msg! (:output library) :library-change revocation-timeout-ms)))))
+      (t/is (true? (get-in (th/command! {::th/type :set-file-shared
+                                         ::rpc/profile-id profile-id
+                                         :id file-id
+                                         :is-shared true})
+                           [:result :is-shared])))
+      (t/testing "A page-only edit in a shared file"
+        (let [changes [{:type :mod-page :id page-id :name "Renamed page"}]
+              out     (opt-in-save fixture session-id 1 changes)
+              msg     (poll-msg! (:output peer) :file-change 1000)]
+          (t/is (th/success? out))
+          (t/is (= changes (:changes msg)))
+          (t/is (not (contains? msg :library-change)))
+          (t/is (nil? (poll-msg! (:output library) :library-change revocation-timeout-ms)))))
+      (finally
+        (close-save-subscriptions peer)
+        (close-save-subscriptions library)))))
+
+(t/deftest rolled-back-shared-save-does-not-publish-to-file-or-team
+  (let [profile    (th/create-profile* 1 {:is-active true})
+        profile-id (:id profile)
+        team-id    (:default-team-id profile)
+        file       (th/create-file* 1 {:profile-id profile-id
+                                       :project-id (:default-project-id profile)
+                                       :is-shared true})
+        file-id    (:id file)
+        page-id    (first (get-in file [:data :pages]))
+        peer       (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+        library    (subscribe (open-registered-connection profile-id) :subscribe-team {:team-id team-id})
+        after      db/after-commit
+        fault      (ex-info "Rollback after save notification registration" {})]
+    (try
+      (await-topic peer file-id)
+      (await-topic library team-id)
+      (let [out (with-redefs [db/after-commit (fn [callback]
+                                                (after callback)
+                                                (throw fault))]
+                  (opt-in-save {:profile profile :file file} (uuid/next) 0
+                               [(th/add-rect-change page-id (uuid/next))]))]
+        (t/is (identical? fault (:error out)))
+        (t/is (= 0 (:revn (th/db-get :file {:id file-id}))))
+        (t/is (nil? (poll-msg! (:output peer) :file-change revocation-timeout-ms)))
+        (t/is (nil? (poll-msg! (:output library) :library-change revocation-timeout-ms))))
+      (finally
+        (close-save-subscriptions peer)
+        (close-save-subscriptions library)))))
+
+(t/deftest opt-in-save-sends-one-repair-event-to-file-and-library-peers
+  (with-redefs [cf/flags (conj cf/flags :file-validation)]
+    (let [{:keys [profile file page-id shape revn] :as fixture} (get-broken-file-fixture 1)
+          profile-id (:id profile)
+          file-id    (:id file)
+          team-id    (:default-team-id profile)
+          params     {:file-id file-id}
+          saver      (subscribe (open-registered-connection profile-id) :subscribe-file params)
+          peer       (subscribe (open-registered-connection profile-id) :subscribe-file params)
+          library    (subscribe (open-registered-connection profile-id) :subscribe-team {:team-id team-id})]
+      (try
+        (await-topic saver file-id)
+        (await-topic peer file-id)
+        (await-topic library team-id)
+        (let [session-id (get-in saver [:wsp ::ws/session-id])
+              rename     (set-shape-attr page-id shape :name "repaired edit")
+              out        (opt-in-save fixture session-id revn
+                                      [{:type :mod-page :id page-id :name "Page change"} rename])
+              result     (:result out)
+              file-msg   (poll-msg! (:output peer) :file-change 1000)
+              lib-msg    (poll-msg! (:output library) :library-change 1000)]
+          (t/is (th/success? out))
+          (t/is (= (+ 2 revn) (:saved-revn result) (:revn file-msg) (:revn lib-msg)))
+          (t/is (true? (:library-change file-msg)))
+          (t/is (= (mapv :id (:written result)) (:revision-ids file-msg)))
+          (t/is (= (into [{:type :mod-page :id page-id :name "Page change"} rename]
+                         (get-in result [:repair :changes]))
+                   (:changes file-msg)))
+          (t/is (= (into [rename] (get-in result [:repair :changes])) (:changes lib-msg)))
+          (doseq [msg [file-msg lib-msg]]
+            (t/is (= {:session-id session-id :repair-base-revn revn :vern 0 :repaired true}
+                     (select-keys msg [:session-id :repair-base-revn :vern :repaired]))))
+          (t/is (nil? (poll-msg! (:output saver) :file-change revocation-timeout-ms)))
+          (t/is (nil? (poll-msg! (:output peer) :file-change revocation-timeout-ms)))
+          (t/is (nil? (poll-msg! (:output library) :library-change revocation-timeout-ms))))
+        (finally
+          (close-save-subscriptions saver)
+          (close-save-subscriptions peer)
+          (close-save-subscriptions library))))))
+
+(t/deftest legacy-v1-and-v2-savers-still-receive-the-repair
+  (with-redefs [cf/flags (conj cf/flags :file-validation)]
+    (doseq [[i type] [[1 :update-file] [2 :update-file-v2]]]
+      (let [{:keys [profile file page-id shape revn]} (get-broken-file-fixture i)
+            team-id (:default-team-id profile)
+            saver   (subscribe (open-registered-connection (:id profile)) :subscribe-file {:file-id (:id file)})
+            library (subscribe (open-registered-connection (:id profile)) :subscribe-team {:team-id team-id})]
+        (try
+          (await-topic saver (:id file))
+          (await-topic library team-id)
+          (let [changes [(set-shape-attr page-id shape :name "legacy edit")]
+                params  (assoc (save-params profile file (get-in saver [:wsp ::ws/session-id]) revn)
+                               ::th/type type)
+                out     (th/command! (merge params
+                                            (if (= :update-file type)
+                                              {:changes changes}
+                                              {:commits [{:commit-id (uuid/next)
+                                                          :changes changes}]})))
+                msg         (poll-msg! (:output saver) :file-change 1000)
+                library-fix (poll-msg! (:output library) :library-change 1000)]
+            (t/is (th/success? out))
+            (if (= :update-file type)
+              (t/is (= #{:revn :lagged} (set (keys (:result out)))))
+              (t/is (= [[:repair (inc revn)] [:edit (+ revn 2)]]
+                       (mapv (juxt :kind :revn) (get-in out [:result :written])))))
+            (t/is (= files-update/repair-session-id (:session-id msg)))
+            (t/is (= (inc revn) (:revn msg)))
+            (t/is (true? (:repaired msg)))
+            (t/is (= #{:type :file-id :profile-id :session-id :revn :vern :changes :repaired :library-change :topic}
+                     (set (keys msg))))
+            (t/is (true? (:library-change msg)))
+            (t/is (= (inc revn) (:revn library-fix)))
+            (t/is (= (:session-id params) (:session-id library-fix)))
+            (t/is (= #{:type :file-id :profile-id :session-id :revn :modified-at :changes :topic}
+                     (set (keys library-fix))))
+            (t/is (nil? (poll-msg! (:output saver) :file-change revocation-timeout-ms))))
+          (finally
+            (close-save-subscriptions saver)
+            (close-save-subscriptions library)))))))
+
+(t/deftest opt-in-fallback-publishes-repair-then-the-persisted-media-redo
+  (with-redefs [cf/flags (conj cf/flags :file-validation)]
+    (let [{:keys [profile file page-id shape revn] :as fixture} (get-broken-file-fixture 1)
+          profile-id (:id profile)
+          file-id    (:id file)
+          team-id    (:default-team-id profile)
+          source     (th/create-file* 2 {:profile-id profile-id :project-id (:default-project-id profile)})
+          storage-id (uuid/next)
+          _          (th/db-insert! :storage-object {:id storage-id :size 100 :backend "test"})
+          image      (th/create-file-media-object* {:file-id (:id source) :media-id storage-id :mtype "image/jpeg"})
+          fills      [{:fill-opacity 1 :fill-image (select-keys image [:id :width :height :mtype])}]
+          broken     (bfc/get-file th/*system* file-id :realize? true)
+          saver      (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+          peer       (subscribe (open-registered-connection profile-id) :subscribe-file {:file-id file-id})
+          library    (subscribe (open-registered-connection profile-id) :subscribe-team {:team-id team-id})]
+      (try
+        (await-topic saver file-id)
+        (await-topic peer file-id)
+        (await-topic library team-id)
+        (let [session-id (get-in saver [:wsp ::ws/session-id])
+              out        (opt-in-save fixture session-id revn [(set-shape-attr page-id shape :fills fills)])
+              result     (:result out)
+              [r u]      (:written result)
+              saver-fix  (poll-msg! (:output saver) :file-change 1000)
+              peer-fix   (poll-msg! (:output peer) :file-change 1000)
+              peer-edit  (poll-msg! (:output peer) :file-change 1000)
+              lib-fix    (poll-msg! (:output library) :library-change 1000)
+              lib-edit   (poll-msg! (:output library) :library-change 1000)
+              stored     (bfc/get-file th/*system* file-id :realize? true)
+              get-redo   (fn [{:keys [id]}]
+                           (let [row (th/db-get :file-change {:file-id file-id :id id}
+                                                {::db/remove-deleted false})]
+                             (blob/decode (:changes row))))
+              linked-id  (get-in stored [:data :pages-index page-id :objects shape :fills 0 :fill-image :id])]
+          (t/is (th/success? out))
+          (t/is (= {:revn revn :vern 0 :saved-revn (+ revn 2) :media-relinked true :recovery {:mode :none}}
+                   (dissoc result :written)))
+          (t/is (uuid? linked-id))
+          (t/is (not= (:id image) linked-id))
+          (t/is (= saver-fix peer-fix))
+          (t/is (true? (:library-change peer-fix)))
+          (t/is (true? (:library-change peer-edit)))
+          (t/is (= [(:id r)] (:revision-ids peer-fix)))
+          (t/is (= [(:id u)] (:revision-ids peer-edit)))
+          (t/is (= {:session-id files-update/repair-session-id :revn (inc revn) :vern 0 :repaired true}
+                   (select-keys peer-fix [:session-id :revn :vern :repaired :repair-base-revn])))
+          (t/is (= {:session-id session-id :revn (inc revn) :vern 0 :repaired true}
+                   (select-keys lib-fix [:session-id :revn :vern :repaired :repair-base-revn :revision-ids])))
+          (t/is (= {:session-id session-id :revn (+ revn 2) :vern 0}
+                   (select-keys lib-edit [:session-id :revn :vern :repaired :repair-base-revn :revision-ids])))
+          (t/is (= (get-redo r) (:changes peer-fix) (:changes lib-fix)))
+          (t/is (= (get-redo u) (:changes peer-edit) (:changes lib-edit)))
+          (t/is (= (:data stored) (reduce cpc/process-changes (:data broken) (map :changes [peer-fix peer-edit]))))
+          (t/is (nil? (poll-msg! (:output saver) :file-change revocation-timeout-ms))))
+        (finally
+          (close-save-subscriptions saver)
+          (close-save-subscriptions peer)
+          (close-save-subscriptions library))))))
+
+(t/deftest later-commit-can-publish-before-an-aggregate-and-sort-before-its-rows
+  (with-redefs [cf/flags (conj cf/flags :file-validation)]
+    (let [{:keys [profile file page-id shape revn] :as fixture} (get-broken-file-fixture 1)
+          peer      (subscribe (open-registered-connection (:id profile)) :subscribe-file {:file-id (:id file)})
+          timestamp (ct/now)
+          callback  (atom nil)
+          after     db/after-commit]
+      (try
+        (await-topic peer (:id file))
+        (let [first-save  (with-redefs [db/after-commit (fn [f] (after #(reset! callback f)))
+                                        ct/now          (constantly timestamp)]
+                            (opt-in-save fixture (uuid/next) revn [(set-shape-attr page-id shape :name "first")]))
+              second-save (with-redefs [ct/now (constantly (ct/minus timestamp (ct/duration {:millis 1})))]
+                            (opt-in-save fixture (uuid/next) revn [(set-shape-attr page-id shape :name "later")]))
+              ordinary    (poll-msg! (:output peer) :file-change 1000)]
+          (t/is (th/success? first-save))
+          (t/is (th/success? second-save))
+          ;; The later edit has the earliest timestamp, but its predecessor
+          ;; proof and the rows of its own write follow revision order.
+          (t/is (= [(inc revn) (+ revn 2)]
+                   (mapv :revn (get-in second-save [:result :recovery :required]))))
+          (t/is (= [(+ revn 3)] (mapv :revn (get-in second-save [:result :written]))))
+          (t/is (= (+ revn 3) (get-in second-save [:result :saved-revn]) (:revn ordinary)))
+          (t/is (= [(get-in second-save [:result :written 0 :id])] (:revision-ids ordinary)))
+          (@callback)
+          (let [aggregate (poll-msg! (:output peer) :file-change 1000)]
+            (t/is (= (+ revn 2) (:revn aggregate)))
+            (t/is (= revn (:repair-base-revn aggregate)))
+            (t/is (= (mapv :id (get-in first-save [:result :written])) (:revision-ids aggregate)))
+            (t/is (= (:revision-ids aggregate)
+                     (mapv :id (get-in second-save [:result :recovery :required]))))))
+        (finally (close-save-subscriptions peer))))))
 
 ;; --- CONNECTION REGISTRY
 
@@ -494,6 +844,216 @@
   (db/exec! th/*system*
             ["delete from team_profile_rel where team_id = ? and profile_id = ?"
              team-id profile-id]))
+
+;; --- FILE SUBSCRIPTION CONFIRMATION
+
+(defn- with-held-redis-subscribe
+  "Pauses the first Redis SUBSCRIBE for `file-id`, leaving the real bus,
+  Redis, and every other topic untouched."
+  [file-id f]
+  (let [subscribe rds/subscribe
+        entered   (promise)
+        release   (promise)]
+    (with-redefs [rds/subscribe
+                  (fn [conn [topic :as topics]]
+                    (when (and (str/ends-with? topic (str "." file-id))
+                               (deliver entered true))
+                      (when-not (= true (deref release 5000 nil))
+                        (throw (ex-info "Timed out waiting to release Redis SUBSCRIBE" {}))))
+                    (subscribe conn topics))]
+      (try
+        (f entered release)
+        (finally
+          (deliver release true))))))
+
+(t/deftest file-subscription-ready-follows-redis-confirmation
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        profile-id      (:id profile)
+        file            (th/create-file* 1 {:profile-id profile-id :project-id (:default-project-id profile)})
+        file-id         (:id file)
+        page-id         (first (get-in file [:data :pages]))
+        fixture         {:file file :profile profile}
+        conn            (open-registered-connection profile-id)
+        output          (:output conn)
+        subscription-id (uuid/next)
+        remote-session  (uuid/next)]
+    (try
+      (with-held-redis-subscribe
+        file-id
+        (fn [entered release]
+          (let [pending (future
+                          (subscribe conn :subscribe-file {:file-id file-id
+                                                           :subscription-id subscription-id}))]
+            (t/is (true? (deref entered 2000 nil)))
+            (t/is (= conn (deref pending 500 nil)) "The websocket handler does not wait for Redis")
+            (t/is (nil? (poll-msg! output :file-subscription-ready revocation-timeout-ms)))
+            (t/is (th/success? (opt-in-save fixture (get-in conn [:wsp ::ws/session-id]) 0
+                                            [{:type :mod-page :id page-id :name "Before Redis"}])))
+            (deliver release true)
+            (t/is (= {:type :file-subscription-ready :topic file-id :subscription-id subscription-id}
+                     (poll-msg! output :file-subscription-ready 2000)))
+            (let [stored (bfc/get-file th/*system* file-id :realize? true)]
+              (t/is (= 1 (:revn stored)))
+              (t/is (= "Before Redis" (get-in stored [:data :pages-index page-id :name]))))
+            (let [changes [{:type :mod-page :id page-id :name "After ready"}]]
+              (t/is (th/success? (opt-in-save fixture remote-session 1 changes)))
+              (t/is (= {:topic file-id :revn 2 :changes changes}
+                       (select-keys (poll-msg! output :file-change 2000) [:topic :revn :changes])))))))
+      (finally
+        (close-save-subscriptions conn)))))
+
+(t/deftest failed-redis-subscription-is-not-ready-and-a-new-attempt-can-recover
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile) :project-id (:default-project-id profile)}))
+        conn    (open-registered-connection (:id profile))
+        peer    (open-registered-connection (:id profile))
+        failed  (promise)
+        real    rds/subscribe]
+    (try
+      (with-redefs [rds/subscribe (fn [conn [topic :as topics]]
+                                    (if (and (str/ends-with? topic (str "." file-id))
+                                             (deliver failed true))
+                                      (throw (ex-info "Redis SUBSCRIBE failed" {}))
+                                      (real conn topics)))]
+        (subscribe conn :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+        (t/is (true? (deref failed 2000 nil)))
+        (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms)))
+        (let [new-id (uuid/next)]
+          (subscribe peer :subscribe-file {:file-id file-id :subscription-id new-id})
+          (t/is (= {:type :file-subscription-ready :topic file-id :subscription-id new-id}
+                   (poll-msg! (:output peer) :file-subscription-ready 2000)))
+          ((publisher!) file-id {:type :file-change :revn 1})
+          (t/is (= 1 (:revn (poll-msg! (:output peer) :file-change 2000))))
+          (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms)))))
+      (finally
+        (close-save-subscriptions conn)
+        (close-save-subscriptions peer)))))
+
+(t/deftest replacing-a-pending-subscription-to-the-same-file-only-confirms-the-new-request
+  (let [profile  (th/create-profile* 1 {:is-active true})
+        file-id  (:id (th/create-file* 1 {:profile-id (:id profile) :project-id (:default-project-id profile)}))
+        conn     (open-registered-connection (:id profile))
+        entered  (promise)
+        release  (promise)
+        new-id   (uuid/next)
+        readable files/has-read-permissions?]
+    (try
+      (with-redefs [files/has-read-permissions?
+                    (fn [cfg profile-id candidate-id]
+                      (let [allowed (readable cfg profile-id candidate-id)]
+                        (when (and (= file-id candidate-id) (deliver entered true))
+                          (deref release 5000 nil))
+                        allowed))]
+        (subscribe conn :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+        (t/is (true? (deref entered 2000 nil)) "The older request is waiting after the Redis ack")
+        (subscribe conn :subscribe-file {:file-id file-id :subscription-id new-id})
+        (t/is (= {:type :file-subscription-ready :topic file-id :subscription-id new-id}
+                 (poll-msg! (:output conn) :file-subscription-ready 2000)))
+        (deliver release true)
+        (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms))))
+      (finally
+        (deliver release true)
+        (close-save-subscriptions conn)))))
+
+(t/deftest file-subscription-ready-requires-fresh-read-permission
+  (let [{:keys [editor team file]} (editor-in-team! 1 2)
+        profile-id (:id editor)
+        file-id    (:id file)
+        conn       (open-registered-connection profile-id)]
+    (try
+      (with-held-redis-subscribe
+        file-id
+        (fn [entered release]
+          (subscribe conn :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+          (t/is (true? (deref entered 2000 nil)))
+          (delete-team-membership! (:id team) profile-id)
+          (deliver release true)
+          (t/is (wait-until #(nil? (subscribed-file conn)) 2000))
+          (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms)))))
+      (finally
+        (close-save-subscriptions conn)))))
+
+(t/deftest a-permission-lookup-error-does-not-confirm-a-file-subscription
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile) :project-id (:default-project-id profile)}))
+        conn    (open-registered-connection (:id profile))]
+    (try
+      (with-held-redis-subscribe
+        file-id
+        (fn [entered release]
+          (subscribe conn :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+          (t/is (true? (deref entered 2000 nil)))
+          (with-redefs [files/has-read-permissions? (fn [& _]
+                                                      (throw (ex-info "Read permission lookup failed" {})))]
+            (deliver release true)
+            (t/is (wait-until #(nil? (subscribed-file conn)) 2000))
+            (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms))))))
+      (finally
+        (close-save-subscriptions conn)))))
+
+(t/deftest closing-a-socket-while-redis-is-pending-does-not-announce-ready
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile) :project-id (:default-project-id profile)}))
+        conn    (open-registered-connection (:id profile))
+        peer    (open-registered-connection (:id profile))]
+    (try
+      (with-held-redis-subscribe
+        file-id
+        (fn [entered release]
+          (subscribe conn :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+          (t/is (true? (deref entered 2000 nil)))
+          (ws/handle-message th/*system* (:wsp conn) {:type :close})
+          (subscribe peer :subscribe-file {:file-id file-id :subscription-id (uuid/next)})
+          (deliver release true)
+          (t/is (some? (poll-msg! (:output peer) :file-subscription-ready 2000)))
+          (t/is (nil? (poll-msg! (:output conn) :file-subscription-ready revocation-timeout-ms)))))
+      (finally
+        (close-save-subscriptions conn)
+        (close-save-subscriptions peer)))))
+
+(t/deftest file-subscription-confirmation-requires-a-uuid
+  (let [profile (th/create-profile* 1 {:is-active true})
+        file-id (:id (th/create-file* 1 {:profile-id (:id profile) :project-id (:default-project-id profile)}))
+        conn    (open-registered-connection (:id profile))]
+    (try
+      (t/is (thrown-with-msg? clojure.lang.ExceptionInfo #"subscription-id must be a UUID"
+                              (subscribe conn :subscribe-file {:file-id file-id
+                                                               :subscription-id "not-a-uuid"})))
+      (t/is (nil? (subscribed-file conn)))
+      (finally
+        (close-save-subscriptions conn)))))
+
+(t/deftest failed-legacy-redis-subscription-is-not-proof-for-an-opt-in
+  (let [profile         (th/create-profile* 1 {:is-active true})
+        profile-id      (:id profile)
+        file-id         (:id (th/create-file* 1 {:id (uuid/next)
+                                                 :profile-id profile-id
+                                                 :project-id (:default-project-id profile)}))
+        legacy          (open-registered-connection profile-id)
+        confirmed       (open-registered-connection profile-id)
+        subscription-id (uuid/next)
+        redis-subscribe rds/subscribe
+        failed          (promise)]
+    (try
+      (with-redefs [rds/subscribe (fn [conn [topic :as topics]]
+                                    (if (and (str/ends-with? topic (str "." file-id))
+                                             (deliver failed true))
+                                      (throw (ex-info "Legacy Redis SUBSCRIBE failed" {}))
+                                      (redis-subscribe conn topics)))]
+        (subscribe legacy :subscribe-file {:file-id file-id})
+        (t/is (true? (deref failed 2000 nil)))
+        ;; The legacy path keeps its local entry even though SUBSCRIBE failed.
+        ;; An opt-in request cannot use that entry as proof.
+        (subscribe confirmed :subscribe-file {:file-id file-id :subscription-id subscription-id})
+        (t/is (= {:type :file-subscription-ready :topic file-id :subscription-id subscription-id}
+                 (poll-msg! (:output confirmed) :file-subscription-ready 2000)))
+        (t/is (nil? (poll-msg! (:output legacy) :file-subscription-ready revocation-timeout-ms)))
+        ((publisher!) file-id {:type :file-change :revn 1})
+        (t/is (= 1 (:revn (poll-msg! (:output legacy) :file-change 2000))))
+        (t/is (= 1 (:revn (poll-msg! (:output confirmed) :file-change 2000)))))
+      (finally
+        (close-save-subscriptions legacy)
+        (close-save-subscriptions confirmed)))))
 
 (t/deftest revocation-closes-subscriptions-that-are-no-longer-authorized
   (let [{:keys [editor team file]} (editor-in-team! 1 2)]

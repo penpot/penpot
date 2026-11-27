@@ -18,20 +18,36 @@
   promises — test code threads no `done`. The remaining tests still use
   `mock/with-mocks` with an explicit `done` chain."
   (:require
+   [app.common.files.changes :as cpc]
+   [app.common.test-helpers.components :as cthc]
+   [app.common.test-helpers.compositions :as ctho]
+   [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
+   [app.common.test-helpers.shapes :as cths]
    [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
+   [app.main.data.comments :as dcmt]
    [app.main.data.event :as ev]
+   [app.main.data.fonts :as df]
+   [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.render-wasm :as drw]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.common :as dwc]
+   [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.notifications :as dwn]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.router :as rt]
    [app.main.store :as st]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -40,6 +56,8 @@
    [frontend-tests.helpers.persistence :as thp :refer [local-commit with-persistence]]
    [okulary.core :as l]
    [potok.v2.core :as ptk]))
+
+(t/use-fixtures :each {:before cthi/reset-idmap!})
 
 (t/deftest reopening-restores-only-the-retained-edits-of-the-loaded-file
   (doseq [[status cause-type vern restored?]
@@ -143,7 +161,7 @@
              (local-commit file-id)
              read-only-event
              ::dps/force-persist)
-  (await (async/await-response requests response {:revn 1}))
+  (await (async/await-response requests response (thp/save-response 0)))
   (t/is (= :saved (get-in @store [:persistence :status])))
   (t/is (empty? (get-in @store [:persistence :queue])))
 
@@ -151,7 +169,7 @@
              #(assoc-in % [:workspace-global :read-only?] false)
              (local-commit file-id)
              ::dps/force-persist)
-  (await (async/await-response requests response {:revn 2}))
+  (await (async/await-response requests response (thp/save-response 1)))
   (t/is (= :saved (get-in @store [:persistence :status])))
   (t/is (empty? (get-in @store [:persistence :queue])))
   (t/is (empty? @errors)))
@@ -365,7 +383,7 @@
                   (local-commit file-id) ::dps/force-persist)
        ;; Phase 1 — two commits share the first request; its landing starts the second.
        (reset! clock 290000)
-       (rx/push! response {:revn 1})
+       (rx/push! response (thp/save-response 0))
        (await (async/wait-for-store store #(= 1 (count (get-in @store [:persistence :queue])))
                                     "first save lands, second request starts"))
        (reset! clock 300001)
@@ -379,7 +397,7 @@
        (await (async/wait-for #(= 1 (count @reports)) "second request stalls"))
        (t/is (= 1 (count @reports)) "The second request has now stalled")
 
-       (rx/push! response {:revn 2})
+       (rx/push! response (thp/save-response 1))
        (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                 (empty? (get-in @store [:persistence :queue])))
                                     "second save lands"))
@@ -525,6 +543,62 @@
 ;; assert block is preceded by `wait-for` on its leading signal (or a bare
 ;; `settle` tick when it asserts only absence). The fixture is
 ;; `with-persistence` (`frontend-tests.helpers.persistence`).
+
+(t/deftest ^:async a-save-sends-forward-changes-when-there-is-no-local-inverse
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id requests requests$ response store]}]
+       (let [commit (local-commit file-id)]
+         (ptk/emit! store commit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the save is sent" {:signal requests$}))
+         (t/is (= [[:update-file-v2
+                    {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :repair-in-response true
+                     :commits [{:commit-id (:id @commit)
+                                :changes (:redo-changes @commit)}]}]]
+                  @requests))
+         (rx/push! response (thp/save-response 0))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the save lands")))))))
+
+(t/deftest ^:async a-queue-entry-emptied-by-a-restore-is-not-sent
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       ;; The file may no longer have a loaded version when this entry
+       ;; reaches the head of the queue.
+       (let [entry (pcm/queue-entry [@(local-commit file-id)])
+             id    (:id entry)]
+         (ptk/emit! store
+                    #(assoc % :persistence {:queue (conj #queue [] id)
+                                            :index {id (assoc entry :commits [])}
+                                            :status :saving})
+                    (dps/initialize-persistence))
+         (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
+                                                  (empty? (get-in @store [:persistence :queue])))
+                                      "the empty entry is acknowledged"))
+         (t/is (empty? @requests)))))))
+
+(t/deftest ^:async a-backend-without-the-new-save-command-does-not-lose-pending-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id requests store]}]
+       (await
+        (mock/with-mocks*
+          {refs/persistence (l/derived :persistence store)}
+          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+          (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
+                                       "the missing endpoint fails the save"))
+          (let [failure (atom nil)]
+            (await (async/observe (dps/wait-persisted-or-error)
+                                  :on-error #(reset! failure (ex-data %))))
+            (t/is (= :not-found (:cause-type @failure))))
+          (t/is (= 1 (count (get-in @store [:persistence :queue]))))
+          (t/is (= [:update-file-v2] (mapv first @requests))
+                "the save must not fall back to the old command"))))
+     (fn [_ _]
+       (rp/handle-response {:status 404 :body {:type :not-found}
+                            :uri "https://penpot.example.com/api/main/methods/update-file-v2"})))))
 
 ;; Scenario: edit permission is revoked with an edit queued. The save fails
 ;; without sending anything, the queue keeps the edit and the user is
@@ -731,7 +805,7 @@
          ;; hot-subject race can swallow the answer.
          (if (= 1 (swap! sends inc))
            (rx/throw (ex-info "rejected" {:type :validation :code :invalid-data}))
-           (rx/of {:revn 1})))))))
+           (rx/of (thp/save-response 0))))))))
 
 (defn- check-save-failure-warning
   "Fails a queued save with `cause-type` and asserts the hint shown to the
@@ -744,7 +818,10 @@
          (mock/with-mocks*
            {errors/flash (fn [& params]
                            (swap! notifications conj (apply hash-map params)))
-            i18n/tr      (mock/stub #(str "translated:" %))}
+            i18n/tr      (mock/stub #(str "translated:" %))
+            ;; Keep the workspace error in this store instead of scheduling a global logout.
+            rt/get-current-href (fn [] "/?screen=workspace")
+            st/async-emit! (fn [& events] (js/queueMicrotask #(apply ptk/emit! store events)))}
            (ptk/emit! store (local-commit file-id) ::dps/force-persist)
            (.error response (ex-info "Raw transport details" {:type cause-type}))
            (await (async/wait-for-store store #(= :error (get-in @store [:persistence :status]))
@@ -753,7 +830,8 @@
            (let [data (get-in @store [:persistence :error])]
              (ptk/handle-error (assoc data ::errors/instance (ex-info "Save failed" data))))
            (if (= cause-type :authentication)
-             (do (await (async/settle))
+             (do (await (async/wait-for-store store #(= :authentication (get-in @store [:exception :type]))
+                                              "the workspace handles the authentication failure"))
                  (t/is (empty? @notifications)))
              (do (await (async/wait-for #(seq @notifications) "save-failure toast"))
                  (t/is (= ["translated:errors.save-failed"]
@@ -880,7 +958,7 @@
                     (dps/initialize-persistence))
          (await (async/wait-for #(= 1 (count @requests)) "dangling commit is sent" {:signal requests$}))
          (t/is (= 1 (count @requests)))
-         (rx/push! response {:revn 1})
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "recovered save lands"))
@@ -897,7 +975,7 @@
       (ptk/emit! store (dps/initialize-persistence))
       (await (async/wait-for #(= 1 (count @requests)) "only the active request is sent" {:signal requests$}))
       (t/is (= 1 (count @requests)))
-      (rx/push! response {:revn 1})
+      (rx/push! response (thp/save-response 0))
       (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                (empty? (get-in @store [:persistence :queue])))
                                    "active request completes"))
@@ -970,7 +1048,7 @@
      (^:async fn [{:keys [file-id response requests store]}]
        (ptk/emit! store (local-commit file-id) ::dps/force-persist
                   (ptk/data-event ::dps/error))
-       (rx/push! response {:revn 1})
+       (rx/push! response (thp/save-response 0))
        (await (async/wait-for-store store #(= 1 (count (get-in @store [:persistence :queue])))
                                     "acknowledged commit stays queued"))
        (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -997,8 +1075,8 @@
                                             :index {id commit} :status :saving})
                     (dps/initialize-persistence))
          (await (async/wait-for #(= 1 (count @requests)) "the commit is sent again" {:signal requests$}))
-         (t/is (= id (:commit-id (second (first @requests)))))
-         (rx/push! response {:revn 1})
+         (t/is (= [id] (mapv :commit-id (get-in @requests [0 1 :commits]))))
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the resent commit saves"))
@@ -1023,7 +1101,7 @@
                               {:signal (rx/merge requests$ (ptk/input-stream store))}))
        (t/is (= 1 (count @requests)))
        (t/is (= 1 (count (get-in @store [:persistence :queue]))))
-       (rx/push! response {:revn 1})
+       (rx/push! response (thp/save-response 0))
        (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                     "buffered edit saves"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
@@ -1041,7 +1119,7 @@
                                     "synchronous save completes"))
        (t/is (= :saved (get-in @store [:persistence :status])))
        (t/is (empty? (get-in @store [:persistence :queue]))))
-     (fn [_ _] (rx/of {:revn 1})))))
+     (fn [_ _] (rx/of (thp/save-response 0))))))
 
 ;; Leave-page guard tests.
 
@@ -1059,7 +1137,7 @@
        (ptk/emit! store ::dps/force-persist)
        (await (async/wait-for #(seq @requests) "the edit is sent" {:signal requests$}))
        (t/is (contains? @tasks :persistence) "the guard stays on while the save is in flight")
-       (rx/push! response {:revn 1})
+       (rx/push! response (thp/save-response 0))
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the save turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
@@ -1075,14 +1153,14 @@
        (ptk/emit! store (local-commit file-id) ::dps/force-persist)
        (await (async/wait-for #(= 1 (count @requests)) "the first edit is sent" {:signal requests$}))
        (ptk/emit! store (local-commit file-id))
-       (rx/push! response {:revn 1})
+       (rx/push! response (thp/save-response 0))
        (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
                                     "the first save lands"))
        (await (async/settle))
        (t/is (contains? @tasks :persistence) "the buffered edit keeps the guard on")
        (ptk/emit! store ::dps/force-persist)
        (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent" {:signal requests$}))
-       (rx/push! response {:revn 2})
+       (rx/push! response (thp/save-response 1))
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the second save turns the guard off"))
        (t/is (empty? (get-in @store [:persistence :queue])))))))
@@ -1175,7 +1253,7 @@
             (await (async/wait-for #(= 1 (count @requests)) "the edit is sent at once" {:signal requests$}))
             (await (async/settle))
             (t/is (false? @done) "the wait holds while the save is in flight")
-            (rx/push! response {:revn 1})
+            (rx/push! response (thp/save-response 0))
             (await (async/wait-for #(true? @done) "the landed save ends the wait"))
             (t/is (not (dps/unsaved-changes? @store #{file-id}))))))))))
 
@@ -1265,7 +1343,7 @@
                   (->> (get-in @store [:persistence :queue])
                        (mapcat #(get-in @store [:persistence :index % :commits]))
                        (mapv :id))))
-         (rx/push! response {:revn 1})
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the save lands")))))))
 
@@ -1337,15 +1415,1332 @@
   {:type :mod-obj :id uuid/zero :page-id page-id
    :operations [{:type :set :attr :shapes :val ids}]})
 
-(defn- lagged-row
-  "A row of a save answer's `:lagged`: a change stored at `revn` by
-  `session-id`."
+(defn- revision-row
+  "A revision and its changes, as delivered by a GET or WebSocket."
   [file-id revn session-id changes]
   {:id (uuid/next) :file-id file-id :revn revn :session-id session-id :changes changes})
 
 (defn- root-children
   [store file-id page-id]
   (thp/shape-attr store file-id page-id uuid/zero :shapes))
+
+(defn- file-message
+  [file-id peer row]
+  (-> row
+      (dissoc :id)
+      (assoc :type :file-change :file-id file-id :vern 0
+             :profile-id peer :session-id peer :revision-ids [(:id row)])))
+
+(defn- open-catch-up-file
+  ([store file-id load-id page-id data]
+   (open-catch-up-file store file-id load-id page-id data 5))
+  ([store file-id load-id page-id data revn]
+   (let [file (with-meta {:id file-id :vern 0 :revn revn :data data}
+                {::dps/fresh-file-read true})]
+     (ptk/emit! store #(-> %
+                           (assoc :workspace-load-id load-id :current-page-id page-id)
+                           (assoc-in [:files file-id] file)
+                           (dps/file-base-loaded file))))))
+
+(t/deftest ^:async a-different-saved-edit-needs-a-fresh-file-even-without-a-gap
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             edit     (thp/rename-commit file-id page-id shape-id "Original" "Optimistic")]
+         (open-catch-up-file store file-id (uuid/next) page-id (thp/file-data page-id shape-id "Original"))
+         (ptk/emit! store (dch/commit @edit) ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (t/is (= "Optimistic" (thp/shape-name store file-id page-id shape-id)))
+         (rx/push! response (assoc (thp/save-response 5) :edit-matches-request false))
+         (await (async/wait-for #(= 2 (count @requests)) "the confirmed edit needs a fresh file"
+                                {:signal requests$}))
+         (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))
+         (rx/push! response {:id file-id :vern 0 :revn 6 :data (thp/file-data page-id shape-id "Stored")})
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the fresh file settles the save"))
+         (t/is (= "Stored" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= [:update-file-v2 :get-file] (mapv first @requests))))))))
+
+(t/deftest ^:async reconnect-and-forward-gap-share-a-read
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [load-id (uuid/next)
+             page-id (uuid/next)
+             shape-id (uuid/next)
+             data (thp/file-data page-id shape-id "Original")
+             rename (fn [revn name]
+                      (revision-row file-id revn repair-session-id [(thp/rename page-id shape-id name)]))]
+         (open-catch-up-file store file-id load-id page-id data)
+         (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true})
+                    (dps/request-catch-up file-id load-id {:minimum 7}))
+         (await (async/wait-for #(seq @requests) "the incremental read starts" {:signal requests$}))
+         (rx/push! response {:vern 0 :head 7 :through 7 :rows [(rename 6 "First") (rename 7 "Last")]})
+         (await (async/wait-for-store store #(= 7 (get-in @store [:files file-id :revn])) "both rows install"))
+         (t/is (= "Last" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= [[:get-file-changes {:file-id file-id :vern 0 :since 5}]] @requests)))))))
+
+(t/deftest ^:async catch-up-does-not-install-after-the-file-reopens
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [load-id (uuid/next)
+             page-id (uuid/next)
+             shape-id (uuid/next)]
+         (open-catch-up-file store file-id load-id page-id (thp/file-data page-id shape-id "Previous opening"))
+         (ptk/emit! store (dps/request-catch-up file-id load-id {:minimum 6}))
+         (await (async/wait-for #(seq @requests) "the first opening's read starts" {:signal requests$}))
+         (open-catch-up-file store file-id (uuid/next) page-id (thp/file-data page-id shape-id "New opening"))
+         (rx/push! response {:vern 0 :head 6 :through 6
+                             :rows [(revision-row file-id 6 repair-session-id
+                                                  [(thp/rename page-id shape-id "Stale")])]})
+         (await (async/settle))
+         (t/is (= "New opening" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(t/deftest ^:async a-websocket-row-applied-during-catch-up-is-not-applied-twice
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [load-id (uuid/next)
+             page-id (uuid/next)
+             shape-id (uuid/next)
+             row-6  (revision-row file-id 6 repair-session-id [(thp/rename page-id shape-id "Six")])
+             row-7  (revision-row file-id 7 repair-session-id [(thp/rename page-id shape-id "Seven")])]
+         (open-catch-up-file store file-id load-id page-id (thp/file-data page-id shape-id "Five"))
+         (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true}))
+         (await (async/wait-for #(seq @requests) "catch-up starts" {:signal requests$}))
+         (ptk/emit! store (dps/apply-remote-message (file-message file-id repair-session-id row-6) nil))
+         (await (async/wait-for-store store #(= 6 (get-in @store [:files file-id :revn])) "WebSocket installs six"))
+         (rx/push! response {:vern 0 :head 7 :through 7 :rows [row-6 row-7]})
+         (await (async/wait-for-store store #(= 7 (get-in @store [:files file-id :revn])) "catch-up installs seven"))
+         (t/is (= "Seven" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= 2 (get-in @store [:persistence :remote-seq])))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(defn- checked-rename
+  [file-id page-id shape-id from to]
+  (dch/commit {:file-id file-id :file-vern 0 :file-revn 5
+               :redo-changes [(thp/rename page-id shape-id to)]
+               :undo-changes [(update (thp/rename page-id shape-id from) :operations
+                                      #(into [{:type :set-touched :touched nil}] %))]}))
+
+(t/deftest ^:async independent-renames-only-index-the-remote-step
+  (doseq [[source case] [[:websocket :independent] [:catch-up :independent] [:websocket :same-page]
+                         [:websocket :component] [:websocket :unverified]]]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id store requests requests$ response]}]
+         (let [load-id (uuid/next)
+               page-id (uuid/next)
+               peer-page (if (= case :same-page) page-id (uuid/next))
+               shape-id (uuid/next)
+               peer-id (uuid/next)
+               current (cond-> (thp/file-data page-id shape-id "Original")
+                         (= case :component)
+                         (assoc-in [:pages-index page-id :objects shape-id :component-file] (uuid/next)))
+               data (if (= case :same-page)
+                      (thp/add-shape current page-id (get-in (thp/file-data page-id peer-id "Peer original")
+                                                             [:pages-index page-id :objects peer-id]))
+                      (-> current
+                          (update :pages conj peer-page)
+                          (update :pages-index merge (:pages-index (thp/file-data peer-page peer-id "Peer original")))))
+               updated (atom [])
+               local (if (= case :unverified)
+                       (dch/commit {:file-id file-id :file-vern 0 :file-revn 5
+                                    :redo-changes [(update (thp/rename page-id shape-id "Pending") :operations
+                                                           conj {:type :set :attr :blocked
+                                                                 :val (get-in current [:pages-index page-id :objects shape-id :blocked])})]
+                                    :undo-changes [(thp/rename page-id shape-id "Original")]})
+                       (checked-rename file-id page-id shape-id "Original" "Pending"))
+               row (revision-row file-id 6 repair-session-id [(thp/rename peer-page peer-id "Peer changed")])]
+           (await
+            (mock/with-mocks*
+              {cf/flags (if (= source :catch-up) #{:file-catch-up} #{})
+               mw/ask! (mock/stub (fn [{:keys [cmd page-id]}]
+                                    (when (= cmd :index/update)
+                                      (swap! updated conj page-id))
+                                    (rx/empty)))}
+              (open-catch-up-file store file-id load-id page-id data)
+              (ptk/emit! store local)
+              (await (async/wait-for #(= [page-id] @updated) "the worker sees the local edit"))
+              (reset! updated [])
+              (if (= source :catch-up)
+                (do (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true}))
+                    (await (async/wait-for #(seq @requests) "the incremental read starts" {:signal requests$}))
+                    (rx/push! response {:vern 0 :head 6 :through 6 :rows [row]}))
+                (ptk/emit! store (dps/apply-remote-message (file-message file-id repair-session-id row) nil)))
+              (await (async/wait-for-store store #(= 6 (get-in @store [:files file-id :revn])) "the remote rename installs"))
+              (await (async/settle))
+              (t/is (= "Pending" (thp/shape-name store file-id page-id shape-id)))
+              (t/is (= "Peer changed" (thp/shape-name store file-id peer-page peer-id)))
+              (t/is (= (if (= case :independent) [peer-page] [page-id peer-page page-id]) @updated))
+              (ptk/emit! store ::dps/force-persist)
+              (await (async/wait-for #(some (comp #{:update-file-v2} first) @requests) "the local rename is sent"
+                                     {:signal requests$}))
+              (rx/push! response (assoc (thp/rejection (:id @local)) :revn 6))
+              (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue])) "the rejection settles"))
+              (t/is (= "Original" (thp/shape-name store file-id page-id shape-id)))
+              (t/is (= "Peer changed" (thp/shape-name store file-id peer-page peer-id)))))))))))
+
+(t/deftest ^:async catch-up-keeps-a-verified-pending-rename
+  (await
+   (mock/with-mocks*
+     {cf/flags #{:file-catch-up}}
+     (await
+      (with-persistence
+        (^:async fn [{:keys [file-id store requests requests$ response]}]
+          (let [load-id (uuid/next)
+                page-id (uuid/next)
+                remote (uuid/next)
+                local (uuid/next)
+                data (thp/add-shape (thp/file-data page-id remote "Remote original") page-id
+                                    (cts/setup-shape {:id local :type :rect :name "Local original"
+                                                      :parent-id uuid/zero :frame-id uuid/zero}))]
+            (open-catch-up-file store file-id load-id page-id data)
+            (ptk/emit! store (checked-rename file-id page-id local "Local original" "Pending"))
+            (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true}))
+            (await (async/wait-for #(seq @requests) "the read starts" {:signal requests$}))
+            (rx/push! response {:vern 0 :head 6 :through 6
+                                :rows [(revision-row file-id 6 repair-session-id
+                                                     [(thp/rename page-id remote "Peer")])]})
+            (await (async/wait-for-store store #(= 6 (get-in @store [:files file-id :revn])) "the remote rename installs"))
+            (t/is (= "Peer" (thp/shape-name store file-id page-id remote)))
+            (t/is (= "Pending" (thp/shape-name store file-id page-id local)))
+            (t/is (= [:get-file-changes] (mapv first @requests))))))))))
+
+(t/deftest ^:async catch-up-falls-back-when-a-pending-inverse-cannot-recover-the-base
+  (await
+   (mock/with-mocks*
+     {cf/flags #{:file-catch-up}}
+     (await
+      (with-persistence
+        (^:async fn [{:keys [file-id store requests requests$ response]}]
+          (let [load-id (uuid/next)
+                page-id (uuid/next)
+                shape-id (uuid/next)
+                data (thp/file-data page-id shape-id "Original")
+                remote [(thp/rename page-id shape-id "Peer")]]
+            (open-catch-up-file store file-id load-id page-id data)
+            (ptk/emit! store (checked-rename file-id page-id shape-id "Not the original" "Pending"))
+            (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true}))
+            (await (async/wait-for #(seq @requests) "the incremental read starts" {:signal requests$}))
+            (rx/push! response {:vern 0 :head 6 :through 6 :rows [(revision-row file-id 6 repair-session-id remote)]})
+            (await (async/wait-for #(= 2 (count @requests)) "the read falls back" {:signal requests$}))
+            (rx/push! response {:id file-id :vern 0 :revn 6 :data (thp/file-data page-id shape-id "Peer")})
+            (await (async/wait-for-store store #(= 6 (get-in @store [:files file-id :revn])) "the server base installs"))
+            (t/is (= "Pending" (thp/shape-name store file-id page-id shape-id)))
+            (t/is (get-in @store [:persistence :buffer 0 :undo-uncertain]))
+            (t/is (= [:get-file-changes :get-file] (mapv first @requests))))))))))
+
+(t/deftest ^:async catch-up-reports-a-missed-restore-only-after-installing-it
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [load-id (uuid/next)
+             page-id (uuid/next)
+             shape-id (uuid/next)]
+         (open-catch-up-file store file-id load-id page-id (thp/file-data page-id shape-id "Before restore"))
+         (ptk/emit! store (checked-rename file-id page-id shape-id "Before restore" "Pending"))
+         (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true}))
+         (await (async/wait-for #(seq @requests) "the incremental read starts" {:signal requests$}))
+         (rx/push! response {:vern 1 :head 6 :reload true})
+         (await (async/wait-for #(= 2 (count @requests)) "a full read starts" {:signal requests$}))
+         (rx/push! response {:id file-id :vern 1 :revn 6 :data (thp/file-data page-id shape-id "Restored")})
+         (await (async/wait-for-store store #(= :file-restored (get-in @store [::modal/modal :type])) "the restore is announced"))
+         (let [notice (::modal/modal @store)]
+           (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= {:unsaved true} (:props notice)))
+           (ptk/emit! store #(dps/file-base-loaded % (vary-meta (get-in % [:files file-id])
+                                                                assoc ::dps/fresh-file-read true))
+                      (dps/request-catch-up file-id load-id {:reconnected true}))
+           (await (async/wait-for #(= 3 (count @requests)) "the restored file starts another read" {:signal requests$}))
+           (ptk/emit! store (dps/reconcile-restored-file {:file-id file-id :vern 1 :label "Version"}))
+           (rx/push! response {:vern 1 :head 7 :through 7
+                               :rows [(revision-row file-id 7 repair-session-id
+                                                    [(thp/rename page-id shape-id "After restore")])]})
+           (await (async/wait-for-store store #(= 7 (get-in @store [:files file-id :revn])) "the duplicate did not cancel recovery"))
+           (await (async/settle))
+           (t/is (= notice (::modal/modal @store)))
+           (t/is (= [:get-file-changes :get-file :get-file-changes] (mapv first @requests)))))))))
+
+(t/deftest ^:async a-restore-recovers-newer-changes-and-unblocks-other-files
+  (await
+   (mock/with-mocks*
+     {cf/flags #{:file-catch-up}}
+     (await
+      (with-persistence
+        (^:async fn [{:keys [file-id store requests requests$ response]}]
+          (let [load-id (uuid/next)
+                page-id (uuid/next)
+                shape-id (uuid/next)
+                other-file-id (uuid/next)
+                old-file (checked-rename file-id page-id shape-id "Before restore" "Pending")
+                other-file (local-commit other-file-id)]
+            (open-catch-up-file store file-id load-id page-id (thp/file-data page-id shape-id "Before restore"))
+            (ptk/emit! store (dps/reconcile-restored-file {:file-id file-id :vern 1 :label "Version"}))
+            (await (async/wait-for #(seq @requests) "the restore GET starts" {:signal requests$}))
+            (ptk/emit! store old-file other-file ::dps/force-persist)
+            (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                         "both files have edits waiting to save"))
+            (ptk/emit! store
+                       (dps/apply-remote-message
+                        (assoc (file-message file-id repair-session-id
+                                             (revision-row file-id 7 repair-session-id
+                                                           [(thp/rename page-id shape-id "After restore")]))
+                               :vern 1)
+                        nil))
+            (rx/push! response {:id file-id :vern 1 :revn 6 :data (thp/file-data page-id shape-id "Restored")})
+            (await (async/wait-for #(= 2 (count @requests)) "the older GET is retried" {:signal requests$}))
+            (t/is (= 0 (get-in @store [:files file-id :vern])))
+            (rx/push! response {:id file-id :vern 1 :revn 7 :data (thp/file-data page-id shape-id "After restore")})
+            (await (async/wait-for #(= 3 (count @requests)) "the unrelated edit can be sent" {:signal requests$}))
+            (t/is (= [:get-file :get-file :update-file-v2] (mapv first @requests)))
+            (t/is (= other-file-id (get-in @requests [2 1 :id])))
+            (t/is (= "After restore" (thp/shape-name store file-id page-id shape-id)))
+            (t/is (true? (get-in @store [::modal/modal :props :unsaved]))))))))))
+
+(defn- ^:async check-catch-up-settles-save-in-order
+  [same-page]
+  (let [timer (rx/subject)
+        sent 40
+        until 43
+        saved 44
+        head 45]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{:file-catch-up}
+        rx/timer (mock/stub (fn [ms]
+                              (if (= ms @#'dps/unseen-changes-timeout-ms) timer (rx/subject))))}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$ response]}]
+            (let [load-id (uuid/next)
+                  page-id (uuid/next)
+                  peer-page (if same-page page-id (uuid/next))
+                  peer-id (uuid/next)
+                  local-id (uuid/next)
+                  local-data (thp/file-data page-id local-id "Local original")
+                  peer-data (thp/file-data peer-page peer-id "Peer original")
+                  data (if same-page
+                         (thp/add-shape local-data page-id (get-in peer-data [:pages-index page-id :objects peer-id]))
+                         (-> local-data
+                             (update :pages conj peer-page)
+                             (update :pages-index merge (:pages-index peer-data))))
+                  commit (checked-rename file-id page-id local-id "Local original" "Saved edit")
+                  prior (mapv (fn [revn]
+                                (revision-row file-id revn repair-session-id
+                                              [(thp/rename peer-page peer-id (str "Peer " revn))]))
+                              [41 42 43])
+                  answer (assoc (thp/save-response until) :recovery (thp/recovery :catch-up sent prior))
+                  own (peek (:written answer))
+                  applied (atom nil)
+                  later (revision-row file-id head repair-session-id [(thp/rename peer-page peer-id "Later")])]
+              (open-catch-up-file store file-id load-id page-id data sent)
+              (ptk/emit! store commit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @requests)) "the local rename is sent" {:signal requests$}))
+              (t/is (= sent (get-in @requests [0 1 :revn])))
+              (ptk/emit! store (checked-rename file-id page-id local-id "Saved edit" "Still pending")
+                         (dps/request-catch-up file-id load-id {:minimum head}))
+              (rx/push! response answer)
+              (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/save-result])
+                                           "the save is waiting for its predecessor"))
+              (rx/push! timer :tick)
+              (await (async/wait-for #(= 2 (count @requests)) "the predecessor read starts" {:signal requests$}))
+              (t/is (= [:get-file-changes {:file-id file-id :vern 0 :since sent :until until
+                                           :confirm-revn saved :confirm-id (:id own)}]
+                       (second @requests)))
+              (->> (ptk/input-stream store)
+                   (rx/filter (ptk/type? ::dch/rebase-commits))
+                   (rx/map (comp :changes deref))
+                   (rx/filter seq)
+                   (rx/take 1)
+                   (rx/subs! #(reset! applied %)))
+              (rx/push! response {:vern 0 :head head :through until :rows prior
+                                  :confirmed-row (select-keys own [:revn :id])})
+              (await (async/wait-for #(= 3 (count @requests)) "the later demand is read separately" {:signal requests$}))
+              (t/is (= [:get-file-changes {:file-id file-id :vern 0 :since saved}] (last @requests)))
+              (t/is (= (if same-page
+                         ["Saved edit" "Local original" "Peer 41" "Peer 42" "Peer 43" "Saved edit" "Still pending"]
+                         ["Peer 41" "Peer 42" "Peer 43"])
+                       (into [] (comp (mapcat :operations) (filter #(= :name (:attr %))) (map :val)) @applied)))
+              (t/is (= "Peer 43" (thp/shape-name store file-id peer-page peer-id)))
+              (t/is (= "Still pending" (thp/shape-name store file-id page-id local-id)))
+              (rx/push! response {:vern 0 :head head :through head :rows [later]})
+              (await (async/wait-for-store store #(= head (get-in @store [:files file-id :revn])) "the last revision installs"))
+              (t/is (= "Later" (thp/shape-name store file-id peer-page peer-id)))
+              (t/is (= "Still pending" (thp/shape-name store file-id page-id local-id)))
+              (t/is (= 4 (get-in @store [:persistence :remote-seq]))
+                    "only peer rows count as remote deltas")
+              (t/is (= 1 (count (filter #(= :update-file-v2 (first %)) @requests))))))))))))
+
+(t/deftest ^:async catch-up-rebases-the-save-and-the-pending-edit-over-the-same-page
+  (await (check-catch-up-settles-save-in-order true)))
+
+(t/deftest ^:async catch-up-installs-predecessors-on-an-independent-page-before-settling
+  (await (check-catch-up-settles-save-in-order false)))
+
+(defn- ^:async check-save-catch-up-demand
+  [{:keys [winner reconnect-before demand-after follow-up] head :head :or {head 44}}]
+  (let [timer (rx/subject)
+        save-rpc (rx/subject)
+        bounded-rpc (rx/subject)
+        next-rpc (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{:file-catch-up}
+        rx/timer (mock/stub (fn [ms]
+                              (if (= ms @#'dps/unseen-changes-timeout-ms) timer (rx/subject))))}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$]}]
+            (let [load-id   (uuid/next)
+                  page-id   (uuid/next)
+                  peer-page (uuid/next)
+                  local-id  (uuid/next)
+                  peer-id   (uuid/next)
+                  peer      (uuid/next)
+                  peer-data (thp/file-data peer-page peer-id "Peer original")
+                  data      (-> (thp/file-data page-id local-id "Local original")
+                                (update :pages conj peer-page)
+                                (update :pages-index merge (:pages-index peer-data)))
+                  edit      (checked-rename file-id page-id local-id "Local original" "Saved")
+                  pending   (checked-rename file-id page-id local-id "Saved" "Pending")
+                  row       (fn [revn] (revision-row file-id revn peer
+                                                     [(thp/rename peer-page peer-id (str "Peer " revn))]))
+                  prior     (mapv row [41 42 43])
+                  answer    (assoc (thp/save-response 43) :recovery (thp/recovery :catch-up 40 prior))
+                  own       (select-keys (peek (:written answer)) [:revn :id])
+                  bounded   {:vern 0 :head head :through 43 :rows prior :confirmed-row own}]
+              (open-catch-up-file store file-id load-id page-id data 40)
+              (ptk/emit! store edit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @requests)) "the local save is sent" {:signal requests$}))
+              (ptk/emit! store pending)
+              (when reconnect-before
+                (ptk/emit! store (dps/request-catch-up file-id load-id {:reconnected true})))
+              (rx/push! save-rpc answer)
+              (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @edit) ::dps/save-result])
+                                           "the save is waiting for its predecessors"))
+              (rx/push! timer :tick)
+              (await (async/wait-for #(= 2 (count @requests)) "the bounded read starts" {:signal requests$}))
+              (t/is (= [:get-file-changes {:file-id file-id :vern 0 :since 40 :until 43
+                                           :confirm-revn 44 :confirm-id (:id own)}]
+                       (second @requests)))
+              (when demand-after
+                (ptk/emit! store (dps/request-catch-up file-id load-id demand-after)))
+
+              (if (= winner :websocket)
+                (doseq [delta prior]
+                  (ptk/emit! store (dps/apply-remote-message (file-message file-id peer delta) nil))
+                  (await (async/wait-for-store store #(>= (get-in @store [:files file-id :revn]) (:revn delta))
+                                               "the exact WebSocket revision is installed")))
+                (rx/push! bounded-rpc bounded))
+              (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                           "the confirmed save leaves the queue"))
+              (await (async/settle))
+              (when (= winner :websocket)
+                (rx/push! bounded-rpc bounded)
+                (await (async/settle)))
+              (t/is (= 44 (get-in @store [:files file-id :revn])))
+              (t/is (= "Peer 43" (thp/shape-name store file-id peer-page peer-id)))
+              (t/is (= "Pending" (thp/shape-name store file-id page-id local-id)))
+              (t/is (= 3 (get-in @store [:persistence :remote-seq]))
+                    "the predecessors are installed only once")
+
+              (if follow-up
+                (let [[cmd revn] follow-up
+                      peer-name (str "Peer " (if (= revn 44) 43 revn))]
+                  (await (async/wait-for #(= 3 (count @requests)) "the remaining demand starts a follow-up"
+                                         {:signal requests$}))
+                  (t/is (= [:update-file-v2 :get-file-changes cmd] (mapv first @requests)))
+                  (case cmd
+                    :get-file
+                    (do
+                      (t/is (= "no-store" (-> @requests peek second meta ::rp/cache)))
+                      (rx/push! next-rpc {:id file-id :vern 0 :revn revn
+                                          :data (-> data
+                                                    (assoc-in [:pages-index page-id :objects local-id :name] "Saved")
+                                                    (assoc-in [:pages-index peer-page :objects peer-id :name] peer-name))}))
+                    :get-file-changes
+                    (do
+                      (t/is (= {:file-id file-id :vern 0 :since 44} (-> @requests peek second)))
+                      (rx/push! next-rpc {:vern 0 :head revn :through revn
+                                          :rows (if (= revn 44) [] [(row revn)])})))
+                  (await (async/wait-for-store store #(and (nil? (get-in @store [:persistence :catch-up]))
+                                                           (nil? (get-in @store [:persistence :reconciliations file-id])))
+                                               "the follow-up satisfies the remaining demand"))
+                  (t/is (= revn (get-in @store [:files file-id :revn])))
+                  (t/is (= peer-name (thp/shape-name store file-id peer-page peer-id)))
+                  (t/is (= "Pending" (thp/shape-name store file-id page-id local-id)))
+                  (t/is (= 3 (count @requests))))
+                (do
+                  (t/is (= [:update-file-v2 :get-file-changes] (mapv first @requests)))
+                  (t/is (nil? (get-in @store [:persistence :catch-up])))
+                  (t/is (not (:undo-uncertain (first (get-in @store [:persistence :buffer])))))))))
+          (fn [cmd params]
+            (->> (case cmd
+                   :update-file-v2 save-rpc
+                   :get-file-changes (if (:until params) bounded-rpc next-rpc)
+                   :get-file next-rpc
+                   (rx/empty))
+                 (rx/take 1)
+                 (rx/observe-on :async)))))))))
+
+(t/deftest ^:async exact-websocket-proof-retires-the-saves-incremental-read
+  (await (check-save-catch-up-demand {:winner :websocket})))
+
+(t/deftest ^:async exact-websocket-proof-keeps-a-later-revision-demand
+  (await (check-save-catch-up-demand {:winner :websocket :demand-after {:minimum 45}
+                                      :follow-up [:get-file 45]})))
+
+(t/deftest ^:async exact-websocket-proof-keeps-a-reconnect-the-bounded-read-took
+  (await (check-save-catch-up-demand {:winner :websocket :reconnect-before true
+                                      :follow-up [:get-file 44]})))
+
+(t/deftest ^:async exact-websocket-proof-keeps-a-reconnect-during-the-bounded-read
+  (await (check-save-catch-up-demand {:winner :websocket :demand-after {:reconnected true}
+                                      :follow-up [:get-file 44]})))
+
+(t/deftest ^:async exact-websocket-proof-keeps-a-forced-full-read
+  (await (check-save-catch-up-demand {:winner :websocket :demand-after {:force-reload true}
+                                      :follow-up [:get-file 44]})))
+
+(t/deftest ^:async a-completed-bounded-read-covers-the-reconnect-it-took
+  (await (check-save-catch-up-demand {:winner :get :reconnect-before true})))
+
+(t/deftest ^:async a-completed-bounded-read-keeps-a-later-reconnect
+  (await (check-save-catch-up-demand {:winner :get :demand-after {:reconnected true}
+                                      :follow-up [:get-file-changes 44]})))
+
+(t/deftest ^:async a-completed-bounded-read-recovers-a-newer-head-separately
+  (await (check-save-catch-up-demand {:winner :get :head 45
+                                      :follow-up [:get-file-changes 45]})))
+
+(defn- ^:async check-save-catch-up-falls-back
+  [fault]
+  (let [timer (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{:file-catch-up}
+        rx/timer (mock/stub (fn [ms]
+                              (if (= ms @#'dps/unseen-changes-timeout-ms) timer (rx/subject))))}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$ response]}]
+            (let [page-id (uuid/next)
+                  shape-id (uuid/next)
+                  peer-id (uuid/next)
+                  load-id (uuid/next)
+                  data (thp/add-shape (thp/file-data page-id shape-id "Original") page-id
+                                      (cts/setup-shape {:id peer-id :type :rect :name "Peer original"
+                                                        :parent-id uuid/zero :frame-id uuid/zero}))
+                  edit (checked-rename file-id page-id shape-id
+                                       (if (= fault :unsafe-inverse) "Wrong old name" "Original")
+                                       "Local")
+                  row (revision-row file-id 6 repair-session-id [(thp/rename page-id peer-id "Incremental")])
+                  answer (assoc (thp/save-response 6) :recovery (thp/recovery :catch-up 5 [row]))
+                  own (select-keys (peek (:written answer)) [:id :revn])
+                  incremental {:vern 0 :head 7 :through 6 :rows [row] :confirmed-row own}]
+              (open-catch-up-file store file-id load-id page-id data)
+              (ptk/emit! store edit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+              (rx/push! response answer)
+              (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @edit) ::dps/save-result])
+                                           "the save is waiting for the peer"))
+              (rx/push! timer :tick)
+              (await (async/wait-for #(= 2 (count @requests)) "the incremental read starts" {:signal requests$}))
+              (rx/push! response (case fault
+                                   :wrong-id (assoc-in incremental [:confirmed-row :id] (uuid/next))
+                                   :invalid-get (assoc incremental :rows [])
+                                   :unsafe-inverse incremental))
+              (await (async/wait-for #(= 3 (count @requests)) "the full read replaces the unsafe replay"
+                                     {:signal requests$}))
+              (t/is (= "Peer original" (thp/shape-name store file-id page-id peer-id)))
+              (rx/push! response {:id file-id :vern 0 :revn 7
+                                  :data (assoc-in data [:pages-index page-id :objects shape-id :name] "Stored")})
+              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                           "the fresh file settles the save"))
+              (t/is (= "Stored" (thp/shape-name store file-id page-id shape-id)))
+              (t/is (= [:update-file-v2 :get-file-changes :get-file] (mapv first @requests)))))))))))
+
+(t/deftest ^:async catch-up-cannot-confirm-a-different-id-for-the-saved-edit
+  (await (check-save-catch-up-falls-back :wrong-id)))
+
+(t/deftest ^:async catch-up-cannot-settle-a-save-from-an-incomplete-get
+  (await (check-save-catch-up-falls-back :invalid-get)))
+
+(t/deftest ^:async catch-up-cannot-settle-a-save-with-an-unsafe-local-inverse
+  (await (check-save-catch-up-falls-back :unsafe-inverse)))
+
+(defn- open-linked-library
+  [store file-id library]
+  (ptk/emit! store #(-> %
+                        (assoc-in [:files (:id library)] (assoc library :library-of file-id))
+                        (dps/file-base-loaded library))))
+
+(defn- library-reload-answer
+  [library-id page-id]
+  (let [peer (uuid/next)
+        rows (mapv #(revision-row library-id % peer [{:type :mod-page :id page-id :name "Peer"}])
+                   [41 42 43])]
+    (assoc (thp/save-response 43) :recovery (thp/recovery :reload 40 rows))))
+
+(defn- get-save-and-read-requests
+  [requests]
+  (filterv (comp #{:update-file-v2 :get-file :get-file-changes} first) @requests))
+
+(defn- ^:async answer-reconciliation
+  [store read result]
+  (let [applied (async/observe
+                 (->> (ptk/input-stream store)
+                      (rx/filter (ptk/type? ::dps/reconciliation-result))
+                      (rx/take 1)))]
+    (if (instance? js/Error result)
+      (rx/error! read result)
+      (rx/push! read result))
+    (await applied)))
+
+(t/deftest ^:async a-restored-linked-library-settles-its-save-and-keeps-the-consumer-open
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{}}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$]}]
+            (let [library-id (uuid/next)
+                  lib-page   (uuid/next)
+                  lib-shape  (uuid/next)
+                  load-id    (uuid/next)
+                  page-id    (uuid/next)
+                  shape-id   (uuid/next)
+                  synced-at  (ct/now)
+                  link       {:library-of file-id :synced-at synced-at :is-indirect true}
+                  library    (merge link {:id library-id :vern 0 :revn 40
+                                          :data (thp/file-data lib-page lib-shape "Original library")})
+                  restored   {:id library-id :vern 93 :revn 45
+                              :data (thp/file-data lib-page lib-shape "Restored library")}]
+              (open-catch-up-file store file-id load-id page-id (thp/file-data page-id shape-id "Consumer"))
+              (open-linked-library store file-id library)
+              (ptk/emit! store #(assoc-in % [:workspace-local :selected] #{shape-id})
+                         (checked-rename library-id lib-page lib-shape "Original library" "Confirmed")
+                         ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count (get-save-and-read-requests requests)))
+                                     "the first library edit is sent" {:signal requests$}))
+              (rx/push! save (library-reload-answer library-id lib-page))
+              (await (async/wait-for #(= 2 (count (get-save-and-read-requests requests)))
+                                     "the confirmed write starts a full read" {:signal requests$}))
+              (t/is (= "no-store" (::rp/cache (meta (get-in @requests [1 1])))))
+              (ptk/emit! store (checked-rename library-id lib-page lib-shape "Confirmed" "Queued")
+                         ::dps/force-persist)
+              (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                           "one old-version edit waits behind the confirmed head"))
+              (ptk/emit! store (checked-rename file-id page-id shape-id "Consumer" "Edited consumer")
+                         ::dps/force-persist)
+              (await (async/wait-for-store store #(= 3 (count (get-in @store [:persistence :queue])))
+                                           "the consumer has a queued edit"))
+              (ptk/emit! store (checked-rename library-id lib-page lib-shape "Queued" "Buffered"))
+              (await (async/wait-for-store store #(= 1 (count (get-in @store [:persistence :buffer])))
+                                           "another old-version edit is buffered"))
+              (await (answer-reconciliation store read restored))
+              (t/is (= "Restored library" (thp/shape-name store library-id lib-page lib-shape)))
+              (t/is (= link (select-keys (get-in @store [:files library-id]) (keys link))))
+              (t/is (= {:vern 93 :latest 45 :through 45}
+                       (select-keys (get-in @store [:persistence :file-order library-id])
+                                    [:vern :latest :through])))
+              (t/is (= [file-id load-id page-id #{shape-id} "Edited consumer"]
+                       [(:current-file-id @store) (:workspace-load-id @store) (:current-page-id @store)
+                        (get-in @store [:workspace-local :selected])
+                        (thp/shape-name store file-id page-id shape-id)]))
+              (t/is (nil? (::modal/modal @store)))
+              (await (async/wait-for #(= 3 (count (get-save-and-read-requests requests)))
+                                     "the consumer can save after the replacement" {:signal requests$}))
+              (t/is (= [[:update-file-v2 library-id] [:get-file library-id] [:update-file-v2 file-id]]
+                       (mapv (fn [[cmd params]] [cmd (:id params)]) (get-save-and-read-requests requests))))
+              (rx/push! save (thp/save-response (get-in (last (get-save-and-read-requests requests)) [1 :revn])))
+              (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                           "the queue is drained"))
+              (t/is (empty? (get-in @store [:persistence :buffer])))
+              (t/is (= 3 (count (get-save-and-read-requests requests))))))
+          (fn [cmd _]
+            (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+                 (rx/take 1)
+                 (rx/observe-on :async)))))))))
+
+(defn- with-confirmed-library-read
+  [scenario]
+  (let [save (rx/subject)
+        reads (atom [])
+        linked-file (atom nil)]
+    (mock/with-mocks*
+      {cf/flags #{}}
+      (await
+       (with-persistence
+         (^:async fn [{:keys [file-id store requests requests$] :as fixture}]
+           (let [library-id (uuid/next)
+                 page-id    (uuid/next)
+                 shape-id   (uuid/next)
+                 edit       (checked-rename library-id page-id shape-id "Original" "Saving")
+                 restored   {:id library-id :vern 20 :revn 45
+                             :data (thp/file-data page-id shape-id "Restored")}]
+             (open-linked-library store file-id {:id library-id :vern 0 :revn 40
+                                                 :data (thp/file-data page-id shape-id "Original")})
+             (ptk/emit! store #(assoc % :workspace-load-id (uuid/next))
+                        edit ::dps/force-persist)
+             (await (async/wait-for #(= 1 (count (get-save-and-read-requests requests)))
+                                    "the library edit is sent" {:signal requests$}))
+             (rx/push! save (library-reload-answer library-id page-id))
+             (await (async/wait-for #(= 2 (count (get-save-and-read-requests requests)))
+                                    "the confirmed edit starts a read" {:signal requests$}))
+             (t/is (true? (get-in @store [:persistence :index (:id @edit) :confirmed])))
+             (await (scenario (assoc fixture :library-id library-id :page-id page-id :shape-id shape-id
+                                     :entry-id (:id @edit) :read (first @reads) :reads reads :save save
+                                     :restored restored :linked-file linked-file)))))
+         (fn [cmd params]
+           (->> (case cmd
+                  :update-file-v2 save
+                  :get-file (if (= "no-store" (::rp/cache (meta params)))
+                              (let [read (rx/subject)]
+                                (swap! reads conj read)
+                                read)
+                              (rx/of @linked-file))
+                  :unlink-file-from-library (rx/of nil)
+                  :get-file-libraries (rx/of [])
+                  :link-file-to-library (rx/of [])
+                  :get-file-object-thumbnails (rx/of {})
+                  (rx/empty))
+                (rx/take 1)
+                (rx/observe-on :async))))))))
+
+(t/deftest ^:async a-library-restore-read-must-cover-the-confirmation-and-newer-revisions
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id page-id shape-id requests requests$ entry-id read reads restored]}]
+       (await (answer-reconciliation store read (assoc restored :revn 43)))
+       (t/is (= "Saving" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [entry-id] (vec (get-in @store [:persistence :queue]))))
+       (t/is (false? (get-in @store [:persistence :reconciliations library-id :loading])))
+       (ptk/emit! store (#'dps/reconcile-file library-id {:retry true}))
+       (await (async/wait-for #(= 3 (count @requests)) "retry sends only a GET" {:signal requests$}))
+       (ptk/emit! store (dwn/handle-library-change
+                         {:type :library-change :file-id library-id :modified-at (ct/now)
+                          :profile-id (uuid/next) :session-id (uuid/next) :vern 20 :revn 46 :changes []}))
+       (await (async/wait-for-store store #(= 46 (get-in @store [:persistence :reconciliations library-id :minimum]))
+                                    "the same read must now cover the observed revision"))
+       (await (answer-reconciliation store (peek @reads) restored))
+       (t/is (= "Saving" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [entry-id] (vec (get-in @store [:persistence :queue]))))
+       (ptk/emit! store (#'dps/reconcile-file library-id {:retry true}))
+       (await (async/wait-for #(= 4 (count @requests)) "the read retries again" {:signal requests$}))
+       (rx/push! (peek @reads) (assoc restored :revn 46))
+       (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                    "a fresh enough read settles the save"))
+       (t/is (= "Restored" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [:update-file-v2 :get-file :get-file :get-file]
+                (mapv first (get-save-and-read-requests requests))))))))
+
+(t/deftest ^:async a-library-restore-read-does-not-cross-workspace-openings
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id file-id page-id shape-id requests entry-id read restored]}]
+       (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)))
+       (open-linked-library store file-id {:id library-id :vern 0 :revn 42
+                                           :data (thp/file-data page-id shape-id "Reopened")})
+       (await (answer-reconciliation store read restored))
+       (await (async/settle))
+       (t/is (= "Reopened" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [entry-id] (vec (get-in @store [:persistence :queue]))))
+       (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))))
+
+(t/deftest ^:async a-library-restore-read-without-data-does-not-settle-the-head
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id page-id shape-id requests entry-id read restored]}]
+       (await (answer-reconciliation store read (dissoc restored :data)))
+       (t/is (= "Saving" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [entry-id] (vec (get-in @store [:persistence :queue]))))
+       (t/is (false? (get-in @store [:persistence :reconciliations library-id :loading])))
+       (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))))
+
+(t/deftest ^:async a-library-restore-read-cannot-install-after-losing-its-head
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id page-id shape-id requests entry-id read restored]}]
+       (ptk/emit! store (#'dps/commit-persisted {:id entry-id :file-id library-id}))
+       (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                    "the queue no longer has the head the read was for"))
+       (await (answer-reconciliation store read restored))
+       (t/is (= "Saving" (thp/shape-name store library-id page-id shape-id)))
+       (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))))
+
+(t/deftest ^:async a-detached-library-read-settles-without-reloading-the-library
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id file-id requests requests$ read restored save]}]
+       (ptk/emit! store (dwl/unlink-file-from-library file-id library-id)
+                  (local-commit file-id) ::dps/force-persist)
+       (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                                    "the consumer save queues behind the confirmed library edit"))
+       (await (async/wait-for #(some (comp #{:get-file-libraries} first) @requests)
+                              "the library is unlinked" {:signal requests$}))
+       (rx/push! read restored)
+       (await (async/wait-for #(= 3 (count (get-save-and-read-requests requests)))
+                              "the confirmed edit no longer blocks the consumer" {:signal requests$}))
+       (rx/push! save (thp/save-response 0))
+       (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                    "the consumer's save settles"))
+       (t/is (not (contains? (:files @store) library-id)))
+       (t/is (nil? (get-in @store [:persistence :reconciliations library-id])))
+       (t/is (not-any? (comp #{:get-file-object-thumbnails} first) @requests))
+       (t/is (= [[:update-file-v2 library-id] [:get-file library-id] [:update-file-v2 file-id]]
+                (mapv (fn [[cmd params]] [cmd (:id params)]) (get-save-and-read-requests requests))))))))
+
+(defn- ^:async unlink-library
+  [store file-id library-id]
+  (let [cleaned (async/observe
+                 (->> (ptk/input-stream store)
+                      (rx/filter (ptk/type? ::dwl/cleanup-unlinked-libraries))
+                      (rx/take 1)))]
+    (ptk/emit! store (dwl/unlink-file-from-library file-id library-id))
+    (await cleaned)))
+
+(defn- ^:async link-library
+  [{:keys [store file-id library-id linked-file]} file]
+  (let [linked (async/observe
+                (->> (ptk/input-stream store)
+                     (rx/filter (ptk/type? ::dwl/link-file-to-library-finished))
+                     (rx/take 1)))]
+    (reset! linked-file file)
+    (ptk/emit! store (dwl/link-file-to-library file-id library-id))
+    (await linked)
+    (await (async/wait-for-store store #(= (:vern file) (get-in @store [:files library-id :vern]))
+                                 "the linked version is loaded"))))
+
+(defn- ^:async relink-library
+  [{:keys [store file-id library-id] :as fixture} file]
+  (await (unlink-library store file-id library-id))
+  (await (link-library fixture file)))
+
+(defn- ^:async get-library-retry
+  [store]
+  (await (async/wait-for-store store #(= :persistence-reconciliation-failed (get-in @store [:notification :tag]))
+                               "the recovery notice offers Retry"))
+  (get-in @store [:notification :links 0 :callback]))
+
+(defn- ^:async invoke-library-retry
+  [store callback]
+  (await
+   (mock/with-mocks*
+     {st/emit! (mock/stub (fn [event] (ptk/emit! store event)))}
+     (callback)
+     (await (async/settle)))))
+
+(defn- ^:async queue-consumer-save
+  [store file-id]
+  (ptk/emit! store (local-commit file-id) ::dps/force-persist)
+  (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue])))
+                               "the consumer save queues behind the confirmed library edit")))
+
+(defn- ^:async settle-consumer-save
+  [{:keys [store file-id requests requests$ save]}]
+  (await (async/wait-for #(some (fn [[cmd params]] (and (= :update-file-v2 cmd) (= file-id (:id params))))
+                                @requests)
+                         "the consumer save is sent" {:signal requests$}))
+  (rx/push! save (thp/save-response 0))
+  (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                               "the consumer save settles")))
+
+(t/deftest ^:async retry-after-unlink-settles-a-confirmed-library-save-without-reading
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store file-id library-id requests read] :as fixture}]
+       (await (queue-consumer-save store file-id))
+       (await (answer-reconciliation store read (js/Error. "Library read failed")))
+       (let [retry (await (get-library-retry store))]
+         (await (unlink-library store file-id library-id))
+         (await (invoke-library-retry store retry))
+         (t/is (nil? (get-in @store [:persistence :reconciliations library-id])))
+         (t/is (nil? (:notification @store)))
+         (await (settle-consumer-save fixture)))
+       (t/is (not (contains? (:files @store) library-id)))
+       (t/is (not-any? (comp #{:get-file-object-thumbnails} first) @requests))
+       (t/is (= [[:update-file-v2 library-id] [:get-file library-id] [:update-file-v2 file-id]]
+                (mapv (fn [[cmd params]] [cmd (:id params)]) (get-save-and-read-requests requests))))))))
+
+(t/deftest ^:async an-obsolete-library-read-restarts-once-from-the-relinked-version
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store file-id library-id page-id shape-id entry-id requests requests$
+                          read reads restored] :as fixture}]
+       (let [path    [:persistence :reconciliations library-id]
+             attempt (get-in @store path)]
+         (await (queue-consumer-save store file-id))
+         (await (relink-library fixture restored))
+         (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+         (t/is (= 1 (count @reads)) "normal link loading does not start a recovery read")
+         (await (answer-reconciliation store read (assoc restored :revn 90
+                                                         :data (thp/file-data page-id shape-id "Obsolete"))))
+         (t/is (= "Restored" (thp/shape-name store library-id page-id shape-id)))
+         (await (async/wait-for #(= 2 (count @reads)) "the obsolete attempt starts a fresh GET"
+                                {:signal requests$}))
+         (let [next-attempt (get-in @store path)]
+           (t/is (not= (:token attempt) (:token next-attempt)))
+           (t/is (= (select-keys attempt [:entry-id :vern]) (select-keys next-attempt [:entry-id :vern])))
+           (t/is (= (:revn restored) (:minimum next-attempt)))
+           (ptk/emit! store (#'dps/reconciliation-result library-id attempt (assoc restored :revn 100)))
+           (await (async/settle))
+           (t/is (= next-attempt (get-in @store path)) "a retired token cannot settle or restart the new attempt"))
+         (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+         (await (answer-reconciliation store (peek @reads) restored))
+         (await (settle-consumer-save fixture))
+         (t/is (nil? (get-in @store path)))
+         (t/is (= [[:update-file-v2 library-id] [:get-file library-id "no-store"]
+                   [:get-file library-id] [:get-file library-id "no-store"] [:update-file-v2 file-id]]
+                  (mapv (fn [[cmd params]]
+                          (cond-> [cmd (:id params)]
+                            (::rp/cache (meta params)) (conj (::rp/cache (meta params)))))
+                        (get-save-and-read-requests requests)))))))))
+
+(t/deftest ^:async obsolete-library-retry-callbacks-do-not-change-the-active-wait
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store file-id library-id entry-id requests$ read reads]}]
+       (await (answer-reconciliation store read (js/Error. "First read failed")))
+       (let [first-retry (await (get-library-retry store))]
+         (await (invoke-library-retry store first-retry))
+         (await (async/wait-for #(= 2 (count @reads)) "the manual retry starts" {:signal requests$}))
+         (await (answer-reconciliation store (peek @reads) (js/Error. "Retry failed")))
+         (let [retry  (await (get-library-retry store))
+               notice (:notification @store)]
+           (t/is (not= first-retry retry))
+           (await (invoke-library-retry store first-retry))
+           (t/is (= 2 (count @reads)))
+           (t/is (= notice (:notification @store)))
+           (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)))
+           (await (unlink-library store file-id library-id))
+           (await (invoke-library-retry store retry))
+           (t/is (= [entry-id] (vec (get-in @store [:persistence :queue]))))
+           (t/is (= notice (:notification @store)))
+           (t/is (= 2 (count @reads)))))))))
+
+(t/deftest ^:async an-obsolete-library-error-restarts-but-a-current-error-needs-retry
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id entry-id requests$ read reads restored] :as fixture}]
+       (await (relink-library fixture restored))
+       (await (answer-reconciliation store read (js/Error. "Obsolete library read failed")))
+       (await (async/wait-for #(= 2 (count @reads)) "the obsolete error starts a fresh GET" {:signal requests$}))
+       (await (answer-reconciliation store (peek @reads) (js/Error. "The current library read failed")))
+       (await (get-library-retry store))
+       (await (async/settle))
+       (t/is (= 2 (count @reads)))
+       (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+       (t/is (false? (get-in @store [:persistence :reconciliations library-id :loading])))))))
+
+(t/deftest ^:async library-retry-does-not-rearm-the-automatic-read
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store file-id library-id requests requests$ read reads restored] :as fixture}]
+       (let [second-link (assoc restored :vern 21 :revn 46)
+             third-link  (assoc restored :vern 22 :revn 47)]
+         (await (queue-consumer-save store file-id))
+         (await (relink-library fixture restored))
+         (await (answer-reconciliation store read restored))
+         (await (async/wait-for #(= 2 (count @reads)) "the automatic GET starts" {:signal requests$}))
+         (await (relink-library fixture second-link))
+         (await (answer-reconciliation store (peek @reads) second-link))
+         (let [retry (await (get-library-retry store))]
+           (t/is (= 2 (count @reads)))
+           (await (invoke-library-retry store retry)))
+         (await (async/wait-for #(= 3 (count @reads)) "the manual Retry starts" {:signal requests$}))
+         (await (relink-library fixture third-link))
+         (await (answer-reconciliation store (peek @reads) third-link))
+         (let [retry (await (get-library-retry store))]
+           (t/is (= 3 (count @reads)) "a second stale read does not grant another automatic GET")
+           (t/is (= (:revn third-link) (get-in @store [:persistence :reconciliations library-id :minimum])))
+           (await (invoke-library-retry store retry)))
+         (await (async/wait-for #(= 4 (count @reads)) "Retry starts another manual read" {:signal requests$}))
+         (await (answer-reconciliation store (peek @reads) third-link))
+         (await (settle-consumer-save fixture))
+         (t/is (= [library-id file-id]
+                  (into [] (keep (fn [[cmd params]] (when (= :update-file-v2 cmd) (:id params)))) @requests))))))))
+
+(t/deftest ^:async a-relinked-library-read-keeps-the-accumulated-minimum-and-cannot-restore-the-old-version
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store file-id library-id entry-id requests$ read reads restored] :as fixture}]
+       (let [path [:persistence :reconciliations library-id]]
+         (await (queue-consumer-save store file-id))
+         (ptk/emit! store (dwn/handle-library-change
+                           {:type :library-change :file-id library-id :modified-at (ct/now)
+                            :profile-id (uuid/next) :session-id (uuid/next) :vern 20 :revn 60 :changes []}))
+         (await (async/wait-for-store store #(= 60 (:minimum (get-in @store path))) "WebSocket raises the minimum"))
+         (await (relink-library fixture restored))
+         (await (answer-reconciliation store read restored))
+         (await (async/wait-for #(= 2 (count @reads)) "the automatic GET starts" {:signal requests$}))
+         (t/is (= 60 (:minimum (get-in @store path))))
+         (await (answer-reconciliation store (peek @reads) (assoc restored :revn 59)))
+         (let [retry (await (get-library-retry store))]
+           (t/is (= (:revn restored) (get-in @store [:files library-id :revn])))
+           (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+           (await (invoke-library-retry store retry)))
+         (await (async/wait-for #(= 3 (count @reads)) "Retry sends a new GET" {:signal requests$}))
+         (await (answer-reconciliation store (peek @reads) (assoc restored :vern 0 :revn 61)))
+         (let [retry (await (get-library-retry store))]
+           (t/is (= (:vern restored) (get-in @store [:files library-id :vern])))
+           (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+           (await (invoke-library-retry store retry)))
+         (await (async/wait-for #(= 4 (count @reads)) "Retry sends a fresh GET" {:signal requests$}))
+         (await (answer-reconciliation store (peek @reads) (assoc restored :revn 60)))
+         (await (settle-consumer-save fixture)))))))
+
+(defn- ^:async edit-library
+  [{:keys [store library-id page-id shape-id]} from to]
+  (let [commit    (volatile! nil)
+        committed (async/observe
+                   (->> (ptk/input-stream store)
+                        (rx/filter (ptk/type? ::dch/commit))
+                        (rx/filter #(= library-id (:file-id @%)))
+                        (rx/take 1))
+                   :on-next #(vreset! commit @%))]
+    (ptk/emit! store (dch/commit-changes {:file-id library-id
+                                          :redo-changes [(thp/rename page-id shape-id to)]
+                                          :undo-changes [(thp/rename page-id shape-id from)]}))
+    (await committed)
+    (let [{:keys [id undo-group file-vern]} @commit]
+      (ptk/emit! store (dwu/append-undo (assoc (thp/undo-entry commit)
+                                               :translation false :origins #{[library-id file-vern undo-group]})
+                                        false))
+      id)))
+
+(defn- get-library-posts
+  [requests library-id]
+  (into [] (keep (fn [[cmd params]]
+                   (when (and (= :update-file-v2 cmd) (= library-id (:id params)))
+                     params)))
+        @requests))
+
+(t/deftest ^:async a-fresh-library-read-replays-only-edits-of-the-relinked-version
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id page-id shape-id entry-id requests requests$ save
+                          read reads restored] :as fixture}]
+       (await (edit-library fixture "Saving" "Old queued edit"))
+       (ptk/emit! store ::dps/force-persist)
+       (await (async/wait-for-store store #(= 2 (count (get-in @store [:persistence :queue]))) "the old edit queues"))
+       (await (relink-library fixture restored))
+       (await (answer-reconciliation store read restored))
+       (await (async/wait-for #(= 2 (count @reads)) "the automatic GET starts" {:signal requests$}))
+       (let [queued-id (await (edit-library fixture "Restored" "New queued edit"))
+             posts     #(get-library-posts requests library-id)]
+         (ptk/emit! store ::dps/force-persist)
+         (await (async/wait-for-store store #(= 3 (count (get-in @store [:persistence :queue]))) "the new edit queues"))
+         (let [buffered-id (await (edit-library fixture "New queued edit" "New buffered edit"))]
+           (await (async/wait-for-store store #(= [buffered-id] (mapv :id (get-in @store [:persistence :buffer])))
+                                        "a later edit of the new version is buffered"))
+           (await (answer-reconciliation store (peek @reads) restored))
+           (t/is (= "New buffered edit" (thp/shape-name store library-id page-id shape-id)))
+           (await (async/wait-for #(= 2 (count (posts))) "the runner skips the old entry and sends the new edit"
+                                  {:signal requests$}))
+           (ptk/emit! store ::dps/force-persist)
+           (let [{:keys [revn vern]} (peek (posts))]
+             (rx/push! save (thp/save-response revn vern)))
+           (await (async/wait-for #(= 3 (count (posts))) "the buffered edit also saves" {:signal requests$}))
+           (let [{:keys [revn vern]} (peek (posts))]
+             (rx/push! save (thp/save-response revn vern)))
+           (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store)) "the queue drains"))
+           (t/is (= [[0 [entry-id]] [20 [queued-id]] [20 [buffered-id]]]
+                    (mapv (fn [{:keys [vern commits]}] [vern (mapv :commit-id commits)]) (posts))))))))))
+
+(t/deftest ^:async a-library-read-of-a-third-version-must-advance-the-revision-and-cuts-obsolete-undo
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id page-id shape-id requests requests$ read reads restored] :as fixture}]
+       (await (relink-library fixture restored))
+       (await (answer-reconciliation store read restored))
+       (await (async/wait-for #(= 2 (count @reads)) "the automatic GET starts" {:signal requests$}))
+       (await (edit-library fixture "Restored" "An edit of the linked version"))
+       (t/is (= 1 (count (get-in @store [:workspace-undo :items]))))
+       (let [third (assoc restored :vern 29 :data (thp/file-data page-id shape-id "Third version"))]
+         (await (answer-reconciliation store (peek @reads) third))
+         (let [retry (await (get-library-retry store))]
+           (t/is (= "An edit of the linked version" (thp/shape-name store library-id page-id shape-id)))
+           (await (invoke-library-retry store retry)))
+         (await (async/wait-for #(= 3 (count @reads)) "Retry checks the third version again" {:signal requests$}))
+         (await (answer-reconciliation store (peek @reads) (update third :revn inc)))
+         (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                      "the replacement retires the old library edits"))
+         (t/is (= "Third version" (thp/shape-name store library-id page-id shape-id)))
+         (t/is (= 29 (get-in @store [:files library-id :vern])))
+         (t/is (empty? (get-in @store [:workspace-undo :items])))
+         (t/is (empty? (get-in @store [:persistence :buffer])))
+         (t/is (= 1 (count (get-library-posts requests library-id)))))))))
+
+(t/deftest ^:async a-failed-library-replay-keeps-the-visible-edits-and-offers-retry
+  (await
+   (with-confirmed-library-read
+     (^:async fn [{:keys [store library-id entry-id requests requests$ read reads restored] :as fixture}]
+       (await (relink-library fixture restored))
+       (await (answer-reconciliation store read restored))
+       (await (async/wait-for #(= 2 (count @reads)) "the automatic GET starts" {:signal requests$}))
+       (let [buffered-id (await (edit-library fixture "Restored" "Unsaved rename"))]
+         (await (async/wait-for-store store #(= [buffered-id] (mapv :id (get-in @store [:persistence :buffer])))
+                                      "the new edit is buffered"))
+         (let [before (select-keys @store [:files :workspace-undo])
+               queue  (select-keys (:persistence @store) [:index :queue :buffer])]
+           (await
+            (mock/with-mocks*
+              {cpc/process-changes (mock/stub (fn [_ _ _] (throw (js/Error. "Unable to replay the local edit"))))}
+              (await (answer-reconciliation store (peek @reads) restored))
+              (await (get-library-retry store))))
+           (t/is (= before (select-keys @store [:files :workspace-undo])))
+           (t/is (= queue (select-keys (:persistence @store) [:index :queue :buffer])))
+           (t/is (= entry-id (peek (get-in @store [:persistence :queue]))))
+           (t/is (= 1 (count (get-library-posts requests library-id))))))))))
+
+(defn- ^:async flush-and-settle
+  [store]
+  (ptk/emit! store ::dps/force-persist)
+  (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store)) "pending edits are saved")))
+
+(t/deftest ^:async a-library-restore-cuts-a-saved-component-action-and-every-later-undo-entry
+  (let [read       (rx/subject)
+        reload     (atom nil)
+        init-event (fn [type] (mock/stub (fn [& _] (ptk/data-event type {}))))]
+    (await
+     (mock/with-mocks*
+       {cf/flags                     #{}
+        dw/initialize-file           (init-event ::file-requested)
+        dcmt/retrieve-comment-threads (init-event ::threads-requested)
+        dcmt/fetch-profiles          (init-event ::profiles-requested)
+        df/fetch-fonts               (init-event ::fonts-requested)}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$]}]
+            (let [library    (-> (cthf/sample-file :library)
+                                 (ctho/add-simple-component :component :main :main-child)
+                                 (assoc :vern 0 :revn 39))
+                  consumer   (-> (cthf/sample-file nil :id file-id)
+                                 (cthc/instantiate-component :component :copy :library library
+                                                             :children-labels [:copy-child])
+                                 (cths/update-shape :copy-child :opacity 0.6)
+                                 (cths/add-sample-shape :unrelated :name "Unrelated"))
+                  library-id (:id library)
+                  lib-page   (cthf/current-page-id library)
+                  main-child (cthi/id :main-child)
+                  copy-id    (cthi/id :copy)
+                  copy-child (cthi/id :copy-child)
+                  page-id    (cthf/current-page-id consumer)
+                  shape-id   (cthi/id :unrelated)
+                  group      (uuid/next)
+                  rename     (fn [from to]
+                               (dch/commit-changes {:redo-changes [(thp/rename page-id shape-id to)]
+                                                    :undo-changes [(thp/rename page-id shape-id from)]}))
+                  get-name   #(thp/shape-name store file-id page-id shape-id)
+                  undo       #(:workspace-undo @store)]
+              (ptk/emit! store (dw/initialize-workspace (uuid/next) file-id))
+              (open-catch-up-file store file-id (:workspace-load-id @store) page-id (:data consumer) 0)
+              (open-linked-library store file-id library)
+              (ptk/emit! store #(assoc-in % [:workspace-local :selected] #{copy-id})
+                         (rename "Unrelated" "Earlier"))
+              (await (async/wait-for-store store #(= 1 (count (:items (undo)))) "the first undo entry is recorded"))
+              (await (flush-and-settle store))
+              (ptk/emit! store (dwl/update-component copy-id group))
+              (await (async/wait-for-store store #(= 3 (count (:items (undo))))
+                                           "updating the component records both commits"))
+              (await (flush-and-settle store))
+              (t/is (= [group group] (mapv :undo-group (rest (:items (undo))))))
+              (t/is (= 0.6 (thp/shape-attr store library-id lib-page main-child :opacity)))
+              (t/is (nil? (thp/shape-attr store file-id page-id copy-child :touched)))
+              (t/is (= #{[file-id 2] [library-id 40]}
+                       (into #{} (map (fn [[_ {:keys [id revn]}]] [id (inc revn)]))
+                             (drop 1 (get-save-and-read-requests requests))))
+                    "both sides of the component action are already saved")
+              (ptk/emit! store (rename "Earlier" "Later"))
+              (await (async/wait-for-store store #(= 4 (count (:items (undo)))) "the later edit is recorded"))
+              (await (flush-and-settle store))
+              (let [consumer-before (get-in @store [:files file-id :data])
+                    prefix          (first (:items (undo)))
+                    n               (count (get-save-and-read-requests requests))]
+                (reset! reload (library-reload-answer library-id lib-page))
+                (ptk/emit! store (dch/commit-changes {:file-id library-id :save-undo? false
+                                                      :redo-changes [(thp/rename lib-page main-child "Saved")]
+                                                      :undo-changes []})
+                           ::dps/force-persist)
+                (await (async/wait-for #(= (+ n 2) (count (get-save-and-read-requests requests)))
+                                       "another confirmed library save starts a read" {:signal requests$}))
+                (reset! reload nil)
+                (rx/push! read (assoc library :vern 99 :revn 45))
+                (await (async/wait-for-store store #(dps/terminal-status? (:persistence @store))
+                                             "the restore settles the library save"))
+                (t/is (= [prefix] (:items (undo))) "the consumer entry of the group is also cut")
+                (t/is (= 0 (:index (undo))))
+                (t/is (= consumer-before (get-in @store [:files file-id :data])))
+                (t/is (= #{copy-id} (get-in @store [:workspace-local :selected])))
+                (t/is (empty? (get-in @store [:persistence :buffer])) "the cut makes no compensating edits")
+                (t/is (= (+ n 2) (count (get-save-and-read-requests requests))))
+                (ptk/emit! store dwu/undo)
+                (await (async/wait-for-store store #(= "Unrelated" (get-name)) "undo can still run the earlier edit"))
+                (t/is (= -1 (:index (undo))))
+                (ptk/emit! store dwu/redo)
+                (await (async/wait-for-store store #(= "Earlier" (get-name)) "redo can still run the earlier edit"))
+                (ptk/emit! store dwu/redo)
+                (await (async/settle))
+                (t/is (= "Earlier" (get-name)) "the later edit and the component action cannot be redone")
+                (t/is (= [prefix] (:items (undo))))
+                (t/is (nil? (thp/shape-attr store file-id page-id copy-child :touched)))
+                (await (flush-and-settle store))
+                (t/is (= (+ n 3) (count (get-save-and-read-requests requests)))))))
+          (fn [cmd {:keys [revn vern]}]
+            (->> (case cmd
+                   :update-file-v2 (rx/of (or @reload (thp/save-response revn vern)))
+                   :get-file (rx/take 1 read)
+                   (rx/empty))
+                 (rx/observe-on :async)))))))))
+
+(t/deftest ^:async a-reload-hint-does-not-read-when-all-old-predecessors-already-applied
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store requests requests$ response]}]
+       (let [page-id (uuid/next)
+             shape-id (uuid/next)
+             peer (uuid/next)
+             edit (checked-rename file-id page-id shape-id "Original" "Saved")
+             prior (mapv (fn [revn]
+                           (revision-row file-id revn peer [{:type :mod-page :id page-id :name (str "Page " revn)}]))
+                         [41 42 43])]
+         (open-catch-up-file store file-id (uuid/next) page-id (thp/file-data page-id shape-id "Original") 40)
+         (ptk/emit! store edit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (doseq [row prior]
+           (ptk/emit! store (dps/apply-remote-message (file-message file-id peer row) nil))
+           (await (async/wait-for-store store #(= (:revn row) (get-in @store [:files file-id :revn]))
+                                        "the exact predecessor is applied")))
+         (rx/push! response (assoc (thp/save-response 43) :recovery (thp/recovery :reload 40 prior)))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the proven base settles without a read"))
+         (t/is (= [44 "Page 43" "Saved"]
+                  [(get-in @store [:files file-id :revn])
+                   (get-in @store [:files file-id :data :pages-index page-id :name])
+                   (thp/shape-name store file-id page-id shape-id)]))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async a-reload-hint-goes-straight-to-uncached-reading-and-never-reposts
+  (let [timers (atom [])
+        save (rx/subject)
+        failed-read (rx/subject)
+        fresh-read (rx/subject)
+        reads (atom 0)]
+    (await
+     (mock/with-mocks*
+       {cf/flags #{}
+        rx/timer (mock/stub (fn [ms] (swap! timers conj ms) (rx/subject)))}
+       (await
+        (with-persistence
+          (^:async fn [{:keys [file-id store requests requests$]}]
+            (let [page-id (uuid/next)
+                  shape-id (uuid/next)
+                  peer (uuid/next)
+                  edit (checked-rename file-id page-id shape-id "Original" "Saved")
+                  prior (mapv (fn [revn]
+                                (revision-row file-id revn peer [{:type :mod-page :id page-id :name (str "Page " revn)}]))
+                              [41 42 43])]
+              (open-catch-up-file store file-id (uuid/next) page-id (thp/file-data page-id shape-id "Original") 40)
+              (ptk/emit! store edit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+              (rx/push! save (assoc (thp/save-response 43) :recovery (thp/recovery :reload 40 prior)))
+              (await (async/wait-for #(= 2 (count @requests)) "the full read does not await WebSocket"
+                                     {:signal requests$}))
+              (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))
+              (t/is (not-any? #{@#'dps/unseen-changes-timeout-ms} @timers))
+              (t/is (true? (get-in @store [:persistence :index (:id @edit) :confirmed])))
+              (rx/push! failed-read nil)
+              (await (async/wait-for-store store
+                                           #(false? (get-in @store [:persistence :reconciliations file-id :loading]))
+                                           "the failed read preserves the confirmed head"))
+              (t/is (= [(:id @edit)] (vec (get-in @store [:persistence :queue]))))
+              (ptk/emit! store (#'dps/reconcile-file file-id {:retry true}))
+              (await (async/wait-for #(= 3 (count @requests)) "only the full read is retried" {:signal requests$}))
+              (t/is (= ["no-store" "no-store"] (mapv (comp ::rp/cache meta second) (rest @requests))))
+              (rx/push! fresh-read {:id file-id :vern 0 :revn 44 :data (thp/file-data page-id shape-id "Stored")})
+              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                           "a fresh copy settles the head"))
+              (t/is (= "Stored" (thp/shape-name store file-id page-id shape-id)))
+              (t/is (= [:update-file-v2 :get-file :get-file] (mapv first @requests)))))
+          (fn [cmd _]
+            (->> (case cmd
+                   :update-file-v2 save
+                   :get-file (if (= 1 (swap! reads inc)) failed-read fresh-read)
+                   (rx/empty))
+                 (rx/take 1)
+                 (rx/observe-on :async)))))))))
+
+(defn- repair-answer
+  [revn repair prior]
+  (let [row {:id (uuid/next) :revn (+ 2 revn) :changes repair}]
+    {:revn revn
+     :vern 0
+     :saved-revn (+ 2 revn)
+     :repair row
+     :written [{:id (uuid/next) :revn (inc revn) :kind :edit}
+               (thp/written-row :repair row)]
+     :recovery (if (seq prior) (thp/recovery :wait 0 prior) {:mode :none})}))
+
+(defn- repair-before-edit-answer
+  [repair]
+  {:revn 0
+   :vern 0
+   :saved-revn 2
+   :written [(thp/written-row :repair repair)
+             {:id (uuid/next) :revn 2 :kind :edit}]
+   :recovery {:mode :none}})
+
+(t/deftest ^:async a-fallback-save-with-relinked-media-reads-the-final-image-id
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id    (uuid/next)
+               shape-id   (uuid/next)
+               source-id  (uuid/next)
+               final-id   (uuid/next)
+               fills      (fn [id] [{:fill-image {:id id :width 10 :height 10 :mtype "image/png"}}])
+               data       #(assoc-in (thp/file-data page-id shape-id %1)
+                                     [:pages-index page-id :objects shape-id :fills] (fills %2))
+               edit       (thp/attr-commit file-id page-id shape-id :fills [] (fills source-id))
+               buffered   (thp/rename-commit file-id page-id shape-id "Original" "Buffered")
+               repair-row (revision-row file-id 1 repair-session-id [(thp/set-attr page-id shape-id :opacity 0.7)])
+               repair-msg (assoc (file-message file-id repair-session-id repair-row) :repaired true)]
+           (ptk/emit! store (thp/open-file file-id page-id (data "Original" source-id))
+                      edit ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+           (ptk/emit! store #(assoc-in % [:files file-id :data :pages-index page-id :objects shape-id :name] "Buffered")
+                      buffered)
+           (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer])) "the next edit is buffered"))
+           (rx/push! save (assoc (repair-before-edit-answer repair-row) :media-relinked true))
+           (await (async/wait-for #(= :get-file (first (peek @requests))) "the accepted edit needs a read"
+                                  {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2
+                           :data (assoc-in (data "Original" final-id)
+                                           [:pages-index page-id :objects shape-id :opacity] 0.7)})
+           (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                        "the read settles the confirmed save"))
+           (t/is (= (fills final-id) (thp/shape-attr store file-id page-id shape-id :fills)))
+           (t/is (= "Buffered" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag]))
+                 "the HTTP fallback announces the repair")
+           (ptk/emit! store (ntf/hide :tag dps/file-repaired-tag) (dwn/handle-file-change repair-msg))
+           (await (async/settle))
+           (t/is (nil? (:notification @store)) "the later WebSocket row does not announce it again")
+           (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
 
 (defn- open-with-new-child
   "Opens a page whose root holds `shape-id` and the new child `child`, as
@@ -1355,6 +2750,310 @@
              (thp/open-file file-id page-id
                             (thp/add-shape (thp/file-data page-id shape-id "S") page-id child))
              #(assoc % :session-id session-id)))
+
+(t/deftest ^:async a-repair-in-the-save-answer-goes-after-the-save-and-before-buffered-edits
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             local    (thp/rename-commit file-id page-id shape-id "Original" "Saved")
+             buffered (thp/rename-commit file-id page-id shape-id "Saved" "Buffered")
+             repair   [(thp/rename page-id shape-id "Repaired")
+                       (thp/set-attr page-id shape-id :opacity 0.7)]]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                    local ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Buffered"))
+                    buffered)
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "the second edit is still buffered"))
+         (rx/push! response (repair-answer 0 repair []))
+         (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
+                                      "the repair needs no WebSocket echo"))
+         (t/is (= :update-file-v2 (ffirst @requests)))
+         (t/is (true? (get-in @requests [0 1 :repair-in-response])))
+         (t/is (= "Buffered" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= 0.7 (thp/shape-attr store file-id page-id shape-id :opacity))
+               "the repair changed the view without entering the save queue"))))))
+
+(t/deftest ^:async a-file-change-older-than-an-applied-aggregate-does-not-regress-the-view
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             peer     (uuid/next)
+             edit-id  (uuid/next)
+             msg      {:type :file-change :file-id file-id :vern 0
+                       :profile-id (uuid/next) :session-id peer}]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original")))
+         (ptk/emit! store
+                    (dwn/handle-file-change
+                     (assoc msg :revn 2 :repair-base-revn 0 :repaired true
+                            :revision-ids [edit-id (uuid/next)]
+                            :changes [(thp/rename page-id shape-id "Repaired")])))
+         (await (async/wait-for-store store #(= "Repaired" (thp/shape-name store file-id page-id shape-id))
+                                      "the two revisions are applied as one"))
+         (ptk/emit! store
+                    (dwn/handle-file-change
+                     (assoc msg :revn 1 :revision-ids [edit-id]
+                            :changes [(thp/rename page-id shape-id "Old")])))
+         (await (async/settle))
+         (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id))))))))
+
+(t/deftest ^:async a-repair-waits-for-the-websocket-row-it-actually-depends-on
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             peer     (uuid/next)
+             edit     (thp/rename-commit file-id page-id shape-id "Original" "Saving")
+             prior    (revision-row file-id 1 peer [(thp/rename page-id shape-id "Peer")])]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saving"))
+                    edit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (rx/push! response (repair-answer 1
+                                           [(thp/rename page-id shape-id "Repaired")] [prior]))
+         (await (async/wait-for-store store #(some? (get-in @store [:persistence :index (:id @edit) ::dps/save-result]))
+                                      "The answer is awaiting its predecessor"))
+         (t/is (= "Saving" (thp/shape-name store file-id page-id shape-id)))
+         (ptk/emit! store (dwn/handle-file-change (file-message file-id peer prior)))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "The predecessor makes it safe to apply the repair"))
+         (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async an-opt-in-fallback-keeps-the-edit-over-the-websocket-repair
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             child    (cts/setup-shape {:id (uuid/next) :type :rect :name "New"
+                                        :parent-id uuid/zero :frame-id uuid/zero})
+             edit     (add-child-commit file-id page-id child)
+             repair   (revision-row file-id 1 repair-session-id [(set-root-children page-id [shape-id])])]
+         (open-with-new-child store file-id session-id page-id shape-id child)
+         (ptk/emit! store edit ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+         (rx/push! response (repair-before-edit-answer repair))
+         (await (async/wait-for-store store #(some? (get-in @store [:persistence :index (:id @edit) ::dps/save-result]))
+                                      "the fallback awaits the repair"))
+         (ptk/emit! store (dwn/handle-file-change (assoc (file-message file-id repair-session-id repair)
+                                                         :repaired true)))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the fallback is settled"))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id)))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async the-same-revision-number-cannot-stand-in-for-the-required-row
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               peer     (uuid/next)
+               edit     (thp/rename-commit file-id page-id shape-id "Original" "Saving")
+               prior    (revision-row file-id 1 peer [(thp/rename page-id shape-id "Peer")])
+               wrong    (assoc prior :id (uuid/next))]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saving"))
+                      edit ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+           (ptk/emit! store (dwn/handle-file-change (file-message file-id peer wrong)))
+           (rx/push! save (repair-answer 1
+                                         [(thp/rename page-id shape-id "Repaired")] [prior]))
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the unrelated row cannot authorize the rebase" {:signal requests$}))
+           (t/is (= "Saving" (thp/shape-name store file-id page-id shape-id)))
+           (rx/push! read {:id file-id :vern 0 :revn 4
+                           :data (thp/file-data page-id shape-id "Newest")})
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the server's view settles the save"))
+           (t/is (= "Newest" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async a-reconciliation-read-behind-a-newer-observed-change-is-not-installed
+  (let [read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               peer     (uuid/next)
+               row      #(file-message file-id peer (revision-row file-id %1 peer
+                                                                  [(thp/rename page-id shape-id %2)]))]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                      (dwn/handle-file-change (row 3 "After repair")))
+           (await (async/wait-for #(= :get-file (ffirst @requests))
+                                  "the gap starts a read" {:signal requests$}))
+           (ptk/emit! store
+                      (dwn/handle-file-change
+                       (assoc (row 2 "Repair") :repair-base-revn 0 :repaired true
+                              :revision-ids [(uuid/next) (uuid/next)])))
+           (ptk/emit! store (dwn/handle-file-change (row 4 "Most recent")))
+           (await (async/wait-for-store store #(= 4 (get-in @store [:persistence :reconciliations file-id :minimum]))
+                                        "the read now needs to cover the newer revision"))
+           (rx/push! read {:id file-id :vern 0 :revn 3 :data (thp/file-data page-id shape-id "Too old")})
+           (await (async/wait-for-store store #(= :persistence-reconciliation-failed
+                                                  (get-in @store [:notification :tag]))
+                                        "the view is preserved when the read is too old"))
+           (t/is (= "Original" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (not (dps/terminal-status? (:persistence @store))))
+           (t/is (= [:get-file] (mapv first @requests)))))
+       (fn [cmd _] (if (= cmd :get-file) (->> read (rx/observe-on :async)) (rx/empty)))))))
+
+(t/deftest ^:async reopening-with-the-same-vern-does-not-install-a-read-from-the-previous-opening
+  (let [answer (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [page-id (uuid/next)
+               shape-id (uuid/next)
+               peer (uuid/next)
+               initial (assoc (file-message file-id peer
+                                            (revision-row file-id 3 peer [(thp/rename page-id shape-id "Peer")]))
+                              :repair-base-revn 1 :revision-ids [(uuid/next) (uuid/next)])]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                      #(assoc % :workspace-load-id (uuid/next))
+                      (dwn/handle-file-change initial))
+           (await (async/wait-for #(= :get-file (ffirst @requests))
+                                  "the gap launches a read" {:signal requests$}))
+           ;; Install the next opening without starting its unrelated shell requests.
+           (ptk/emit! store #(-> %
+                                 (assoc :workspace-load-id (uuid/next))
+                                 (assoc-in [:files file-id] {:id file-id :vern 0 :revn 2
+                                                             :data (thp/file-data page-id shape-id "Reopened")})))
+           (rx/push! answer {:id file-id :vern 0 :revn 3 :data (thp/file-data page-id shape-id "Old opening")})
+           (await (async/settle))
+           (t/is (= "Reopened" (thp/shape-name store file-id page-id shape-id)))))
+       (fn [cmd _] (if (= cmd :get-file) (->> answer (rx/observe-on :async)) (rx/empty)))))))
+
+(t/deftest ^:async rejecting-the-rest-of-a-repaired-group-keeps-the-saved-prefix
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store failures]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               group    (uuid/next)
+               edit     (fn [from to]
+                          (let [data @(thp/rename-commit file-id page-id shape-id from to)]
+                            (ptk/data-event ::dch/commit (assoc data :undo-group group))))
+               prefix   (edit "Original" "Saved")
+               later    (edit "Saved" "Rejected")]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                      prefix ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the prefix is sent" {:signal requests$}))
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Rejected"))
+                      later ::dps/force-persist)
+           (rx/push! save (repair-answer 0
+                                         [(thp/rename page-id shape-id "Repaired")] []))
+           (await (async/wait-for #(= 2 (count @requests)) "the rest is sent" {:signal requests$}))
+           (t/is (= [(:id @prefix)] (mapv :id (get-in @store [:persistence :saved]))))
+           (rx/push! save (assoc (thp/rejection (:id @later)) :revn 2))
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the rollback reads instead of undoing the saved prefix" {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2 :data (thp/file-data page-id shape-id "Repaired")})
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the failed suffix settles against the repaired file"))
+           (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= 1 (:kept-saved (ex-data (first @failures)))))
+           (t/is (= [:update-file-v2 :update-file-v2 :get-file] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
+
+(defn- ^:async leave-before-applying-a-repair
+  [already-answered?]
+  (await
+   (with-persistence
+     (^:async fn [{:keys [file-id response requests requests$ store failures]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)
+             group    (uuid/next)
+             edit     (fn [from to]
+                        (ptk/data-event ::dch/commit
+                                        (assoc @(thp/rename-commit file-id page-id shape-id from to)
+                                               :undo-group group)))
+             prefix   (edit "Original" "Saved")
+             later    (edit "Saved" "Rejected")
+             prior    (revision-row file-id 1 (uuid/next) [])
+             answer   (repair-answer 1
+                                     [(thp/rename page-id shape-id "Repaired")] [prior])]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                    prefix ::dps/force-persist)
+         (await (async/wait-for #(= 1 (count @requests)) "the prefix is sent" {:signal requests$}))
+         (ptk/emit! store later ::dps/force-persist)
+         (when already-answered?
+           (rx/push! response answer)
+           (await (async/wait-for-store store
+                                        #(get-in @store [:persistence :index (:id @prefix) ::dps/save-result])
+                                        "the repair is waiting for a predecessor")))
+         (ptk/emit! store #(-> %
+                               (dissoc :current-file-id)
+                               (update-in [:files file-id] dissoc :data))
+                    (ptk/data-event ::dw/finalize-workspace))
+         (when-not already-answered?
+           (rx/push! response answer))
+         (await (async/wait-for #(= 2 (count @requests)) "the prefix settles on exit" {:signal requests$}))
+         (rx/push! response (assoc (thp/rejection (:id @later)) :revn 3))
+         (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                      "the remaining rejected edit settles without compensation"))
+         (t/is (= 1 (:kept-saved (ex-data (first @failures)))))
+         (t/is (= [:update-file-v2 :update-file-v2] (mapv first @requests))))))))
+
+(t/deftest ^:async closing-while-a-repair-awaits-a-predecessor-protects-saved-undo
+  (await (leave-before-applying-a-repair true)))
+
+(t/deftest ^:async a-repair-answer-for-an-unloaded-file-protects-saved-undo
+  (await (leave-before-applying-a-repair false)))
+
+(t/deftest ^:async a-new-vern-releases-a-head-confirmed-during-the-restore
+  (let [save (rx/subject)
+        read (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id requests requests$ store]}]
+         (let [other-id (uuid/next)
+               page-id  (uuid/next)
+               shape-id (uuid/next)
+               edit     (thp/rename-commit file-id page-id shape-id "Original" "Saved")
+               next     (local-commit other-id)
+               restored (thp/file-data page-id shape-id "Restored")]
+           (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                      #(assoc % :workspace-load-id (uuid/next))
+                      edit next ::dps/force-persist)
+           (await (async/wait-for #(= 1 (count @requests)) "the original edit is sent" {:signal requests$}))
+           ;; The new opening has started, but still holds the old data until
+           ;; its file bundle arrives.
+           (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)))
+           (rx/push! save (repair-answer 0
+                                         [(thp/rename page-id shape-id "Repaired")] []))
+           (await (async/wait-for #(some (comp #{:get-file} first) @requests)
+                                  "the late save starts a read against the old vern" {:signal requests$}))
+           (ptk/emit! store (#'dw/bundle-fetched {:file-id file-id :thumbnails {}
+                                                  :file {:id file-id :revn 3 :vern 1 :data restored}}))
+           (await (async/wait-for #(= other-id (get-in @requests [2 1 :id]))
+                                  "the next file can save without waiting for the obsolete read"
+                                  {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 2 :data (thp/file-data page-id shape-id "Old version")})
+           (rx/push! save (thp/save-response 0))
+           (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                        "the queue drains after the restore"))
+           (t/is (= "Restored" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (empty? (get-in @store [:persistence :reconciliations])))
+           (t/is (= [:update-file-v2 :get-file :update-file-v2] (mapv first @requests)))))
+       (fn [cmd _]
+         (->> (case cmd :update-file-v2 save :get-file read (rx/empty))
+              (rx/observe-on :async)))))))
 
 ;; Scenario: the user adds a child to a page with old damage. The server
 ;; repairs the page first, storing a repair that sets the root's children
@@ -1372,18 +3071,16 @@
              child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
                                           :parent-id uuid/zero :frame-id uuid/zero})
              commit     (add-child-commit file-id page-id child)
-             repair     [(set-root-children page-id [shape-id])]]
+             repair     (revision-row file-id 1 repair-session-id [(set-root-children page-id [shape-id])])]
          (open-with-new-child store file-id session-id page-id shape-id child)
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
-         (rx/push! response {:revn 0
-                             :lagged [(lagged-row file-id 1 repair-session-id repair)
-                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
-         (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
+         (rx/push! response (repair-before-edit-answer repair))
+         (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/save-result])
                                       "the saved commit waits for the repair"))
          (t/is (= [(:id @commit)] (vec (get-in @store [:persistence :queue]))))
 
-         (ptk/emit! store (thp/remote-commit file-id 1 repair))
+         (ptk/emit! store (dwn/handle-file-change (assoc (file-message file-id repair-session-id repair) :repaired true)))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the saved commit is acknowledged once the repair arrives"))
@@ -1402,83 +3099,77 @@
              child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
                                           :parent-id uuid/zero :frame-id uuid/zero})
              commit     (add-child-commit file-id page-id child)
-             repair     [(set-root-children page-id [shape-id])]]
+             repair     (revision-row file-id 1 repair-session-id [(set-root-children page-id [shape-id])])]
          (open-with-new-child store file-id session-id page-id shape-id child)
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
-         (ptk/emit! store (thp/remote-commit file-id 1 repair))
-         (rx/push! response {:revn 0
-                             :lagged [(lagged-row file-id 1 repair-session-id repair)
-                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+         (ptk/emit! store (dwn/handle-file-change (assoc (file-message file-id repair-session-id repair) :repaired true)))
+         (await (async/wait-for-store store #(= 1 (get-in @store [:files file-id :revn])) "the repair is applied"))
+         (rx/push! response (repair-before-edit-answer repair))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the save lands at once"))
-         (t/is (= [shape-id (:id child)] (root-children store file-id page-id))))))))
+         (t/is (= [shape-id (:id child)] (root-children store file-id page-id)))
+         (t/is (= [:update-file-v2] (mapv first @requests))))))))
 
-;; Scenario: the save answer lists a repair whose message never reaches the
-;; tab. Proves: the wait is bounded; the saved commit is acknowledged and
-;; the file reloads to get the server's data.
+;; The save names a predecessor whose WebSocket message never arrives.
+;; With incremental recovery disabled, the wait expires and a full read
+;; settles the confirmed save.
 (t/deftest ^:async a-change-that-never-arrives-reloads-the-file
-  (let [reloads   (atom 0)
-        timeout-s (rx/subject)
-        original  (get-method ptk/resolve ::dw/reload-current-file)]
-    (-add-method ptk/resolve ::dw/reload-current-file
-                 (fn [_ _]
-                   (swap! reloads inc)
-                   (ptk/data-event ::reloaded {})))
-    (try
-      (await
-       (with-persistence
-         (^:async fn [{:keys [file-id response requests requests$ store]}]
-           (await
-            (mock/with-mocks*
-              {rx/timer (mock/stub (fn [ms]
-                                     (if (= ms @#'dps/unseen-changes-timeout-ms)
-                                       timeout-s
-                                       (rx/subject))))}
-              (let [session-id (uuid/next)
-                    page-id    (uuid/next)
-                    shape-id   (uuid/next)
-                    child      (cts/setup-shape {:id (uuid/next) :type :rect :name "Rectangle"
-                                                 :parent-id uuid/zero :frame-id uuid/zero})
-                    commit     (add-child-commit file-id page-id child)]
-                (open-with-new-child store file-id session-id page-id shape-id child)
-                (ptk/emit! store commit ::dps/force-persist)
-                (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
-                (rx/push! response {:revn 0
-                                    :lagged [(lagged-row file-id 1 repair-session-id
-                                                         [(set-root-children page-id [shape-id])])
-                                             (lagged-row file-id 2 session-id (:redo-changes @commit))]})
-                (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
-                                             "the saved commit waits for the repair"))
-                (t/is (zero? @reloads))
-                (rx/push! timeout-s :tick)
-                (await (async/wait-for #(= 1 @reloads) "the file reloads"))
-                (t/is (empty? (get-in @store [:persistence :queue]))
-                      "the saved commit is acknowledged")))))))
-      (finally
-        (-add-method ptk/resolve ::dw/reload-current-file original)))))
+  (let [timeout-s (rx/subject)]
+    (await
+     (with-persistence
+       (^:async fn [{:keys [file-id response requests requests$ store]}]
+         (await
+          (mock/with-mocks*
+            {cf/flags #{}
+             rx/timer (mock/stub (fn [ms]
+                                   (if (= ms @#'dps/unseen-changes-timeout-ms)
+                                     timeout-s
+                                     (rx/subject))))}
+            (let [page-id  (uuid/next)
+                  shape-id (uuid/next)
+                  peer     (uuid/next)
+                  commit   (thp/rename-commit file-id page-id shape-id "Original" "Saved")
+                  prior    (revision-row file-id 1 peer [(thp/set-attr page-id shape-id :opacity 0.7)])]
+              (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Saved"))
+                         commit ::dps/force-persist)
+              (await (async/wait-for #(= 1 (count @requests)) "the edit is sent" {:signal requests$}))
+              (rx/push! response (assoc (thp/save-response 1) :recovery (thp/recovery :wait 0 [prior])))
+              (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/save-result])
+                                           "the saved commit waits for the peer"))
+              (t/is (= [:update-file-v2] (mapv first @requests)))
+              (rx/push! timeout-s :tick)
+              (await (async/wait-for #(= 2 (count @requests)) "the file reloads" {:signal requests$}))
+              (rx/push! response {:id file-id :vern 0 :revn 2 :data (thp/file-data page-id shape-id "From server")})
+              (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                           "the fresh file settles the save"))
+              (t/is (= "From server" (thp/shape-name store file-id page-id shape-id)))
+              (t/is (= [:update-file-v2 :get-file] (mapv first @requests)))))))))))
 
 ;; Commit boundaries.
 
-;; Scenario: two edits are buffered and saved together. The request carries
-;; one group per edit, each with its commit id and its own changes, so the
-;; backend can accept or reject them one by one. Proves: merging a buffer
-;; for one request keeps the boundaries between commits.
-(t/deftest ^:async a-save-sends-each-commit-as-its-own-group
+(t/deftest ^:async a-save-preserves-commit-boundaries-and-the-order-of-forward-changes
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
-       (let [commit1 (local-commit file-id)
-             commit2 (local-commit file-id)]
+     (^:async fn [{:keys [file-id session-id response requests requests$ store]}]
+       (let [page-id (uuid/next)
+             rename  (fn [name] {:type :mod-page :id page-id :name name})
+             commit1 (local-commit file-id {:redo-changes [(rename "B") (rename "C")]
+                                            :undo-changes [(rename "B") (rename "A")]})
+             commit2 (local-commit file-id {:redo-changes [(rename "D")]
+                                            :undo-changes [(rename "C")]})]
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "both edits go in one save" {:signal requests$}))
-         (let [[_ params] (first @requests)]
-           (t/is (not (contains? params :changes)))
-           (t/is (= [{:commit-id (:id @commit1) :changes (:redo-changes @commit1)}
-                     {:commit-id (:id @commit2) :changes (:redo-changes @commit2)}]
-                    (:changes-with-metadata params))))
-         (rx/push! response {:revn 1})
+         (t/is (= [[:update-file-v2
+                    {:id file-id :session-id session-id :revn 0 :vern 0 :features #{}
+                     :repair-in-response true
+                     :commits [{:commit-id (:id @commit1)
+                                :changes [(rename "B") (rename "C")]}
+                               {:commit-id (:id @commit2)
+                                :changes [(rename "D")]}]}]]
+                  @requests))
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the save lands")))))))
 
@@ -1497,7 +3188,7 @@
          (ptk/emit! store (local-commit file-id))
          (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
                                       "the second edit waits in the buffer"))
-         (rx/push! response {:revn 1})
+         (rx/push! response (thp/save-response 0))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the first save lands"))
@@ -1505,5 +3196,5 @@
          (t/is (not (released?)) "the buffered edit is not saved yet")
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent" {:signal requests$}))
-         (rx/push! response {:revn 2})
+         (rx/push! response (thp/save-response 1))
          (await (async/wait-for released? "the waiters are released")))))))

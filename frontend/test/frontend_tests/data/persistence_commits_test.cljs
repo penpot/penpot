@@ -101,6 +101,20 @@
     (t/is (= [(:id head)] (vec (:queue pstate'))) "the in-flight entry stays until it is discarded")
     (t/is (not (contains? (:index pstate') (:id lib))))))
 
+(t/deftest a-rollback-keeps-saved-edits-in-a-file-being-previewed
+  (let [file-id (uuid/next)
+        lib-id  (uuid/next)
+        group   (uuid/next)
+        saved   (commit file-id group)
+        bad     (commit lib-id group)
+        head    (pcm/queue-entry [bad])
+        pstate  (assoc (queued head) :saved [saved])
+        plan    (pcm/rollback-plan pstate head {:commit-ids [(:id bad)]
+                                                :preview-file-id file-id})]
+    (t/is (= #{file-id} (:reconcile plan)))
+    (t/is (= [saved] (:kept-saved plan)))
+    (t/is (empty? (:compensate plan)))))
+
 (t/deftest compensation-undoes-newest-first
   (let [c1 {:redo-changes [:r1] :undo-changes [:u1]}
         c2 {:redo-changes [:r2] :undo-changes [:u2]}]
@@ -160,8 +174,9 @@
           "the rest of the undo group goes too")))
 
 (t/deftest rollback-targets-name-the-files-pages-and-page-shapes-of-the-reverted-changes
-  (let [[f1 f2 p1 p2 p3 s1 s2 s3 s4 s5 c1] (repeatedly 11 uuid/next)
-        plan {:files      {f1 {:reverted [{:redo-changes [{:type :add-obj :page-id p1 :id s1}
+  (let [[f1 f2 p1 p2 p3 s1 s2 s3 s4 s5 c1 group] (repeatedly 12 uuid/next)
+        plan {:files      {f1 {:reverted [{:undo-group group
+                                           :redo-changes [{:type :add-obj :page-id p1 :id s1}
                                                           {:type :mov-objects :page-id p1 :shapes [s2 s3]}
                                                           {:type :mod-obj :component-id (uuid/next) :id s4}
                                                           {:type :mod-page :id p2}
@@ -169,6 +184,7 @@
                                                            :comment-thread-id c1}]}]}}
               :compensate [{:file-id f2 :redo-changes [{:type :del-obj :page-id p3 :id s5}]}]}]
     (t/is (= {:file-ids           #{f1 f2}
+              :undo-groups        #{group}
               :page-ids           #{p1 p2 p3}
               :shape-ids          #{s1 s2 s3 s5}
               :comment-thread-ids #{c1}}

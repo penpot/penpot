@@ -186,6 +186,7 @@
 
 (def default-options
   {:update-file {:query-params [:id]}
+   :update-file-v2 {:query-params [:id]}
    :get-raw-file {:rename-to :get-file :raw-transit? true}
 
    :create-file-object-thumbnail
@@ -255,6 +256,7 @@
         {:method method
          :uri (u/join cf/public-uri "api/main/methods/" nid)
          :credentials "include"
+         :cache (::cache (meta params))
          :headers (assoc (get-backend-headers params)
                          "accept" "application/transit+json,text/event-stream,*/*"
                          "x-session-id" (str cf/session-id))
@@ -311,7 +313,10 @@
         (with-retry make-request)
         (make-request)))))
 
-(defmulti cmd! (fn [id _] id))
+(defmulti cmd!
+  "Run an RPC. The default method accepts `::cache` on the params metadata
+  as a Fetch cache mode, not as an RPC parameter."
+  (fn [id _] id))
 
 (defmethod cmd! :default
   [id params]

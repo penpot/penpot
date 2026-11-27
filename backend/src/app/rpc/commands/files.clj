@@ -902,7 +902,7 @@
             f.created_at,
             f.modified_at,
             f.name,
-            f.deleted_at AS will_be_deleted_at,
+            LEAST(f.deleted_at, p.deleted_at) AS will_be_deleted_at,
             ft.media_id AS thumbnail_id,
             row_number() OVER w AS row_num,
             p.team_id
@@ -911,8 +911,7 @@
        LEFT JOIN file_thumbnail AS ft on (ft.file_id = f.id
                                           AND ft.revn = f.revn)
       WHERE p.team_id = ?
-        AND (p.deleted_at > ?::timestamptz OR
-             f.deleted_at > ?::timestamptz)
+         AND LEAST(f.deleted_at, p.deleted_at) > ?::timestamptz
      WINDOW w AS (PARTITION BY f.project_id
                       ORDER BY f.modified_at DESC)
       ORDER BY f.modified_at DESC
@@ -921,8 +920,7 @@
 
 (defn get-team-deleted-files
   [conn team-id]
-  (let [now (ct/now)]
-    (db/exec! conn [sql:team-deleted-files team-id now now])))
+  (db/exec! conn [sql:team-deleted-files team-id (ct/now)]))
 
 (def ^:private schema:get-team-deleted-files
   [:map {:title "get-team-deleted-files"}
@@ -1148,24 +1146,28 @@
 
 ;; --- MUTATION COMMAND: delete-file
 
-(defn- mark-file-deleted
-  [{:keys [::db/conn] :as cfg} team file-id]
-  (let [delay (ldel/get-deletion-delay team)
-        file  (db/update! conn :file
-                          {:deleted-at (ct/in-future delay)}
-                          {:id file-id}
-                          {::db/return-keys [:name :deleted-at
-                                             :project-id :created-at :modified-at]})]
-    ;; Only the mark happens here, so the file disappears at once. The
-    ;; cascade job captures the files using this one as a library,
-    ;; removes the relations and absorbs them: the relations must still
-    ;; exist when the job runs.
+(def ^:private sql:mark-file-deleted
+  "UPDATE file
+      SET deleted_at = LEAST(deleted_at, ?::timestamptz)
+    WHERE id = ?
+   RETURNING name, deleted_at, project_id, created_at, modified_at")
+
+(defn- schedule-file-deletion
+  [{:keys [::db/conn] :as cfg} file-id deleted-at & {:keys [purge]}]
+  (when-let [file (db/exec-one! conn [sql:mark-file-deleted deleted-at file-id])]
     (jobs/submit cfg
                  {::jobs/name :delete-object
-                  ::jobs/params {:object :file
-                                 :deleted-at (:deleted-at file)
-                                 :id file-id}})
+                  ::jobs/params (cond-> {:object :file
+                                         :deleted-at (:deleted-at file)
+                                         :id file-id}
+                                  purge (assoc :purge true))})
     file))
+
+(defn- mark-file-deleted
+  [cfg team file-id]
+  ;; The file disappears at once. The job absorbs it into its dependents
+  ;; if it was a library, so its relations must stay until the job runs.
+  (schedule-file-deletion cfg file-id (ct/in-future (ldel/get-deletion-delay team))))
 
 (def ^:private
   schema:delete-file
@@ -1351,13 +1353,15 @@
 ;; --- MUTATION COMMAND: delete-files-immediatelly
 
 (def ^:private sql:get-delete-team-files-candidates
-  "SELECT f.id
+  "SELECT f.id, LEAST(p.deleted_at, ?::timestamptz) AS deleted_at
     FROM file AS f
     JOIN project AS p ON (p.id = f.project_id)
     JOIN team AS t ON (t.id = p.team_id)
    WHERE t.deleted_at IS NULL
      AND t.id = ?
-     AND f.id = ANY(?::uuid[])")
+     AND f.id = ANY(?::uuid[])
+   ORDER BY f.project_id, f.id
+     FOR UPDATE OF f")
 
 (def ^:private schema:permanently-delete-team-files
   [:map {:title "permanently-delete-team-files"}
@@ -1366,25 +1370,15 @@
 
 (defn- permanently-delete-team-files
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/request-at team-id ids]}]
-  (let [ids (into #{}
-                  d/xf:map-id
-                  (db/exec! conn [sql:get-delete-team-files-candidates team-id
-                                  (db/create-array conn "uuid" ids)]))]
+  (let [files (db/exec! conn [sql:get-delete-team-files-candidates request-at team-id
+                              (db/create-array conn "uuid" ids)])]
 
-    (reduce (fn [acc id]
-              (events/tap :progress {:file-id id :index (inc (count acc)) :total (count ids)})
-              (db/update! conn :file
-                          {:deleted-at request-at}
-                          {:id id}
-                          {::db/return-keys false})
-              (jobs/submit cfg
-                           {::jobs/name :delete-object
-                            ::jobs/params {:object :file
-                                           :deleted-at request-at
-                                           :id id}})
+    (reduce (fn [acc {:keys [id deleted-at]}]
+              (events/tap :progress {:file-id id :index (inc (count acc)) :total (count files)})
+              (schedule-file-deletion cfg id deleted-at :purge true)
               (conj acc id))
             #{}
-            ids)))
+            files)))
 
 (sv/defmethod ::permanently-delete-team-files
   "Mark the specified files to be deleted immediatelly on the
@@ -1400,14 +1394,35 @@
 
 ;; --- MUTATION COMMAND: restore-files-immediatelly
 
-(def ^:private sql:resolve-editable-files
-  "SELECT f.id, f.project_id
-     FROM file AS f
-     JOIN project AS p ON (p.id = f.project_id)
+(def ^:private sql:lock-restore-projects
+  "SELECT p.id
+     FROM project AS p
      JOIN team AS t ON (t.id = p.team_id)
     WHERE t.deleted_at IS NULL
       AND t.id = ?
-      AND f.id = ANY(?::uuid[])")
+      AND EXISTS (SELECT 1 FROM file AS f
+                   WHERE f.project_id = p.id
+                     AND f.id = ANY(?::uuid[])
+                     AND (f.deleted_at IS NOT NULL OR p.deleted_at IS NOT NULL))
+    ORDER BY p.id
+      FOR UPDATE OF p")
+
+(def ^:private sql:lock-restore-files
+  "SELECT f.id,
+          f.project_id,
+          f.deleted_at AS file_deleted_at,
+          p.deleted_at AS project_deleted_at,
+          LEAST(f.deleted_at, p.deleted_at) AS will_be_deleted_at,
+          f.id = ANY(?::uuid[]) AS requested
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+    WHERE f.project_id = ANY(?::uuid[])
+      AND ((f.id = ANY(?::uuid[])
+            AND (f.deleted_at IS NOT NULL OR p.deleted_at IS NOT NULL))
+           OR (p.deleted_at IS NOT NULL
+               AND (f.deleted_at IS NULL OR f.deleted_at > p.deleted_at)))
+    ORDER BY f.project_id, f.id
+      FOR UPDATE OF f")
 
 (def ^:private sql:restore-files
   "UPDATE file SET deleted_at = null, has_media_trimmed = false
@@ -1418,22 +1433,21 @@
     WHERE file_id = ANY(?::uuid[])")
 
 (def ^:private sql:restore-file-changes
-  ;; Only durable history comes back: a snapshot, the rows that carry `label`.
-  ;; Everything else is deliberately left alone. Revisions are born already
-  ;; scheduled for deletion one hour later, and the collector only looks at
-  ;; rows that carry a date, so unmarking one here would keep it in the table
-  ;; for ever. Rows that still carry a legacy payload without a label are
-  ;; garbage that no read path reaches; 0157-migrate-legacy-file-data deletes
-  ;; them, so they must keep their date and go with the collector.
+  ;; Only restore snapshots and explicitly retained revisions. An ephemeral
+  ;; revision must keep its original expiry so the collector can take it.
   ;; Every write moves `updated_at`: the delta passes copy the rows whose
   ;; `updated_at` changed, so a restore that left it stale could be missed.
-  "UPDATE file_change SET deleted_at = null, updated_at = now()
+  "UPDATE file_change
+      SET deleted_at = null, updated_at = ?
     WHERE file_id = ANY(?::uuid[])
-      AND label IS NOT NULL")
+      AND deleted_at IS NOT NULL
+      AND (label IS NOT NULL OR retained)")
 
 (def ^:private sql:restore-file-data
   "UPDATE file_data SET deleted_at = null
-    WHERE file_id = ANY(?::uuid[])")
+    WHERE file_id = ANY(?::uuid[])
+      AND deleted_at IS NOT NULL
+      AND (type <> 'revision' OR metadata -> 'retained' = 'true'::jsonb)")
 
 (def ^:private sql:restore-file-thumbnails
   "UPDATE file_thumbnail SET deleted_at = null
@@ -1490,7 +1504,7 @@
   (let [file-ids (db/create-array conn "uuid" file-ids)]
     (db/exec-one! conn [sql:restore-files file-ids])
     (db/exec-one! conn [sql:restore-file-media-objects file-ids])
-    (db/exec-one! conn [sql:restore-file-changes file-ids])
+    (db/exec-one! conn [sql:restore-file-changes (ct/now) file-ids])
     (db/exec-one! conn [sql:restore-file-data file-ids])
     (db/exec-one! conn [sql:restore-file-thumbnails file-ids])
     (db/exec-one! conn [sql:restore-file-tagged-object-thumbnails file-ids])
@@ -1511,10 +1525,18 @@
          (db/get-update-count))))
 
 (defn- restore-deleted-team-files
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id ids]}]
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id team-id ids]}]
   (teams/check-edition-permissions! conn profile-id team-id)
-  (let [total-files
-        (count ids)
+  (let [requested-ids (db/create-array conn "uuid" ids)
+        project-ids   (into [] d/xf:map-id
+                            (db/exec! conn [sql:lock-restore-projects team-id requested-ids]))
+        candidates    (db/exec! conn [sql:lock-restore-files requested-ids
+                                      (db/create-array conn "uuid" project-ids)
+                                      requested-ids])
+        ;; Use the clock after the locks, not the request or transaction
+        ;; start. A file may expire while waiting for another writer.
+        now           (ct/now)
+        total-files   (count ids)
 
         {:keys [files projects]}
         (reduce (fn [result {:keys [id project-id]}]
@@ -1524,8 +1546,22 @@
                         (update :files conj id)
                         (update :projects conj project-id))))
                 {:files #{} :projects #{}}
-                (db/plan conn [sql:resolve-editable-files team-id
-                               (db/create-array conn "uuid" ids)]))]
+                (filter (fn [{:keys [requested will-be-deleted-at]}]
+                          (and requested
+                               (some? will-be-deleted-at)
+                               (ct/is-after? will-be-deleted-at now)))
+                        candidates))]
+
+    ;; If the project job has not run, removing the project's deletion
+    ;; mark must not restore files the caller did not ask for. Preserve
+    ;; their effective deadline and leave the child cleanup to the worker.
+    (doseq [{:keys [id project-id file-deleted-at project-deleted-at]} candidates]
+      (when (and (contains? projects project-id)
+                 (not (contains? files id))
+                 (some? project-deleted-at)
+                 (or (nil? file-deleted-at)
+                     (ct/is-after? file-deleted-at project-deleted-at)))
+        (schedule-file-deletion cfg id project-deleted-at)))
 
     (when (seq files)
       (restore-files conn files))

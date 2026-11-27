@@ -244,37 +244,73 @@
             (let [elapsed (tpoint)]
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
+(defn reconciliation-context-current?
+  "Whether a recovery read still refers to the visible live file."
+  [state {:keys [file-id load-id vern]}]
+  (let [file (dsh/lookup-file state file-id)]
+    (and (= file-id (:current-file-id state))
+         (= load-id (:workspace-load-id state))
+         (= vern (:vern file))
+         (some? (:data file))
+         (not (get-in state [:workspace-global :preview-id])))))
+
+(defn- apply-workspace-tokens
+  [state resolved-tokens scope]
+  (let [undo-id (js/Symbol)]
+    (rx/concat
+     (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+
+     ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
+     ;; into a single commit-changes. This is not really the best way, the token application
+     ;; should be done with a changes_builder and sending only one `commit-changes` instead
+     ;; of creating lots of `update-shapes`.
+     (rx/of (dwsh/update-shapes-buffer-start))
+     (->> (propagate-tokens state resolved-tokens scope)
+          (rx/catch #(rx/concat
+                      (rx/of (dwsh/update-shapes-buffer-stop))
+                      (rx/throw %))))
+     (rx/of (dwsh/update-shapes-buffer-stop))
+     (rx/of (dwu/commit-undo-transaction undo-id)))))
+
+(defn- apply-reconciled-workspace-tokens
+  [context token-input resolved-tokens scope]
+  (ptk/reify ::apply-reconciled-workspace-tokens
+    ptk/WatchEvent
+    (watch [_ state _]
+      ;; Potok dispatches the token changes and drains the shape buffer
+      ;; and undo transaction synchronously. Delayed layout and text
+      ;; measurement read the live model, not these resolved values.
+      (if (and (reconciliation-context-current? state context)
+               (= token-input (dsh/get-token-resolution-input (dsh/lookup-tokens-status state)
+                                                              (dsh/lookup-tokens-lib state))))
+        (apply-workspace-tokens state resolved-tokens scope)
+        (rx/empty)))))
+
 (defn propagate-workspace-tokens
   "Apply the resolved values of the active tokens to the shapes that use
   them. Without `scope` it covers every page of the file. A `scope` of
   `:page-id` and `:root-ids` limits it to those shapes and their
-  descendants."
+  descendants. A reconciliation `context` of `:file-id`, `:load-id` and
+  `:vern` limits the result to that live opening and the token input
+  that was resolved."
   ([]
    (propagate-workspace-tokens nil))
   ([scope]
+   (propagate-workspace-tokens scope nil))
+  ([scope context]
    (ptk/reify ::propagate-workspace-tokens
      ptk/WatchEvent
      (watch [_ state _]
-       (let [tokens-lib    (dsh/lookup-tokens-lib state)
-             tokens-status (dsh/lookup-tokens-status state)]
-         (when (and tokens-lib tokens-status)
-           (->> (if (contains? cf/flags :tokenscript)
-                  (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
-                  (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
-                (rx/mapcat
-                 (fn [sd-tokens]
-                   (let [undo-id (js/Symbol)]
-                     (rx/concat
-                      (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-
-                      ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                      ;; into a single commit-changes. This is not really the best way, the token application
-                      ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                      ;; of creating lots of `update-shapes`.
-                      (rx/of (dwsh/update-shapes-buffer-start))
-                      (->> (propagate-tokens state sd-tokens scope)
-                           (rx/catch #(rx/concat
-                                       (rx/of (dwsh/update-shapes-buffer-stop))
-                                       (rx/throw %))))
-                      (rx/of (dwsh/update-shapes-buffer-stop))
-                      (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+       (when (or (nil? context) (reconciliation-context-current? state context))
+         (let [tokens-lib    (dsh/lookup-tokens-lib state)
+               tokens-status (dsh/lookup-tokens-status state)]
+           (when (and tokens-lib tokens-status)
+             (let [token-input (when context (dsh/get-token-resolution-input tokens-status tokens-lib))]
+               (->> (if (contains? cf/flags :tokenscript)
+                      (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
+                      (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
+                    (rx/mapcat
+                     (fn [resolved-tokens]
+                       (if context
+                         (rx/of (apply-reconciled-workspace-tokens context token-input resolved-tokens scope))
+                         (apply-workspace-tokens state resolved-tokens scope)))))))))))))

@@ -16,8 +16,10 @@
    [app.main.data.websocket :as dws]
    [app.main.repo :as rp]
    [app.main.router :as rt]
+   [app.main.store :as st]
    [app.util.clipboard :as clipboard]
    [app.util.i18n :as i18n]
+   [app.util.sse :as sse]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -348,3 +350,81 @@
     (t/is (= :error (:level notification)))
     (t/is (= (i18n/tr "errors.generic") (:content notification)))
     (t/is (= ntf/default-timeout (:timeout notification)))))
+
+(defn- ^:async get-restore-toasts
+  [event deleted-files restored-ids]
+  (let [store  (ptk/store {:state {:deleted-files deleted-files}
+                           :on-error #(t/is false (str %))})
+        toasts (atom [])
+        sub    (->> (ptk/input-stream store)
+                    (rx/filter (ptk/type? ::ntf/show))
+                    (rx/subs! (fn [_]
+                                (swap! toasts conj (select-keys (:notification @store) [:content :level])))))]
+    (try
+      (await
+       (mock/with-mocks*
+         {st/state store
+          i18n/tr  (fn [key & args] (pr-str (into [key] args)))
+          rp/cmd!  (mock/stub (fn [cmd _]
+                                (->> (case cmd
+                                       ::sse/restore-deleted-team-files (rx/of #js {:type "end" :data restored-ids})
+                                       :get-projects (rx/of [])
+                                       :get-team-deleted-files (rx/of []))
+                                     (rx/observe-on :async))))}
+         (ptk/emit! store event)
+         (await (async/wait-for-store store #(and (empty? (:deleted-files @store))
+                                                  (not (contains? @store :progress)))
+                                      "the trash refreshes and restore progress clears"))
+         @toasts))
+      (finally
+        (rx/dispose! sub)
+        (rx/dispose! store)))))
+
+(t/deftest ^:async restoring-no-files-shows-the-existing-error
+  (let [file-id (uuid/next)
+        restore (dd/restore-files-immediately {:team-id (uuid/next) :ids #{file-id}})
+        toasts  (await (get-restore-toasts restore {file-id {:name "Expired"}} #{}))]
+    (t/is (= [{:level :error
+               :content (pr-str ["dashboard.errors.error-on-restore-file" "Expired"])}]
+             toasts))))
+
+(t/deftest ^:async a-partial-file-restore-names-the-only-restored-file
+  (let [kept-id (uuid/next)
+        lost-id (uuid/next)
+        restore (dd/restore-files-immediately {:team-id (uuid/next) :ids #{kept-id lost-id}})
+        files   {kept-id {:name "Restored"} lost-id {:name "Expired"}}
+        toasts  (await (get-restore-toasts restore files #{kept-id}))]
+    (t/is (= [{:level :success
+               :content (pr-str ["dashboard.restore-success-notification" "Restored"])}]
+             toasts))))
+
+(t/deftest ^:async a-partial-file-restore-counts-only-the-restored-files
+  (let [first-id  (uuid/next)
+        second-id (uuid/next)
+        lost-id   (uuid/next)
+        restore   (dd/restore-files-immediately {:team-id (uuid/next) :ids #{first-id second-id lost-id}})
+        files     {first-id {:name "First"} second-id {:name "Second"} lost-id {:name "Expired"}}
+        toasts    (await (get-restore-toasts restore files #{first-id second-id}))]
+    (t/is (= [{:level :success
+               :content (pr-str ["dashboard.restore-files-success-notification" 2])}]
+             toasts))))
+
+(t/deftest ^:async restoring-a-project-with-no-restored-files-shows-the-existing-error
+  (let [project-id (uuid/next)
+        project    {:id project-id :team-id (uuid/next) :name "Project"}
+        files      {(uuid/next) {:project-id project-id :name "Expired"}}
+        toasts     (await (get-restore-toasts (dd/restore-project-immediately project) files #{}))]
+    (t/is (= [{:level :error
+               :content (pr-str ["dashboard.errors.error-on-restoring-project" "Project"])}]
+             toasts))))
+
+(t/deftest ^:async restoring-a-project-with-at-least-one-restored-file-shows-success
+  (let [project-id (uuid/next)
+        kept-id    (uuid/next)
+        project    {:id project-id :team-id (uuid/next) :name "Project"}
+        files      {kept-id {:project-id project-id :name "Restored"}
+                    (uuid/next) {:project-id project-id :name "Expired"}}
+        toasts     (await (get-restore-toasts (dd/restore-project-immediately project) files #{kept-id}))]
+    (t/is (= [{:level :success
+               :content (pr-str ["dashboard.restore-success-notification" "Project"])}]
+             toasts))))

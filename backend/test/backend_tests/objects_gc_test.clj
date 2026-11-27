@@ -295,6 +295,7 @@
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)})
+        expiry  (ct/in-past "30m")
         sobject (sto/put-object! (::sto/storage th/*system*)
                                  {::sto/content (sto/content "file-data")
                                   :content-type "application/octet-stream"
@@ -302,19 +303,20 @@
                                   :file-id (:id file)
                                   :id (:id file)})]
 
-    ;; `main` always carries `id = file_id`: mark the real row as deleted
-    ;; instead of inventing a second main row.
+    ;; A main row goes to the trash with its file, not by itself.
+    (th/db-update! :file {:deleted-at expiry} {:id (:id file)})
     (th/db-update! :file-data
                    {:backend "storage"
                     :data nil
                     :storage-object-id (:id sobject)
-                    :deleted-at (ct/in-past "30m")}
+                    :deleted-at expiry}
                    {:file-id (:id file) :id (:id file)})
 
     (th/run-task! :objects-gc {})
 
     (t/testing "the row is purged"
-      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id (:id file)}))))
+      (t/is (nil? (th/db-get :file-data {:file-id (:id file) :id (:id file)}
+                             {::db/remove-deleted false}))))
 
     (t/testing "the storage object is touched for the storage GC"
       (t/is (some? (:touched-at (th/db-get :storage-object {:id (:id sobject)})))))))

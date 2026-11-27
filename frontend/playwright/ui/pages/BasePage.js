@@ -1,3 +1,8 @@
+import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+
+const savePath = "/api/main/methods/update-file-v2";
+
 export class BasePage {
   static async init(page) {
     await BasePage.mockConfigFlags(page, []);
@@ -42,12 +47,41 @@ export class BasePage {
       contentType: "application/transit+json",
       ...options,
     };
-    return page.route(url, (route) =>
-      route.fulfill({
-        ...interceptConfig,
-        path: jsonFilename ? `playwright/data/${jsonFilename}` : undefined,
-      }),
-    );
+    const fixture = jsonFilename
+      ? `playwright/data/${jsonFilename}`
+      : undefined;
+    return page.route(url, async (route) => {
+      const request = route.request();
+      if (
+        fixture &&
+        interceptConfig.status === 200 &&
+        request.method() === "POST" &&
+        new URL(request.url()).pathname === savePath
+      ) {
+        // A successful save mock confirms this attempt, not the request
+        // that originally produced the fixture.
+        const { "~:revn": revn, "~:vern": vern } = request.postDataJSON();
+        const savedRevn = revn + 1;
+        const response = JSON.parse(await readFile(fixture, "utf-8"));
+        return route.fulfill({
+          ...interceptConfig,
+          body: JSON.stringify({
+            ...response,
+            "~:vern": vern,
+            "~:revn": revn,
+            "~:saved-revn": savedRevn,
+            "~:written": [
+              {
+                "~:id": `~u${randomUUID()}`,
+                "~:revn": savedRevn,
+                "~:kind": "~:edit",
+              },
+            ],
+          }),
+        });
+      }
+      return route.fulfill({ ...interceptConfig, path: fixture });
+    });
   }
 
   static async mockFileMediaAsset(
@@ -110,7 +144,11 @@ export class BasePage {
       .map(([key, value]) => `var ${key} = ${JSON.stringify(value)};`)
       .join("\n");
     return await page.route(url, (route) =>
-      route.fulfill({ status: 200, contentType: "application/javascript", body }),
+      route.fulfill({
+        status: 200,
+        contentType: "application/javascript",
+        body,
+      }),
     );
   }
 

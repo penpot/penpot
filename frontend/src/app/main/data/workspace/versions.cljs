@@ -11,6 +11,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.notifications :as ntf]
@@ -35,8 +36,7 @@
 (defonce default-state
   {:status :loading
    :data nil
-   :editing nil
-   :preview-id nil})
+   :editing nil})
 
 (declare fetch-versions)
 
@@ -45,7 +45,7 @@
   (ptk/reify ::init-versions-state
     ptk/UpdateEvent
     (update [_ state]
-      (assoc state :workspace-versions default-state))
+      (update state :workspace-versions #(merge default-state (select-keys % [:backup :preview :restore]))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -109,39 +109,82 @@
          (->> (rp/cmd! :update-file-snapshot {:id id :file-id file-id :label label})
               (rx/map fetch-versions)))))))
 
+(defn- get-opening
+  [state]
+  (select-keys state [:current-file-id :workspace-load-id]))
+
+(defn- get-active-session
+  [state kind]
+  (let [session (get-in state [:workspace-versions kind])]
+    (when (= (get-opening state) (:opening session))
+      session)))
+
+(defn get-version-controls
+  [state]
+  (or (get-active-session state :restore)
+      (get-active-session state :preview)))
+
+(defn- active-session?
+  [state kind token]
+  (and (some? token) (= token (:token (get-active-session state kind)))))
+
+(defn- workspace-replacement
+  [stream]
+  (rx/filter #(or (ptk/type? ::dw/finalize-workspace %)
+                  (ptk/type? ::dw/initialize-workspace %))
+             stream))
+
+(defn- get-read-only-before-preview
+  [state]
+  (cond
+    (dm/get-in state [:workspace-global :persistence-lock])
+    (dm/get-in state [:workspace-global :persistence-lock :read-only?])
+
+    (dm/get-in state [:render-state :lost])
+    (dm/get-in state [:render-state :pre-context-lost-read-only?])
+
+    :else
+    (dm/get-in state [:workspace-global :read-only?])))
+
 (defn- clear-preview-state
   []
   (ptk/reify ::clear-preview-state
     ptk/UpdateEvent
-    (update [_ state]
-      (-> state
-          (update :workspace-versions dissoc :backup)
-          (update :workspace-global dissoc :read-only? :preview-id)))))
+    (update [_ state] (dw/clear-version-preview state))))
 
 (defn- initialize-version
-  []
-  (ptk/reify ::initialize-version
-    ptk/WatchEvent
-    (watch [_ state stream]
-      (let [page-id (:current-page-id state)
-            file-id (:current-file-id state)
-            team-id (:current-team-id state)]
+  ([] (initialize-version nil))
+  ([token]
+   (let [current? #(or (nil? token) (active-session? % :restore token))]
+     (ptk/reify ::initialize-version
+       ptk/UpdateEvent
+       (update [_ state]
+         (if (and token (current? state))
+           (assoc-in state [:workspace-versions :restore :phase] :loading)
+           state))
 
-        (rx/merge
-         (->> stream
-              (rx/filter (ptk/type? ::dw/bundle-fetched))
-              (rx/take 1)
-              ;; Keep historical content read-only until the restored file
-              ;; has loaded, including when saving or loading fails.
-              (rx/mapcat #(rx/of (clear-preview-state)
-                                 (dwpg/initialize-page file-id page-id))))
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (when (current? state)
+           (let [{:keys [current-file-id current-team-id current-page-id]} state]
+             (rx/merge
+              (cond->> (->> stream
+                            (rx/filter (ptk/type? ::dw/bundle-fetched))
+                            (rx/filter #(or (nil? token) (= current-file-id (:file-id @%))))
+                            (rx/take 1)
+                            ;; Keep historical content read-only until the
+                            ;; restored file has loaded, not just until the
+                            ;; RPC succeeds.
+                            (rx/mapcat #(rx/of (clear-preview-state)
+                                               (dwpg/initialize-page current-file-id current-page-id))))
+                token (rx/take-until (workspace-replacement stream)))
 
-         (rx/of (ntf/hide :tag :restore-dialog)
-                (dw/initialize-file team-id file-id)))))
+              (rx/of (dw/initialize-file current-team-id current-file-id))))))
 
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (th/clear-queue!))))
+       ptk/EffectEvent
+       (effect [_ state _]
+         (when (current? state)
+           (th/clear-queue!)))))))
 
 (defn delete-version
   [id]
@@ -204,9 +247,7 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [backup (dm/get-in state [:workspace-versions :backup])]
-        (-> state
-            (update :workspace-versions dissoc :backup)
-            (update :workspace-global dissoc :read-only? :preview-id)
+        (-> (dw/clear-version-preview state)
             (update :files assoc (:id backup) backup))))))
 
 (defn exit-preview
@@ -215,58 +256,97 @@
   No-op when there is no preview to exit (no backup stored), so it is
   safe to call from the restore dialog dismiss action even when the
   restore was triggered directly without entering preview first."
-  []
-  (ptk/reify ::exit-preview
+  ([] (exit-preview nil))
+  ([token]
+   (ptk/reify ::exit-preview
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [file-id (:current-file-id state)
+             page-id (:current-page-id state)
+             backup  (dm/get-in state [:workspace-versions :backup])]
+         (when (and backup
+                    (= file-id (:id backup))
+                    (or (nil? token)
+                        (and (active-session? state :preview token)
+                             (nil? (get-active-session state :restore)))))
+           (rx/concat
+            (rx/of (exit-preview-cleanup))
+            (when page-id (rx/of (dwpg/initialize-page file-id page-id)))
+            (rx/of (dwp/finish-preview-effects file-id)))))))))
+
+(defn- close-restore
+  [token phase]
+  (ptk/reify ::close-restore
     ptk/WatchEvent
     (watch [_ state _]
-      ;; Ensure we are actually in preview mode. Otherwise there
-      ;; is no backup to restore and wasm crashes
-      (when (dm/get-in state [:workspace-versions :backup])
-        (let [file-id (:current-file-id state)
-              page-id (:current-page-id state)]
-          (rx/of (exit-preview-cleanup)
-                 (dwpg/initialize-page file-id page-id)))))))
+      (let [restore (get-active-session state :restore)]
+        (when (and (= token (:token restore)) (= phase (:phase restore)))
+          (rx/concat
+           (rx/of #(update % :workspace-versions dissoc :restore))
+           (when-let [preview (get-active-session state :preview)]
+             (rx/of (exit-preview (:token preview))))))))))
+
+(defn cancel-restore
+  [token]
+  (close-restore token :confirm-restore))
 
 (defn- restore-version
-  [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::restore-version
+  ([id] (restore-version id nil))
+  ([id token]
+   (assert (uuid? id) "expected valid uuid for `id`")
+   (let [accepted (volatile! false)]
+     (ptk/reify ::restore-version
+       ptk/UpdateEvent
+       (update [_ state]
+         (let [restore (get-active-session state :restore)]
+           (if (and token (= token (:token restore)) (= :confirm-restore (:phase restore)))
+             (do
+               (vreset! accepted true)
+               (assoc-in state [:workspace-versions :restore :phase] :restoring))
+             state)))
+
+       ptk/WatchEvent
+       (watch [_ state stream]
+         (when (or (nil? token) @accepted)
+           (let [file-id (:current-file-id state)]
+             (rx/concat
+              (rx/of ::dwp/force-persist
+                     (dw/remove-layout-flag :document-history))
+
+              (cond->> (->> (dwp/wait-persisted-or-error)
+                            (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
+                            (rx/map #(initialize-version token))
+                            (rx/catch (fn [cause]
+                                        (rx/concat
+                                         (rx/of (if token (close-restore token :restoring) (exit-preview)))
+                                         (rx/throw cause)))))
+                token (rx/take-until (workspace-replacement stream)))))))))))
+
+(defn confirm-restore
+  [token]
+  (ptk/reify ::confirm-restore
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file-id (:current-file-id state)]
-        (rx/concat
-         (rx/of ::dwp/force-persist
-                (dw/remove-layout-flag :document-history))
-
-         (->> (dwp/wait-persisted-or-error)
-              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
-              (rx/map #(initialize-version))
-              (rx/catch (fn [cause]
-                          (rx/concat (rx/of (exit-preview))
-                                     (rx/throw cause))))))))))
+      (let [restore (get-active-session state :restore)]
+        (when (and (= token (:token restore)) (= :confirm-restore (:phase restore)))
+          (rx/of (restore-version (:snapshot-id restore) token)))))))
 
 (defn enter-restore
-  [id]
-  (assert (uuid? id) "expected valid uuid for `id`")
-  (ptk/reify ::enter-restore
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [output-s (rx/subject)]
-        (rx/merge
-         output-s
-         (rx/of (ntf/dialog
-                 :content (tr "workspace.versions.restore-warning")
-                 :controls :inline-actions
-                 :cancel {:label (tr "workspace.updates.dismiss")
-                          :callback #(do
-                                       (rx/push! output-s (ntf/hide :tag :restore-dialog))
-                                       (rx/push! output-s (exit-preview))
-                                       (rx/end! output-s))}
-                 :accept {:label (tr "labels.restore")
-                          :callback #(do
-                                       (rx/push! output-s (restore-version id))
-                                       (rx/end! output-s))}
-                 :tag :restore-dialog)))))))
+  ([id] (enter-restore id nil))
+  ([id preview-token]
+   (assert (uuid? id) "expected valid uuid for `id`")
+   (ptk/reify ::enter-restore
+     ptk/UpdateEvent
+     (update [_ state]
+       (if (and (:current-file-id state)
+                (nil? (get-active-session state :restore))
+                (or (nil? preview-token) (active-session? state :preview preview-token)))
+         (assoc-in state [:workspace-versions :restore]
+                   {:opening (get-opening state)
+                    :phase :confirm-restore
+                    :snapshot-id id
+                    :token (uuid/next)})
+         state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PREVIEW VERSION EVENTS
@@ -276,11 +356,23 @@
   "Swap the file data in app state with the provided snapshot-file
   response. Used by the version preview feature to show historical
   file content without modifying the database"
-  [{:keys [id] :as snapshot}]
-  (ptk/reify ::apply-snapshot-data
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :files assoc id snapshot))))
+  [token {:keys [id] :as snapshot}]
+  (let [current? (fn [state]
+                   (and (= id (:current-file-id state))
+                        (active-session? state :preview token)
+                        (not= :loading (:phase (get-active-session state :restore)))))]
+    (ptk/reify ::apply-snapshot-data
+      ptk/UpdateEvent
+      (update [_ state]
+        (if (current? state)
+          (update state :files assoc id snapshot)
+          state))
+
+      ptk/WatchEvent
+      (watch [_ state _]
+        (when (current? state)
+          (when-let [page-id (:current-page-id state)]
+            (rx/of (dwpg/initialize-page id page-id))))))))
 
 (defn enter-preview
   "Load a snapshot into the workspace for read-only preview without
@@ -289,84 +381,39 @@
   [id]
   (assert (uuid? id) "expected valid uuid for `id`")
 
-  (ptk/reify ::enter-preview
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [file (dsh/lookup-file state)]
-        (-> state
-            (update :workspace-versions assoc :backup file)
-            (update :workspace-global assoc :read-only? true :preview-id id))))
+  (let [token (uuid/next)]
+    (ptk/reify ::enter-preview
+      ptk/UpdateEvent
+      (update [_ state]
+        (if-let [file (and (nil? (get-active-session state :restore))
+                           (dsh/lookup-file state))]
+          (let [versions (:workspace-versions state)
+                current  (get-active-session state :preview)
+                backup   (if current (:backup versions) file)
+                read-only (if current (:prior-read-only current) (get-read-only-before-preview state))
+                snapshot (d/seek #(= id (:id %)) (:data versions))]
+            (-> state
+                (update :workspace-versions assoc :backup backup
+                        :preview {:opening (get-opening state)
+                                  :phase :preview
+                                  :prior-read-only read-only
+                                  :snapshot-id id
+                                  :snapshot snapshot
+                                  :token token})
+                (update :workspace-global assoc :read-only? true :preview-id id)))
+          state))
 
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [file-id  (:current-file-id state)
-            page-id  (:current-page-id state)
-            team-id  (:current-team-id state)
-            features (features/get-enabled-features state team-id)
-            snapshot (->> (dm/get-in state [:workspace-versions :data])
-                          (d/seek #(= id (:id %))))
-            ;; Match the History sidebar's identifying text so the
-            ;; preview banner and the sidebar entry "speak the same
-            ;; language" (#9503):
-            ;; - user-created (pinned) versions keep the user's custom
-            ;;   label; if absent, fall back to "unnamed"
-            ;; - system-created autosaves use the same auto-generated
-            ;;   label the sidebar's `snapshot-entry*` already renders
-            ;;   via `workspace.versions.autosaved.version` + a
-            ;;   localized date, instead of the internal snapshot
-            ;;   label (e.g. `internal/snapshot/20`).
-            label    (cond
-                       (repair-snapshot? snapshot)
-                       (tr "workspace.versions.repair.version"
-                           (ct/format-inst (:created-at snapshot) :localized-date))
-
-                       (= "system" (:created-by snapshot))
-                       (tr "workspace.versions.autosaved.version"
-                           (ct/format-inst (:created-at snapshot) :localized-date))
-
-                       :else
-                       (or (:label snapshot)
-                           (tr "workspace.versions.preview.unnamed")))
-            output-s (rx/subject)]
-        (rx/merge
-         output-s
-
-         (rx/of (ntf/dialog
-                 :content (tr "workspace.versions.preview-banner-title" label)
-                 :controls :inline-actions
-                 :cancel {:label (tr "labels.exit")
-                          :callback #(do
-                                       (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (exit-preview))
-                                       (rx/end! output-s))}
-                 :accept {:label (tr "labels.restore")
-                          :callback #(do
-                                       (rx/push! output-s (ntf/hide))
-                                       (rx/push! output-s (enter-restore id))
-                                       (rx/end! output-s))}
-                 :tag :preview-dialog))
-
-         (->> (rp/cmd! :get-file-snapshot
-                       {:file-id file-id
-                        :id id
-                        :features features})
-              (rx/mapcat
-               (fn [snapshot]
-                 (rx/of
-                  ;; Swap the file data in state with snapshot content.
-                  ;; Passing id sets workspace-file-version-id, which
-                  ;; causes the WASM viewport to reload its shape buffer.
-                  (apply-snapshot snapshot)
-                  ;; Re-initialize the page to rebuild its search index
-                  ;; and page-local state with the new snapshot
-                  ;; objects.
-                  (dwpg/initialize-page file-id page-id))))
-
-              (rx/catch (fn [err]
-                          ;; On error roll back the read-only flag so the
-                          ;; user is not stuck in a broken preview state.
-                          (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
-                          (rx/of (exit-preview))))))))))
+      ptk/WatchEvent
+      (watch [_ state stream]
+        (when (active-session? state :preview token)
+          (let [file-id (:current-file-id state)
+                features (features/get-enabled-features state (:current-team-id state))]
+            (->> (rp/cmd! :get-file-snapshot {:file-id file-id :id id :features features})
+                 (rx/map #(apply-snapshot token %))
+                 (rx/catch (fn [err]
+                             (log/error :hint "failed to load snapshot" :cause err :file-id file-id :snapshot-id id)
+                             (rx/of (exit-preview token))))
+                 (rx/take-until (workspace-replacement stream)))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS

@@ -49,9 +49,9 @@ async function setupWorkspace(workspacePage) {
     "workspace/get-file-rename-page.json",
   );
 
-  // Mock update-file so rename commits don't fail.
+  // Mock the save so rename commits don't fail.
   await workspacePage.mockRPC(
-    "update-file?id=*",
+    "update-file-v2?id=*",
     "workspace/update-file-create-rect.json",
   );
 

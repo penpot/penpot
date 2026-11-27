@@ -19,6 +19,7 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence.commits :as pcm]
    [app.main.data.persistence.lock :as plk]
+   [app.main.data.persistence.replay :as replay]
    [app.main.data.workspace :as-alias dw]
    [app.main.features :as features]
    [app.main.worker :as mw]
@@ -104,7 +105,7 @@
           (wasm.api/request-render "sync-wasm-structural-changes"))))))
 
 (defn- apply-changes-localy
-  [{:keys [file-id redo-changes ignore-wasm?] :as commit} pending]
+  [{:keys [file-id redo-changes ignore-wasm? change-steps] :as commit} pending]
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]
@@ -126,9 +127,9 @@
 
             apply-changes
             (fn [fdata]
-              (let [fdata (cpc/process-changes fdata undo-changes false)
-                    fdata (cpc/process-changes fdata redo-changes false)
-                    pids (into #{} xf:map-page-id redo-changes)]
+              (let [steps (or change-steps [undo-changes redo-changes])
+                    fdata (reduce #(cpc/process-changes %1 %2 false) fdata steps)
+                    pids  (into #{} (comp cat xf:map-page-id) steps)]
                 (reduce #(ctst/update-object-indices %1 %2) fdata pids)))]
 
         (if (and (not ignore-wasm?) (features/active-feature? state "render-wasm/v1"))
@@ -199,11 +200,20 @@
                    :translation? translation?
                    :skip-component-sync? skip-component-sync?
                    ;; Undo history index an undo or redo commit moved away from
-                   :undo-index undo-index}]
+                   :undo-index undo-index}
+        proof     (volatile! nil)]
 
     (ptk/reify ::commit
       cljs.core/IDeref
-      (-deref [_] commit)
+      (-deref [_] (merge commit @proof))
+
+      ptk/UpdateEvent
+      (update [_ state]
+        (when local?
+          (when-let [base (get-in state [:persistence :file-order file-id :base-id])]
+            (when-let [targets (replay/capture (dsh/lookup-file-data state file-id) commit)]
+              (vreset! proof {:replay-base base :replay-targets targets}))))
+        state)
 
       ptk/WatchEvent
       (watch [_ state _]
@@ -221,52 +231,63 @@
              (rx/of (update-indexes commit :redo-changes)))))))))
 
 (defn rebase-commits
-  "Undoes `undo`, applies `remote` and redoes `redo` on the local data of
-  `file-id`, commits oldest first. Nothing is saved or added to the undo
-  history; if the changes fail to apply, the file is reloaded.
-
-  Not a commit, so commit watchers miss it: once it has run, its deref
-  gives `{:file-id :changes :failed}` (`:failed` true when the file
-  reloads instead)."
-  [file-id {:keys [undo remote redo]}]
-  (let [commit  {:file-id file-id
-                 :redo-changes (-> []
-                                   (into (mapcat :undo-changes) (reverse undo))
-                                   (into remote)
-                                   (into (mapcat :redo-changes) redo))}
-        event   (apply-changes-localy commit nil)
-        failed? (volatile! false)]
+  "Undoes `undo`, applies `remote` and redoes `redo` without saving or
+  adding undo history. A guarded rebase can supply `prepare`, checked in
+  the model update itself, and `on-applied` to record success atomically.
+  `after` receives the final state and outcome instead of the default
+  reload on failure. `separate-steps` preserves touched passes and worker
+  ordering at the undo/remote/redo boundaries."
+  [file-id {:keys [prepare after on-skipped] :as plan}]
+  (let [applied (volatile! nil)
+        outcome (volatile! :skipped)]
     (ptk/reify ::rebase-commits
       IDeref
       (-deref [_]
         {:file-id file-id
-         :changes (:redo-changes commit)
-         :failed  @failed?})
+         :changes (:redo-changes @applied)
+         :failed  (= :failed @outcome)})
 
       ptk/UpdateEvent
       (update [_ state]
         (if (dsh/lookup-file-data state file-id)
-          (try
-            (ptk/update event state)
-            (catch :default cause
-              (log/error :hint "unable to rebase commits" :file-id (str file-id) :cause cause)
-              (vreset! failed? true)
-              state))
+          (if-let [{:keys [undo remote remote-steps redo on-applied separate-steps]}
+                   (if prepare (prepare state) plan)]
+            (let [steps  (if separate-steps
+                           (-> (mapv :undo-changes (reverse undo))
+                               (into (or remote-steps [(vec remote)]))
+                               (into (map :redo-changes) redo))
+                           [(into [] (mapcat :undo-changes) (reverse undo))
+                            (vec remote)
+                            (into [] (mapcat :redo-changes) redo)])
+                  commit (cond-> {:file-id file-id
+                                  :redo-changes (into [] cat steps)}
+                           separate-steps (assoc :change-steps steps))]
+              (try
+                (let [updated (cond-> (ptk/update (apply-changes-localy commit nil) state)
+                                on-applied on-applied)]
+                  (vreset! applied commit)
+                  (vreset! outcome :applied)
+                  updated)
+                (catch :default cause
+                  (log/error :hint "unable to rebase commits" :file-id (str file-id) :cause cause)
+                  (vreset! outcome :failed)
+                  state)))
+            (if on-skipped (on-skipped state) state))
           state))
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (cond
-          @failed?
-          (rx/of (ptk/event ::dw/reload-current-file))
-
-          (dsh/lookup-file-data state file-id)
-          (rx/merge
-           (or (ptk/watch event state stream) (rx/empty))
-           (rx/of (update-indexes commit :redo-changes)))
-
-          :else
-          (rx/empty))))))
+        (rx/concat
+         (if-let [commit @applied]
+           (rx/merge
+            (or (ptk/watch (apply-changes-localy commit nil) state stream) (rx/empty))
+            (->> (rx/from (or (:change-steps commit) [(:redo-changes commit)]))
+                 (rx/map #(update-indexes (assoc commit :redo-changes %) :redo-changes))))
+           (rx/empty))
+         (cond
+           after (after state @outcome)
+           (= :failed @outcome) (rx/of (ptk/event ::dw/reload-current-file))
+           :else (rx/empty)))))))
 
 (defn- resolve-file-revn
   [state file-id]

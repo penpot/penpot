@@ -6,20 +6,35 @@
 
 (ns frontend-tests.data.workspace-notifications-test
   (:require
+   [app.common.files.tokens :as cfo]
    [app.common.time :as ct]
+   [app.common.transit :as transit]
+   [app.common.types.shape :as cts]
+   [app.common.types.tokens-lib :as ctob]
+   [app.common.types.tokens-status :as ctos]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
    [app.main.data.persistence :as dps]
+   [app.main.data.persistence.order :as porder]
    [app.main.data.websocket :as dws]
    [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.notifications :as dwntf]
+   [app.main.data.workspace.tokens.propagation :as dwtp]
+   [app.main.data.workspace.versions :as dwv]
+   [app.main.repo :as rp]
+   [app.main.worker :as mw]
    [app.util.i18n :as i18n]
+   [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [clojure.datafy :refer [datafy]]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
+   [frontend-tests.helpers.persistence :as thp]
    [potok.v2.core :as ptk]))
 
 (defn- file-change-msg
@@ -35,9 +50,15 @@
 
 (defn- ^:async watch-file-change
   [msg]
-  (let [events (atom [])]
-    (await (async/observe (ptk/watch (dwntf/handle-file-change msg) {} (rx/empty))
+  (let [events (atom [])
+        state  {:current-file-id (:file-id msg)
+                :files {(:file-id msg) {:data {} :revn 0 :vern 0 :is-shared true}}}]
+    (await (async/observe (ptk/watch (dwntf/handle-file-change msg) state (rx/empty))
                           :on-next #(swap! events conj %)))
+    (let [change (first @events)
+          state  (ptk/update change state)]
+      (await (async/observe (ptk/watch change state (rx/empty))
+                            :on-next #(swap! events conj %))))
     @events))
 
 (defn- ^:async shown-notice
@@ -51,13 +72,22 @@
           @events)))
 
 (t/deftest ^:async repaired-file-change-applies-and-notifies
-  (let [events (await (watch-file-change (file-change-msg {:repaired true})))
-        notice (await (shown-notice (second events) {}))]
-    (t/is (= [::dch/commit ::dps/notify-repaired] (mapv ptk/type events)))
-    (t/is (= :info (:level notice)))
-    (t/is (nil? (:timeout notice)) "the toast stays until the user closes it")
-    (t/is (= dps/file-repaired-tag (:tag notice)))
-    (t/is (= (i18n/tr "workspace.notifications.file-repaired") (:content notice)))))
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id store]}]
+       (let [page-id  (uuid/next)
+             shape-id (uuid/next)]
+         (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                    (dwntf/handle-file-change
+                     (file-change-msg {:file-id file-id :repaired true
+                                       :changes [(thp/rename page-id shape-id "Repaired")]})))
+         (await (async/wait-for-store store #(:notification @store) "the repair is announced"))
+         (let [notice (:notification @store)]
+           (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= :info (:level notice)))
+           (t/is (nil? (:timeout notice)) "the toast stays until the user closes it")
+           (t/is (= dps/file-repaired-tag (:tag notice)))
+           (t/is (= (i18n/tr "workspace.notifications.file-repaired") (:content notice)))))))))
 
 ;; Scenario: a save of the open file came back rejected and its notice is
 ;; still on screen when the backend repairs the file. The store holds one
@@ -77,7 +107,1068 @@
 
 (t/deftest ^:async ordinary-file-change-does-not-notify
   (let [events (await (watch-file-change (file-change-msg {})))]
-    (t/is (= [::dch/commit] (mapv ptk/type events)))))
+    (t/is (= ::dch/rebase-commits (ptk/type (first events))))
+    (t/is (not-any? (ptk/type? ::dps/notify-repaired) events))))
+
+(defn- library-change-msg
+  [extra]
+  (file-change-msg (merge {:type :library-change :modified-at (ct/now)} extra)))
+
+(defn- library-color
+  [id name]
+  {:id id :name name :color "#224466" :opacity 1})
+
+(defn- get-color-name
+  [store file-id color-id]
+  (get-in @store [:files file-id :data :colors color-id :name]))
+
+(defn- get-file-reads
+  [requests]
+  (into [] (keep (fn [[command params]] (when (= command :get-file) (:id params)))) @requests))
+
+(defn- websocket-message
+  [msg]
+  (ptk/data-event ::dws/message msg))
+
+(defn- ^:async with-reconnect-subscription
+  [{:keys [flags connected] :or {flags #{:file-catch-up} connected true}} scenario]
+  (let [team-id  (uuid/next)
+        file-id  (uuid/next)
+        load-id  (uuid/next)
+        page-id  (uuid/next)
+        shape-id (uuid/next)
+        file     (with-meta {:id file-id :revn 0 :vern 0 :data (thp/file-data page-id shape-id "Original")}
+                   {::dps/fresh-file-read true})
+        sent     (atom [])
+        timers   (atom [])
+        requests (atom [])
+        response (rx/subject)
+        open     (atom connected)
+        socket   (reify ws/IWebSocket
+                   (-open? [_] @open)
+                   (-send [_ message]
+                     (when @open
+                       (swap! sent conj (transit/decode-str message)))))
+        store    (ptk/store {:state {:current-file-id file-id
+                                     :current-page-id page-id
+                                     :workspace-load-id load-id
+                                     :profile-id (uuid/next)
+                                     :session-id (uuid/next)
+                                     :files {file-id file}
+                                     :ws-conn socket}
+                             :on-error #(t/is false (str %))})]
+    (await
+     (mock/with-mocks*
+       {cf/flags     flags
+        dws/ws-conn  (volatile! socket)
+        rp/cmd!      (mock/stub (fn [command params]
+                                  (swap! requests conj [command params])
+                                  (rx/observe-on :async response)))
+        mw/ask!      (mock/stub (fn [_] (rx/empty)))
+        rx/timer     (mock/stub (fn [_]
+                                  (let [tick (rx/subject)]
+                                    (swap! timers conj tick)
+                                    (rx/observe-on :async tick))))}
+       (try
+         (ptk/emit! store #(dps/file-base-loaded % file) (dwntf/initialize team-id file-id))
+         (await (async/settle))
+         (await (scenario {:store store :file-id file-id :team-id team-id
+                           :page-id page-id :shape-id shape-id :response response
+                           :sent sent :timers timers :open open :requests requests}))
+         (finally
+           (rx/dispose! store)
+           (rx/end! response)))))))
+
+(defn- file-subscriptions
+  [sent]
+  (filterv #(= :subscribe-file (:type %)) @sent))
+
+(defn- ^:async open-websocket
+  [{:keys [store open]}]
+  (reset! open true)
+  (ptk/emit! store (ptk/data-event ::dws/opened {}))
+  (await (async/settle)))
+
+(defn- ^:async deliver-ready
+  [store topic subscription-id]
+  (ptk/emit! store (websocket-message {:type :file-subscription-ready
+                                       :topic topic
+                                       :subscription-id subscription-id}))
+  (await (async/settle)))
+
+(defn- ^:async expire-ready-wait
+  [timers attempt]
+  (when-let [timer (get @timers attempt)]
+    (rx/push! timer 0))
+  (await (async/settle)))
+
+(t/deftest ^:async only-reconnect-requests-a-file-subscription-ready
+  (await
+   (with-reconnect-subscription
+     {:connected false}
+     (^:async fn [{:keys [file-id team-id sent timers] :as fixture}]
+       (t/is (empty? @sent) "the initial send could not reach a closed socket")
+       (await (open-websocket fixture))
+       (t/is (= [{:type :subscribe-file :file-id file-id}
+                 {:type :subscribe-team :team-id team-id}]
+                (mapv #(dissoc % :version) @sent)))
+       (t/is (empty? @timers) "the first socket open does not start a catch-up")
+
+       (await (open-websocket fixture))
+       (t/is (uuid? (:subscription-id (peek (file-subscriptions sent)))))
+       (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))))
+       (t/is (= 1 (count @timers)))))))
+
+(t/deftest ^:async reconnect-waits-for-ready-to-read-missed-edits
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id team-id page-id shape-id response sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (let [subscription-id (:subscription-id (peek (file-subscriptions sent)))]
+         (t/is (uuid? subscription-id))
+         (await (deliver-ready store team-id subscription-id))
+         (await (deliver-ready store file-id (uuid/next)))
+         (t/is (empty? @requests) "neither an unrelated topic nor an unrelated ID proves readiness")
+         (await (deliver-ready store file-id subscription-id))
+         (await (deliver-ready store file-id subscription-id))
+         (await (expire-ready-wait timers 0))
+         (t/is (= [[:get-file-changes {:file-id file-id :since 0 :vern 0}]] @requests))
+         (t/is (= 2 (count (file-subscriptions sent))) "ready cancels the retry")
+         (rx/push! response {:vern 0 :head 1 :through 1
+                             :rows [{:id (uuid/next) :revn 1 :session-id (uuid/next)
+                                     :changes [(thp/rename page-id shape-id "Missed peer edit")]}]})
+         (await (async/wait-for-store store #(= 1 (get-in @store [:files file-id :revn]))
+                                      "the missed revision is installed without another peer edit"))
+         (t/is (= "Missed peer edit" (thp/shape-name store file-id page-id shape-id))))))))
+
+(t/deftest ^:async only-the-retry-id-can-prove-readiness-after-the-first-timeout
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (expire-ready-wait timers 0))
+       (let [[_ initial retry] (file-subscriptions sent)
+             first-id          (:subscription-id initial)
+             retry-id          (:subscription-id retry)]
+         (t/is (and (uuid? first-id) (uuid? retry-id) (not= first-id retry-id)))
+         (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))) "only the file is retried")
+         (await (deliver-ready store file-id first-id))
+         (t/is (empty? @requests) "the first attempt already expired")
+         (await (deliver-ready store file-id retry-id))
+         (await (expire-ready-wait timers 1))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(t/deftest ^:async reconnect-without-ready-falls-back-to-one-full-read
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (expire-ready-wait timers 0))
+       (t/is (empty? @requests) "only a subscription retry is allowed at the first timeout")
+       (await (expire-ready-wait timers 1))
+       (let [[_ initial retry] (file-subscriptions sent)]
+         (t/is (uuid? (:subscription-id retry)))
+         (await (deliver-ready store file-id (:subscription-id initial)))
+         (await (deliver-ready store file-id (:subscription-id retry)))
+         (await (expire-ready-wait timers 1))
+         (t/is (= [file-id] (get-file-reads requests)))
+         (t/is (= [:get-file] (mapv first @requests)))
+         (t/is (= 3 (count (file-subscriptions sent))) "there is no third attempt")
+
+         (await (open-websocket fixture))
+         (t/is (= 4 (count (file-subscriptions sent))))
+         (t/is (not= (:subscription-id retry) (:subscription-id (peek (file-subscriptions sent))))))))))
+
+(t/deftest ^:async reopening-the-same-file-discards-the-old-ready-wait
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id team-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (let [old-id (:subscription-id (peek (file-subscriptions sent)))]
+         (t/is (uuid? old-id))
+         (ptk/emit! store #(assoc % :workspace-load-id (uuid/next))
+                    (dwntf/initialize team-id file-id))
+         (await (async/settle))
+         (await (deliver-ready store file-id old-id))
+         (await (expire-ready-wait timers 0))
+         (t/is (empty? @requests))
+         (t/is (= 3 (count (file-subscriptions sent))))
+         (t/is (nil? (:subscription-id (peek (file-subscriptions sent))))))))))
+
+(t/deftest ^:async a-second-reconnect-supersedes-the-ready-wait
+  (await
+   (with-reconnect-subscription
+     {}
+     (^:async fn [{:keys [store file-id sent timers requests] :as fixture}]
+       (await (open-websocket fixture))
+       (await (open-websocket fixture))
+       (let [[_ earlier later] (file-subscriptions sent)]
+         (t/is (and (uuid? (:subscription-id earlier)) (uuid? (:subscription-id later))))
+         (t/is (not= (:subscription-id earlier) (:subscription-id later)))
+         (await (deliver-ready store file-id (:subscription-id earlier)))
+         (await (expire-ready-wait timers 0))
+         (t/is (empty? @requests))
+         (t/is (= 3 (count (file-subscriptions sent))) "the old timer cannot retry")
+         (await (deliver-ready store file-id (:subscription-id later)))
+         (t/is (= [:get-file-changes] (mapv first @requests))))))))
+
+(t/deftest ^:async reconnect-with-catch-up-disabled-keeps-the-legacy-subscription
+  (await
+   (with-reconnect-subscription
+     {:flags #{}}
+     (^:async fn [{:keys [sent timers] :as fixture}]
+       (await (open-websocket fixture))
+       (t/is (= 2 (count (file-subscriptions sent))))
+       (t/is (not-any? :subscription-id (file-subscriptions sent)))
+       (t/is (= 2 (count (filter #(= :subscribe-team (:type %)) @sent))))
+       (t/is (empty? @timers))))))
+
+(defn- library-effect?
+  [event]
+  (contains? #{::dwl/library-change-effects ::dwl/notify-sync-file
+               ::dwtp/propagate-workspace-tokens}
+             (ptk/type event)))
+
+(t/deftest ^:async an-unmarked-delta-does-not-run-effects-just-because-the-open-file-is-shared
+  (let [set-id (uuid/next)
+        events (await (watch-file-change
+                       (file-change-msg {:changes [{:type :set-token-set :id set-id
+                                                    :attrs {:id set-id :name "Peer set"}}]})))]
+    (t/is (= ::dch/rebase-commits (ptk/type (first events))))
+    (t/is (some (ptk/type? ::dps/record-remote-changes) events))
+    (t/is (not-any? library-effect? events))))
+
+(t/deftest a-file-delta-rejects-a-non-boolean-library-flag
+  (t/is (thrown? js/Error
+                 (dwntf/handle-file-change (file-change-msg {:library-change "true"})))))
+
+(defn- ^:async stale-share-file-delivery
+  [first-topic]
+  (let [save (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [team-id     (uuid/next)
+               page-id     (uuid/next)
+               shape-id    (uuid/next)
+               set-id      (uuid/next)
+               local       (dch/commit {:file-id file-id :file-revn 0 :file-vern 0 :features #{}
+                                        :redo-changes [(thp/rename page-id shape-id "Local edit")]
+                                        :undo-changes [(thp/rename page-id shape-id "Original")]})
+               token-edit  {:type :set-token-set :id set-id :attrs {:id set-id :name "Peer set"}}
+               page-edit   {:type :mod-page :id page-id :name "Peer page"}
+               common      {:file-id file-id :profile-id (uuid/next) :session-id (uuid/next)
+                            :revn 1 :vern 0}
+               ;; Only the file topic has the complete changes and row ID.
+               file-msg    (assoc common :type :file-change :topic file-id :library-change true
+                                  :changes [page-edit token-edit] :revision-ids [(uuid/next)])
+               team-msg    (assoc common :type :library-change :topic team-id
+                                  :modified-at (ct/now) :changes [token-edit])
+               [first-msg second-msg] (if (= first-topic :file)
+                                        [file-msg team-msg]
+                                        [team-msg file-msg])
+               effects     (atom [])
+               seen        (->> (ptk/input-stream store)
+                                (rx/filter library-effect?)
+                                (rx/subs!
+                                 (fn [event]
+                                   (let [data (get-in @store [:files file-id :data])]
+                                     (swap! effects conj [(ptk/type event)
+                                                          (get-in data [:pages-index page-id :name])
+                                                          (ctob/get-name (ctob/get-set (:tokens-lib data) set-id))])))))]
+           (try
+             (ptk/emit! store (thp/open-file file-id page-id (thp/file-data page-id shape-id "Original"))
+                        #(-> %
+                             (assoc-in [:files file-id :is-shared] false)
+                             (assoc-in [:persistence :file-order file-id] (porder/loaded 0 0)))
+                        (dwntf/initialize team-id file-id)
+                        local)
+             (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                          "the local edit is pending"))
+             (ptk/emit! store (websocket-message first-msg))
+             (if (= first-topic :team)
+               (do
+                 (await (async/settle))
+                 (t/is (= "Page" (get-in @store [:files file-id :data :pages-index page-id :name])))
+                 (t/is (empty? @effects) "the team copy cannot run effects on its own"))
+               (await (async/wait-for-store store #(= 1 (get-in @store [:files file-id :revn]))
+                                            "the full delta applies before the team copy arrives")))
+             (ptk/emit! store (websocket-message second-msg))
+             (await (async/wait-for-store store #(>= (count @effects) 3)
+                                          "the installed file delta emits its library effects"))
+             (ptk/emit! store (websocket-message file-msg)
+                        (websocket-message (assoc file-msg :vern 1 :revn 7 :repaired true)))
+             (await (async/settle))
+             (t/is (= {::dwl/library-change-effects 1 ::dwl/notify-sync-file 1
+                       ::dwtp/propagate-workspace-tokens 1}
+                      (frequencies (map first @effects))))
+             (t/is (every? #(= ["Peer page" "Peer set"] (subvec % 1)) @effects)
+                   "effects only see complete, updated file data")
+             (t/is (= 1 (count (get-in @store [:persistence :remote-changes file-id])))
+                   "only the full delta is applied under the pending local edit")
+             (t/is (= "Local edit" (thp/shape-name store file-id page-id shape-id)))
+             (t/is (false? (get-in @store [:files file-id :is-shared]))
+                   "the flag does not change the opening's share status")
+             (t/is (empty? (get-file-reads requests)))
+
+             (ptk/emit! store ::dps/force-persist)
+             (await (async/wait-for #(some (fn [[cmd _]] (= cmd :update-file-v2)) @requests)
+                                    "the save queue sends the pending local edit" {:signal requests$}))
+             (let [[[_ params] :as saves] (filter #(= :update-file-v2 (first %)) @requests)]
+               (t/is (= 1 (count saves)))
+               (t/is (= 1 (:revn params))))
+             (rx/push! save (thp/save-response 1))
+             (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
+                                          "the local save settles without a reconciliation"))
+             (t/is (empty? (get-file-reads requests)))
+             (finally (rx/dispose! seen)))))
+       (fn [command _]
+         (->> (case command
+                :update-file-v2 save
+                :get-file-object-thumbnails (rx/of {})
+                (rx/empty))
+              (rx/observe-on :async)))))))
+
+(t/deftest ^:async a-stale-private-tab-ignores-the-team-copy-before-the-marked-file-delta
+  (await (stale-share-file-delivery :team)))
+
+(t/deftest ^:async a-stale-private-tab-ignores-the-team-copy-after-the-marked-file-delta
+  (await (stale-share-file-delivery :file)))
+
+(t/deftest ^:async a-shared-open-file-applies-the-aggregate-only-from-the-file-topic
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id store requests]}]
+       (let [page-id       (uuid/next)
+             shape-id      (uuid/next)
+             color-id      (uuid/next)
+             set-id        (uuid/next)
+             original      (assoc-in (thp/file-data page-id shape-id "Original")
+                                     [:colors color-id] (library-color color-id "Original color"))
+             local         (dch/commit {:file-id file-id :file-revn 0 :file-vern 0
+                                        :redo-changes [(thp/rename page-id shape-id "Local edit")]
+                                        :undo-changes [(thp/rename page-id shape-id "Original")]})
+             team-changes  [{:type :mod-color :color (library-color color-id "Peer color")}
+                            {:type :set-token-set :id set-id :attrs {:id set-id :name "Peer set"}}
+                            (thp/rename page-id shape-id "Repaired")
+                            (thp/set-attr page-id shape-id :opacity 0.7)]
+             library-msg   (library-change-msg {:file-id file-id :revn 2 :repair-base-revn 0
+                                                :repaired true
+                                                :changes team-changes})
+             file-msg      (-> library-msg
+                               (assoc :type :file-change :library-change true
+                                      :revision-ids [(uuid/next) (uuid/next)])
+                               (dissoc :modified-at)
+                               (assoc :changes (into [{:type :mod-page :id page-id :name "Peer page"}]
+                                                     team-changes)))]
+         (ptk/emit! store (thp/open-file file-id page-id original)
+                    #(assoc-in % [:files file-id :is-shared] true)
+                    local)
+         (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
+                                      "the local edit is pending"))
+
+         ;; The library delivery comes first but has only the filtered delta.
+         (ptk/emit! store (dwntf/handle-library-change library-msg))
+         (await (async/settle))
+         (t/is (= "Original color" (get-color-name store file-id color-id)))
+
+         (ptk/emit! store (dwntf/handle-file-change file-msg))
+         (await (async/wait-for-store store #(= 2 (get-in @store [:files file-id :revn]))
+                                      "the full aggregate is installed"))
+         (ptk/emit! store (dwntf/handle-library-change library-msg))
+         (await (async/settle))
+         (t/is (= "Peer page" (get-in @store [:files file-id :data :pages-index page-id :name])))
+         (t/is (= "Peer color" (get-color-name store file-id color-id)))
+         (t/is (= 0.7 (thp/shape-attr store file-id page-id shape-id :opacity)))
+         (t/is (= "Local edit" (thp/shape-name store file-id page-id shape-id)))
+         (t/is (= 1 (count (get-in @store [:persistence :remote-changes file-id])))
+               "only one remote batch is retained under the pending edit")
+         (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag]))
+               "the repair notice takes priority over the token-set update notice")
+         (t/is (empty? (get-file-reads requests))))))))
+
+(defn- library-data
+  [file-id color]
+  {:id file-id :pages [] :pages-index {} :colors {(:id color) color}})
+
+(defn- load-linked-library
+  [file-id library-id color synced-at]
+  (let [library {:id library-id :library-of file-id :synced-at synced-at
+                 :revn 6 :vern 0 :data (library-data library-id color)}]
+    (fn [state]
+      (-> state
+          (assoc :workspace-load-id (uuid/next))
+          (assoc-in [:files file-id :data] {:id file-id :pages [] :pages-index {}})
+          (assoc-in [:files library-id] library)
+          (dps/file-base-loaded library)))))
+
+(defn- read-file-response
+  [read]
+  (fn [command _]
+    (->> (case command
+           :get-file read
+           :get-file-object-thumbnails (rx/of {})
+           (rx/empty))
+         (rx/observe-on :async))))
+
+(defn- height-set
+  [name value]
+  (ctob/make-token-set
+   :name name
+   :tokens {"size" (ctob/make-token :name "size" :type :sizing :value value)}))
+
+(defn- token-status
+  [sets]
+  (ctos/make-tokens-status :active-set-ids (into #{} (map ctob/get-id) sets)))
+
+(defn- ^:async marked-file-reconciliation
+  [mark-first?]
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [page-id (uuid/next)
+               set-id  (uuid/next)
+               data    (assoc (thp/file-data page-id (uuid/next) "Original") :id file-id)
+               msg     (file-change-msg {:file-id file-id :revn 2 :revision-ids [(uuid/next)]
+                                         :changes [{:type :set-token-set :id set-id
+                                                    :attrs {:id set-id :name "Delta set"}}]})
+               read-set (height-set "Read set" "16")
+               tokens  (ctob/add-set (ctob/make-tokens-lib) read-set)
+               effects (atom [])
+               sub     (->> (ptk/input-stream store)
+                            (rx/filter library-effect?)
+                            (rx/subs! (fn [event]
+                                        (swap! effects conj
+                                               [(ptk/type event)
+                                                (get-in @store [:files file-id :data :tokens-lib])]))))]
+           (try
+             (ptk/emit! store (thp/open-file file-id page-id data)
+                        #(-> %
+                             (assoc-in [:files file-id :is-shared] false)
+                             (assoc-in [:persistence :file-order file-id] (porder/loaded 0 0)))
+                        (dwntf/handle-file-change (cond-> msg mark-first? (assoc :library-change true))))
+             (await (async/wait-for #(seq (get-file-reads requests))
+                                    "the full delta has a gap and requires a read" {:signal requests$}))
+             (ptk/emit! store
+                        (dwntf/handle-file-change
+                         (cond-> (assoc msg :revn 3 :revision-ids [(uuid/next)])
+                           (not mark-first?) (assoc :library-change true)))
+                        (dwntf/handle-file-change
+                         (assoc msg :revn 4 :revision-ids [(uuid/next)] :changes [])))
+             (await (async/settle))
+             (t/is (empty? @effects) "the skipped delta emits no library effects")
+             (rx/push! read {:id file-id :revn 4 :vern 0 :is-shared false
+                             :data (assoc data :tokens-lib tokens :tokens-status (token-status [read-set]))})
+             (await (async/wait-for-store store #(>= (count @effects) 2)
+                                          "the installed base emits its effects"))
+             (await (async/settle))
+             (t/is (= #{[::dwl/notify-sync-file tokens] [::dwtp/propagate-workspace-tokens tokens]}
+                      (set @effects)))
+             (t/is (= 2 (count @effects)) "the authoritative data only runs each effect once")
+             (t/is (= [file-id] (get-file-reads requests)))
+             (t/is (nil? (:notification @store)) "a read cannot identify which token sets or themes changed")
+             (finally (rx/dispose! sub)))))
+       (read-file-response read)))))
+
+(t/deftest ^:async a-marked-delta-reconciles-the-open-file-despite-stale-share-status
+  (await (marked-file-reconciliation true)))
+
+(t/deftest ^:async a-marked-delta-joins-an-in-flight-read-without-discarding-its-effects
+  (await (marked-file-reconciliation false)))
+
+(defn- ^:async with-preview-reconciliation
+  [scenario & {:keys [tokens-source]}]
+  (let [history (rx/subject)
+        read    (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$] :as fixture}]
+         (let [team-id     (uuid/next)
+               page-id     (uuid/next)
+               shape-id    (uuid/next)
+               snapshot-id (uuid/next)
+               live-set    (height-set "Live set" "24")
+               ref-set     (height-set "Reference set" "8")
+               ref-id      (ctob/get-id ref-set)
+               base-tokens (reduce ctob/add-set (ctob/make-tokens-lib) [live-set ref-set])
+               token-id    (:id (ctob/get-token-by-name base-tokens "Reference set" "size"))
+               peer-tokens (ctob/update-token base-tokens ref-id token-id #(assoc % :value "16"))
+               status      (token-status [live-set ref-set])
+               data        (cond-> (assoc (thp/file-data page-id shape-id "Live")
+                                          :id file-id :tokens-lib base-tokens :tokens-status status)
+                             tokens-source (assoc :tokens-source tokens-source))
+               historical  (assoc (thp/file-data page-id shape-id "Historical") :id file-id)
+               effects     (atom [])
+               sub         (->> (ptk/input-stream store)
+                                (rx/filter library-effect?)
+                                (rx/subs!
+                                 (fn [event]
+                                   (let [file (get-in @store [:files file-id])]
+                                     (swap! effects conj
+                                            [(ptk/type event)
+                                             (:revn file)
+                                             (datafy (get-in file [:data :tokens-lib]))
+                                             (thp/shape-name store file-id page-id shape-id)])))))]
+           (try
+             (ptk/emit! store (thp/open-file file-id page-id data)
+                        #(-> %
+                             (assoc :workspace-load-id (uuid/next))
+                             (update-in [:files file-id] assoc :vern 0 :is-shared false))
+                        (dwntf/initialize team-id file-id)
+                        (dwv/enter-preview snapshot-id))
+             (await (async/wait-for #(some (comp #{:get-file-snapshot} first) @requests)
+                                    "the historical version is requested" {:signal requests$}))
+             (rx/push! history {:id file-id :vern 0 :revn 0 :data historical})
+             (await (async/wait-for-store store #(= "Historical" (thp/shape-name store file-id page-id shape-id))
+                                          "the historical version is visible"))
+             (await (scenario (assoc fixture
+                                     :read read :data data :page-id page-id :shape-id shape-id
+                                     :base-tokens base-tokens :peer-tokens peer-tokens :effects effects
+                                     :ref-id ref-id :token-id token-id :live-set live-set)))
+             (finally (rx/dispose! sub)))))
+       (fn [command _]
+         (->> (case command
+                :get-file-snapshot history
+                :get-file read
+                (rx/empty))
+              (rx/take 1)
+              (rx/observe-on :async)))))))
+
+(defn- ^:async request-preview-file
+  [{:keys [file-id store requests requests$]} revn library-change]
+  (let [expected (conj (get-file-reads requests) file-id)
+        message  (file-change-msg (cond-> {:file-id file-id :topic file-id :revn revn
+                                           :revision-ids [(uuid/next)]}
+                                    library-change (assoc :library-change true)))]
+    (ptk/emit! store (websocket-message message))
+    (await (async/wait-for #(= expected (get-file-reads requests))
+                           "the WebSocket delta requires a fresh live file" {:signal requests$}))))
+
+(defn- ^:async reconcile-preview-file
+  [{:keys [file-id store read data] :as fixture} revn library-change tokens
+   & {:keys [shared tokens-status] :or {shared false}}]
+  (await (request-preview-file fixture revn library-change))
+  (rx/push! read {:id file-id :vern 0 :revn revn :is-shared shared
+                  :data (cond-> (assoc data :tokens-lib tokens)
+                          tokens-status (assoc :tokens-status tokens-status))})
+  (await (async/wait-for-store store #(= revn (get-in @store [:workspace-versions :backup :revn]))
+                               "the result is installed in the live backup")))
+
+(defn- ^:async leave-preview
+  [store]
+  (ptk/emit! store (dwv/exit-preview))
+  (await (async/wait-for-store store #(nil? (get-in @store [:workspace-global :preview-id]))
+                               "the preview ends"))
+  (await (async/settle)))
+
+(t/deftest ^:async preview-defers-marked-library-effects-until-the-last-live-file-is-visible
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [file-id store page-id shape-id peer-tokens effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 true peer-tokens))
+       ;; An unmarked later read must not lose the first read's effects.
+       (await (reconcile-preview-file fixture 3 false (ctob/make-tokens-lib (datafy peer-tokens))))
+       (await (async/settle))
+       (t/is (= "Historical" (thp/shape-name store file-id page-id shape-id)))
+       (t/is (nil? (get-in @store [:files file-id :data :tokens-lib])))
+       (t/is (empty? @effects) "no library effects run against the snapshot")
+       (await (leave-preview store))
+       (let [live [3 (datafy peer-tokens) "Live"]]
+         (t/is (= #{(into [::dwl/notify-sync-file] live)
+                    (into [::dwtp/propagate-workspace-tokens] live)}
+                  (set @effects)))
+         (t/is (= 2 (count @effects)) "each effect runs once on the latest live data"))))))
+
+(t/deftest ^:async preview-does-not-propagate-tokens-that-return-to-their-original-values
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store base-tokens peer-tokens ref-id token-id effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 true peer-tokens))
+       (let [restored (with-redefs [ct/now (constantly (ct/inst 0))]
+                        (ctob/update-token peer-tokens ref-id token-id #(assoc % :value "8")))]
+         (t/is (= "8" (:value (ctob/get-token restored ref-id token-id))))
+         (t/is (not= (:modified-at (ctob/get-token base-tokens ref-id token-id))
+                     (:modified-at (ctob/get-token restored ref-id token-id))))
+         (t/is (not= (ctob/get-modified-at (ctob/get-set base-tokens ref-id))
+                     (ctob/get-modified-at (ctob/get-set restored ref-id))))
+         (await (reconcile-preview-file fixture 3 true restored))
+         (await (leave-preview store))
+         (t/is (= [[::dwl/notify-sync-file 3 (datafy restored) "Live"]] @effects)))))))
+
+(t/deftest ^:async preview-propagates-after-a-read-that-only-reorders-token-sets
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [file-id store data base-tokens effects] :as fixture}]
+       (let [reordered (reduce ctob/add-set
+                               (ctob/make-tokens-lib (dissoc (datafy base-tokens) :sets))
+                               (reverse (ctob/get-sets base-tokens)))
+             status    (:tokens-status data)]
+         (t/is (= (datafy base-tokens) (datafy reordered)) "the set contents have not changed")
+         (t/is (= "8" (get-in (cfo/get-tokens-in-active-sets status base-tokens) ["size" :value])))
+         (t/is (= "24" (get-in (cfo/get-tokens-in-active-sets status reordered) ["size" :value])))
+         (t/is (= ["Live set" "Reference set"] (ctob/get-set-names base-tokens)))
+         (await (reconcile-preview-file fixture 2 true reordered))
+         (await (leave-preview store))
+         (t/is (= ["Reference set" "Live set"]
+                  (ctob/get-set-names (get-in @store [:files file-id :data :tokens-lib]))))
+         (t/is (= [[::dwtp/propagate-workspace-tokens 2 (datafy reordered) "Live"]]
+                  (filterv #(= ::dwtp/propagate-workspace-tokens (first %)) @effects))))))))
+
+(t/deftest ^:async preview-propagates-after-a-read-that-only-changes-active-sets
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [file-id store base-tokens live-set effects] :as fixture}]
+       (let [status (token-status [live-set])]
+         (await (reconcile-preview-file fixture 2 true base-tokens :tokens-status status))
+         (await (leave-preview store))
+         (t/is (= "24" (get-in (cfo/get-tokens-in-active-sets
+                                (get-in @store [:files file-id :data :tokens-status]) base-tokens)
+                               ["size" :value])))
+         (t/is (= [::dwl/notify-sync-file ::dwtp/propagate-workspace-tokens]
+                  (mapv first @effects))))))))
+
+(t/deftest ^:async preview-notifies-without-propagating-after-library-metadata-changes
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store base-tokens ref-id effects] :as fixture}]
+       (let [updated (-> base-tokens
+                         (ctob/update-set ref-id #(ctob/set-description % "Reference sizes"))
+                         (ctob/update-theme ctob/hidden-theme-id #(assoc % :description "Active sets")))]
+         (t/is (not= (datafy base-tokens) (datafy updated)))
+         (await (reconcile-preview-file fixture 2 true updated))
+         (await (leave-preview store))
+         (t/is (= [[::dwl/notify-sync-file 2 (datafy updated) "Live"]] @effects)))))))
+
+(t/deftest ^:async preview-notifies-without-propagating-after-an-inactive-set-is-added
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store base-tokens effects] :as fixture}]
+       (let [updated (ctob/add-set base-tokens (height-set "Inactive set" "32"))]
+         (await (reconcile-preview-file fixture 2 true updated))
+         (await (leave-preview store))
+         (t/is (= [[::dwl/notify-sync-file 2 (datafy updated) "Live"]] @effects)))))))
+
+(t/deftest ^:async preview-propagates-after-a-read-that-changes-a-token-reference
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store base-tokens ref-id token-id effects] :as fixture}]
+       (let [updated (ctob/update-token base-tokens ref-id token-id #(assoc % :value "{other-size}"))]
+         (await (reconcile-preview-file fixture 2 true updated))
+         (await (leave-preview store))
+         (t/is (= [::dwl/notify-sync-file ::dwtp/propagate-workspace-tokens]
+                  (mapv first @effects))))))))
+
+(t/deftest ^:async preview-uses-the-share-status-of-the-reconciled-file
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store peer-tokens effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 false peer-tokens :shared true))
+       (await (leave-preview store))
+       (t/is (= [[::dwl/notify-sync-file 2 (datafy peer-tokens) "Live"]
+                 [::dwtp/propagate-workspace-tokens 2 (datafy peer-tokens) "Live"]]
+                @effects))))))
+
+(t/deftest ^:async preview-does-not-propagate-tokens-from-an-inactive-source
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store peer-tokens effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 true peer-tokens))
+       (await (leave-preview store))
+       (t/is (= [[::dwl/notify-sync-file 2 (datafy peer-tokens) "Live"]] @effects)))
+     :tokens-source (uuid/next))))
+
+(t/deftest ^:async preview-library-effects-do-not-cross-workspace-openings
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [store peer-tokens effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 true peer-tokens))
+       (ptk/emit! store #(assoc % :workspace-load-id (uuid/next)))
+       (await (leave-preview store))
+       (t/is (empty? @effects))))))
+
+(t/deftest ^:async preview-library-effects-do-not-cross-file-versions
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [file-id store peer-tokens effects] :as fixture}]
+       (await (reconcile-preview-file fixture 2 true peer-tokens))
+       ;; Simulate a restored live version without also changing the opening,
+       ;; to isolate the version guard at delivery.
+       (ptk/emit! store #(assoc-in % [:workspace-versions :backup :vern] 1))
+       (await (leave-preview store))
+       (t/is (= 1 (get-in @store [:files file-id :vern])))
+       (t/is (empty? @effects))))))
+
+(t/deftest ^:async exiting-preview-before-the-read-uses-normal-reconciliation
+  (await
+   (with-preview-reconciliation
+     (^:async fn [{:keys [file-id store read data peer-tokens effects] :as fixture}]
+       (await (request-preview-file fixture 2 true))
+       (await (leave-preview store))
+       (t/is (empty? @effects) "leaving the preview does not run effects for an in-flight read")
+       (rx/push! read {:id file-id :vern 0 :revn 2 :is-shared false :data (assoc data :tokens-lib peer-tokens)})
+       (await (async/wait-for-store store #(= 2 (get-in @store [:files file-id :revn]))
+                                    "the read is installed in the live file"))
+       (await (async/settle))
+       (t/is (= [[::dwl/notify-sync-file 2 (datafy peer-tokens) "Live"]
+                 [::dwtp/propagate-workspace-tokens 2 (datafy peer-tokens) "Live"]]
+                @effects))))))
+
+(t/deftest ^:async an-in-flight-read-ignores-marked-duplicates-and-other-versions
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [page-id   (uuid/next)
+               data      (assoc (thp/file-data page-id (uuid/next) "Original") :id file-id)
+               msg       (file-change-msg {:file-id file-id :vern 1 :revision-ids [(uuid/next)]
+                                           :library-change true
+                                           :changes [{:type :add-color
+                                                      :color (library-color (uuid/next) "Peer color")}]})
+               gap       (-> msg
+                             (dissoc :library-change)
+                             (assoc :revn 3 :changes [] :revision-ids [(uuid/next)]))
+               stale     (assoc msg :vern 0 :revn 5 :repaired true :revision-ids [(uuid/next)])
+               tokens    (-> (ctob/make-tokens-lib)
+                             (ctob/add-set (ctob/make-token-set {:id (uuid/next) :name "Read set"})))
+               effects   (atom [])
+               sub       (->> (ptk/input-stream store)
+                              (rx/filter library-effect?)
+                              (rx/subs! #(swap! effects conj (ptk/type %))))]
+           (try
+             (ptk/emit! store (thp/open-file file-id page-id data)
+                        #(-> %
+                             (update-in [:files file-id] assoc :vern 1 :is-shared true)
+                             (assoc-in [:persistence :file-order file-id] (porder/loaded 1 0)))
+                        (dwntf/handle-file-change msg))
+             (await (async/wait-for-store store #(= 2 (count @effects))
+                                          "the marked delta applies once"))
+             (ptk/emit! store (dwntf/handle-file-change gap))
+             (await (async/wait-for #(seq (get-file-reads requests))
+                                    "the unmarked delta requires a read" {:signal requests$}))
+             (ptk/emit! store (dwntf/handle-file-change msg) (dwntf/handle-file-change stale))
+             (await (async/settle))
+             (rx/push! read {:id file-id :revn 3 :vern 1 :is-shared false :data (assoc data :tokens-lib tokens)})
+             (await (async/wait-for-store store #(= 3 (get-in @store [:files file-id :revn]))
+                                          "the obsolete revision cannot raise the minimum for the read"))
+             (await (async/settle))
+             (t/is (= {::dwl/library-change-effects 1 ::dwl/notify-sync-file 1} (frequencies @effects))
+                   "neither discarded message can add its effects to the read")
+             (t/is (nil? (:notification @store)))
+             (t/is (= [file-id] (get-file-reads requests)))
+             (finally (rx/dispose! sub)))))
+       (read-file-response read)))))
+
+(t/deftest ^:async ordinary-file-changes-that-arrive-out-of-order-read-the-current-file
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [page-id  (uuid/next)
+               shape-id (uuid/next)
+               data     (thp/file-data page-id shape-id "Original")
+               rename   (fn [revn name]
+                          (file-change-msg {:file-id file-id :revn revn :revision-ids [(uuid/next)]
+                                            :changes [(thp/rename page-id shape-id name)]}))
+               contiguous (rename 1 "Contiguous peer")
+               older    (rename 2 "Earlier peer")
+               newer    (rename 3 "Later peer")
+               name     #(thp/shape-name store file-id page-id shape-id)]
+           (ptk/emit! store (thp/open-file file-id page-id data)
+                      #(dps/file-base-loaded % {:id file-id :vern 0 :revn 0})
+                      (dwntf/handle-file-change contiguous))
+           (await (async/wait-for-store store #(= "Contiguous peer" (name)) "the contiguous edit applies"))
+           (ptk/emit! store (dwntf/handle-file-change contiguous))
+           (await (async/settle))
+           (t/is (empty? (get-file-reads requests)))
+           (ptk/emit! store (dwntf/handle-file-change newer) (dwntf/handle-file-change older))
+           (t/is (= "Contiguous peer" (name)) "the deltas cannot overwrite the view out of order")
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the gap requests current data" {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 3
+                           :data (thp/file-data page-id shape-id "Later peer")})
+           (await (async/wait-for-store store #(= "Later peer" (name)) "the server state is installed"))
+           (ptk/emit! store (dwntf/handle-file-change older) (dwntf/handle-file-change newer))
+           (await (async/settle))
+           (t/is (= "Later peer" (name)))
+           (t/is (= [file-id] (get-file-reads requests)) "the read also covers both replays")
+           (t/is (not-any? (comp #{:update-file-v2} first) @requests))))
+       (read-file-response read)))))
+
+(t/deftest ^:async an-ordinary-library-change-that-arrives-late-reads-both-assets
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [library-id (uuid/next)
+               first-id   (uuid/next)
+               second-id  (uuid/next)
+               older      (library-color first-id "Earlier peer")
+               newer      (library-color second-id "Later peer")
+               msg        (library-change-msg {:file-id library-id})
+               change     (fn [revn color]
+                            (dwntf/handle-library-change
+                             (assoc msg :revn revn :changes [{:type :add-color :color color}])))]
+           (ptk/emit! store
+                      (load-linked-library file-id library-id (library-color (uuid/next) "Original")
+                                           (:modified-at msg))
+                      (change 9 newer))
+           (await (async/wait-for-store store #(= "Later peer" (get-color-name store library-id second-id))
+                                        "a forward gap on the team topic is valid"))
+           (t/is (empty? (get-file-reads requests)))
+           (ptk/emit! store (change 8 older))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the unseen older asset requires a read" {:signal requests$}))
+           (rx/push! read {:id library-id :vern 0 :revn 9
+                           :data (assoc-in (library-data library-id newer) [:colors first-id] older)})
+           (await (async/wait-for-store store #(= "Earlier peer" (get-color-name store library-id first-id))
+                                        "the read installs the missing asset"))
+           (t/is (= "Later peer" (get-color-name store library-id second-id)))
+           (t/is (= [library-id] (get-file-reads requests)))
+           (t/is (not-any? (comp #{:update-file-v2} first) @requests))))
+       (read-file-response read)))))
+
+(defn- get-fallback-scenario
+  [file-id]
+  (let [page-id  (uuid/next)
+        shape-id (uuid/next)
+        child-id (uuid/next)
+        child    (cts/setup-shape {:id child-id :type :rect :name "New"
+                                   :parent-id uuid/zero :frame-id uuid/zero})
+        original (thp/file-data page-id shape-id "Original")
+        edit     {:type :add-obj :id child-id :page-id page-id :obj child
+                  :parent-id uuid/zero :frame-id uuid/zero}
+        repair   [(thp/set-attr page-id uuid/zero :shapes [shape-id])
+                  (thp/rename page-id shape-id "Repaired")]
+        common   {:file-id file-id :profile-id (uuid/next) :topic file-id}]
+    {:page-id page-id :shape-id shape-id :children [shape-id child-id]
+     :open (thp/open-file file-id page-id original)
+     :file {:id file-id :revn 2 :vern 0
+            :data (-> (thp/add-shape original page-id child)
+                      (assoc-in [:pages-index page-id :objects shape-id :name] "Repaired"))}
+     :repair-msg (file-change-msg (assoc common :revn 1 :changes repair :repaired true
+                                         :session-id #uuid "a11c0de5-0000-4000-8000-000000000001"
+                                         :revision-ids [(uuid/next)]))
+     :edit-msg (file-change-msg (assoc common :revn 2 :changes [edit] :revision-ids [(uuid/next)]))}))
+
+(t/deftest ^:async a-late-fallback-repair-does-not-drop-a-child-added-by-the-edit
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [{:keys [page-id shape-id children open file repair-msg edit-msg]} (get-fallback-scenario file-id)]
+           (ptk/emit! store open (dwntf/handle-file-change edit-msg))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the edit ahead of the repair requests the current file" {:signal requests$}))
+           (ptk/emit! store (dwntf/handle-file-change repair-msg))
+           (t/is (= [shape-id] (thp/shape-attr store file-id page-id uuid/zero :shapes))
+                 "neither delta is installed on an unproven base")
+           (t/is (= "Original" (thp/shape-name store file-id page-id shape-id)))
+           (rx/push! read file)
+           (await (async/wait-for-store store #(= "Repaired" (thp/shape-name store file-id page-id shape-id))
+                                        "the current server state is installed"))
+           (t/is (= children (thp/shape-attr store file-id page-id uuid/zero :shapes)))
+           (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag])))
+           (ptk/emit! store (ntf/hide :tag dps/file-repaired-tag)
+                      (dwntf/handle-file-change repair-msg))
+           (await (async/settle))
+           (t/is (nil? (:notification @store)) "the read already announced this repair")
+           (t/is (= [file-id] (get-file-reads requests)))))
+       (read-file-response read)))))
+
+(t/deftest ^:async a-repair-covered-by-a-recovery-read-still-notifies-once
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [page-id (uuid/next)
+               shape-id (uuid/next)
+               data    (thp/file-data page-id shape-id "Original")
+               message #(dwntf/handle-file-change (file-change-msg (assoc % :file-id file-id)))
+               repair  {:revn 4 :repaired true :repair-base-revn 2
+                        :revision-ids [(uuid/next) (uuid/next)]
+                        :changes [(thp/rename page-id shape-id "Repaired")]}
+               later   {:revn 5 :revision-ids [(uuid/next)]
+                        :changes [(thp/rename page-id shape-id "Later peer")]}]
+           (ptk/emit! store (thp/open-file file-id page-id data)
+                      #(-> %
+                           (assoc :workspace-load-id (uuid/next))
+                           (assoc-in [:files file-id :revn] 2)
+                           (dps/file-base-loaded {:id file-id :vern 0 :revn 2}))
+                      (message later))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the gap starts a recovery read" {:signal requests$}))
+           (rx/push! read {:id file-id :vern 0 :revn 5
+                           :data (thp/file-data page-id shape-id "Later peer")})
+           (await (async/wait-for-store store #(= "Later peer" (thp/shape-name store file-id page-id shape-id))
+                                        "the read installs the newer value"))
+           (ptk/emit! store (message (assoc repair :revn 2 :repair-base-revn 0))
+                      (message (assoc repair :vern 1)))
+           (await (async/settle))
+           (t/is (nil? (:notification @store)) "initially covered and other-version repairs stay silent")
+           (ptk/emit! store (message repair))
+           (await (async/settle))
+           (t/is (= dps/file-repaired-tag (get-in @store [:notification :tag]))
+                 "the late repair still notifies")
+           (ptk/emit! store (ntf/hide :tag dps/file-repaired-tag) (message repair))
+           (await (async/settle))
+           (t/is (nil? (:notification @store)) "the same repair does not show again after dismissal")
+           (t/is (= "Later peer" (thp/shape-name store file-id page-id shape-id)))
+           (t/is (= [file-id] (get-file-reads requests)))
+           (t/is (not-any? (comp #{:update-file-v2} first) @requests))))
+       (read-file-response read)))))
+
+(t/deftest ^:async contiguous-fallback-rows-apply-in-order-and-a-known-repair-is-ignored
+  (await
+   (thp/with-persistence
+     (^:async fn [{:keys [file-id store requests]}]
+       (let [{:keys [page-id shape-id children open repair-msg edit-msg]} (get-fallback-scenario file-id)
+             notices (atom 0)
+             sub     (->> (ptk/input-stream store)
+                          (rx/filter (ptk/type? ::dps/notify-repaired))
+                          (rx/subs! (fn [_] (swap! notices inc))))]
+         (try
+           (ptk/emit! store open (dwntf/handle-file-change repair-msg))
+           (await (async/wait-for-store store #(= 1 @notices) "the repair applies and notifies"))
+           (t/is (= "Repaired" (thp/shape-name store file-id page-id shape-id)))
+           (ptk/emit! store (dwntf/handle-file-change edit-msg))
+           (await (async/wait-for-store store #(= 2 (get-in @store [:files file-id :revn]))
+                                        "the edit applies after the repair"))
+           (ptk/emit! store (dwntf/handle-file-change repair-msg))
+           (await (async/settle))
+           (t/is (= children (thp/shape-attr store file-id page-id uuid/zero :shapes)))
+           (t/is (= 1 @notices))
+           (t/is (empty? (get-file-reads requests)))
+           (finally (rx/dispose! sub))))))))
+
+(t/deftest a-file-repair-needs-more-than-the-latest-revision-number
+  (let [message {:revn 3 :repaired true :revision-ids [(uuid/next)]}
+        base    (porder/loaded 0 0)
+        gap     (porder/applied base {:revn 2 :revision-ids [(uuid/next)]})]
+    (t/is (= :reconcile (porder/decision base message false)) "the predecessor has not arrived")
+    (t/is (= :reconcile (porder/decision gap message false)) "the predecessor has an earlier gap")))
+
+(t/deftest recovery-keeps-a-bounded-history-of-announced-repairs
+  (let [repairs (mapv (fn [revn] [revn (uuid/next)]) (range 1 140))
+        order   (-> (porder/loaded 0 0)
+                    (porder/announce-repairs repairs)
+                    (porder/recovered 200))]
+    (t/is (< (count (:announced-repairs order)) (count repairs)))
+    (t/is (porder/announced-repair? order (first repairs)) "older duplicates stay retired")
+    (t/is (porder/announced-repair? order (peek repairs)) "recent repairs keep their row identity")
+    (t/is (not (porder/announced-repair? order [139 (uuid/next)])))
+    (t/is (porder/recovered-repair? order [150 (uuid/next)]))))
+
+(t/deftest ^:async a-library-gap-is-valid-but-a-late-aggregate-reads-the-current-library
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [library-id (uuid/next)
+               color-id   (uuid/next)
+               newest    (library-color color-id "Later peer")
+               msg       (library-change-msg {:file-id library-id})]
+           (ptk/emit! store (load-linked-library file-id library-id (library-color color-id "Original")
+                                                 (:modified-at msg))
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 9 :revision-ids [(uuid/next)]
+                              :changes [{:type :mod-color :color newest}])))
+           (await (async/wait-for-store store #(= "Later peer" (get-color-name store library-id color-id))
+                                        "the library topic may skip unreported revisions"))
+           (t/is (empty? (get-file-reads requests)))
+
+           (ptk/emit! store
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 8 :repair-base-revn 6 :repaired true
+                              :revision-ids [(uuid/next) (uuid/next)]
+                              :changes [{:type :mod-color :color (library-color color-id "Older repair")}])))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the late aggregate requests a fresh library" {:signal requests$}))
+           (t/is (= "Later peer" (get-color-name store library-id color-id))
+                 "the repair is not applied while the read is in flight")
+
+           (rx/push! read {:id library-id :vern 0 :revn 10 :data (library-data library-id newest)})
+           (await (async/wait-for-store store #(= 10 (get-in @store [:files library-id :revn]))
+                                        "the fresh library is installed"))
+           (t/is (= "Later peer" (get-color-name store library-id color-id)))
+           (t/is (= [library-id] (get-file-reads requests)))))
+       (read-file-response read)))))
+
+(t/deftest ^:async library-fallback-repairs-allow-forward-gaps-but-not-late-rows
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [library-id (uuid/next)
+               color-id   (uuid/next)
+               newest     (library-color color-id "Later peer")
+               msg        (library-change-msg {:file-id library-id})]
+           (ptk/emit! store (load-linked-library file-id library-id (library-color color-id "Original")
+                                                 (:modified-at msg))
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 8 :repaired true
+                              :changes [{:type :mod-color :color (library-color color-id "First repair")}])))
+           (await (async/wait-for-store store #(= "First repair" (get-color-name store library-id color-id))
+                                        "a filtered library may miss earlier revisions"))
+           (ptk/emit! store
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 10 :changes [{:type :mod-color :color newest}])))
+           (await (async/wait-for-store store #(= "Later peer" (get-color-name store library-id color-id))
+                                        "a normal library gap needs no read, even after a repair"))
+           (t/is (empty? (get-file-reads requests)))
+
+           (ptk/emit! store
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 9 :repaired true
+                              :changes [{:type :mod-color :color (library-color color-id "Late repair")}])))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "a late repair requests the current library" {:signal requests$}))
+           (t/is (= "Later peer" (get-color-name store library-id color-id)))
+           (rx/push! read {:id library-id :vern 0 :revn 11 :data (library-data library-id newest)})
+           (await (async/wait-for-store store #(= 11 (get-in @store [:files library-id :revn]))
+                                        "the updated library data is installed"))
+           (t/is (= "Later peer" (get-color-name store library-id color-id)))
+           (t/is (= [library-id] (get-file-reads requests)))))
+       (read-file-response read)))))
+
+(t/deftest ^:async an-older-ordinary-library-change-cannot-overwrite-an-applied-aggregate
+  (let [read (rx/subject)]
+    (await
+     (thp/with-persistence
+       (^:async fn [{:keys [file-id store requests requests$]}]
+         (let [library-id (uuid/next)
+               color-id   (uuid/next)
+               repaired   (library-color color-id "Repaired")
+               msg        (library-change-msg {:file-id library-id})]
+           (ptk/emit! store (load-linked-library file-id library-id (library-color color-id "Original")
+                                                 (:modified-at msg))
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 9 :repair-base-revn 7 :repaired true
+                              :revision-ids [(uuid/next) (uuid/next)]
+                              :changes [{:type :mod-color :color repaired}])))
+           (await (async/wait-for-store store #(= "Repaired" (get-color-name store library-id color-id))
+                                        "the aggregate applies after a gap in the library topic"))
+           (t/is (empty? (get-file-reads requests)))
+
+           ;; Revision 7 was not part of the aggregate, and was unseen.
+           (ptk/emit! store
+                      (dwntf/handle-library-change
+                       (assoc msg :revn 7 :revision-ids [(uuid/next)]
+                              :changes [{:type :mod-color :color (library-color color-id "Older peer")}])))
+           (await (async/wait-for #(seq (get-file-reads requests))
+                                  "the older delta is reconciled without applying it" {:signal requests$}))
+           (t/is (= "Repaired" (get-color-name store library-id color-id)))
+
+           (rx/push! read {:id library-id :vern 0 :revn 10 :data (library-data library-id repaired)})
+           (await (async/wait-for-store store #(= 10 (get-in @store [:files library-id :revn]))
+                                        "the reconciliation preserves the repair"))
+           (t/is (= "Repaired" (get-color-name store library-id color-id)))
+           (t/is (= [library-id] (get-file-reads requests)))))
+       (read-file-response read)))))
 
 (defn- restored-events
   "Events the watch of `handle-file-restored` emits for `msg` on `state`."
@@ -168,6 +1259,29 @@
                                                :session-id (uuid/next)
                                                :vern 2}))]
     (t/is (empty? events))))
+
+(t/deftest ^:async catch-up-routes-a-real-restore-notice-through-persistence
+  (await
+   (mock/with-mocks*
+     {cf/flags                   #{:file-catch-up}
+      dps/reconcile-restored-file #(ptk/data-event ::restore-details %)}
+     (let [file-id    (uuid/next)
+           profile-id (uuid/next)
+           created-at (ct/now)
+           state      {:current-file-id file-id
+                       :files {file-id {:id file-id :vern 1}}
+                       :profiles {profile-id {:id profile-id :fullname "Ada"}}}
+           events     (await (restored-events state {:type :file-restored
+                                                     :file-id file-id
+                                                     :session-id (uuid/next)
+                                                     :profile-id profile-id
+                                                     :vern 2
+                                                     :label "Hand-off v2"
+                                                     :created-at created-at}))]
+       (t/is (= [::restore-details] (mapv ptk/type events))
+             "persistence coordinates reload and notice; neither starts directly")
+       (t/is (= {:file-id file-id :vern 2 :fullname "Ada" :label "Hand-off v2" :date created-at}
+                (some #(when (ptk/type? ::restore-details %) @%) events)))))))
 
 (defn- ^:async subscription-messages
   "Runs `scenario` with a store over `team-id`, `dws/send` and the pointer

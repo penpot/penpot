@@ -1899,6 +1899,12 @@ msgstr[1] ""
 "Ya no puedes editar este archivo, así que %s cambios no se han podido "
 "guardar. Recarga la página para ver el archivo como está ahora."
 
+#: src/app/main/data/persistence.cljs:636
+msgid "errors.save-reconciliation-failed"
+msgstr ""
+"No se han podido leer los últimos cambios del servidor. Prueba de nuevo "
+"o abre otra vez el archivo. Tus cambios pendientes se conservan."
+
 #: src/app/main/data/persistence.cljs:701
 msgid "errors.save-rejected-changes-undone"
 msgstr ""
@@ -1917,6 +1923,13 @@ msgstr ""
 "Esta página tiene datos dañados que no se pueden reparar automáticamente, "
 "así que sus cambios no se pueden guardar y se han deshecho. Contacta con "
 "soporte."
+
+#: src/app/main/data/persistence.cljs:406 src/app/main/data/persistence.cljs:1187
+#: src/app/main/data/persistence.cljs:1214 src/app/main/data/persistence.cljs:1215
+msgid "errors.save-rejected-kept-saved-changes"
+msgstr ""
+"Algunos cambios no se han podido guardar. Parte de tu acción sigue "
+"guardada para no sobrescribir cambios más recientes."
 
 #: src/app/main/data/persistence.cljs:609
 msgid "errors.save-retrying"
