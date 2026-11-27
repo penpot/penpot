@@ -297,15 +297,94 @@
 
 (t/deftest migration-read-rereads-the-row-under-lock
   ;; The first read decides; only when a migration is pending the row is read
-  ;; again, and that second read takes the `file` row lock.
+  ;; again, after taking the `file` row lock in a separate statement.
   (let [{:keys [file-id]} (create-file!)]
     (force-migration! file-id)
     (let [[_ sqls] (th/read-recording-sql
                     #(db/tx-run! th/*system*
                                  (fn [cfg] (bfc/get-file cfg file-id))))]
       (t/is (= [bfc/sql:get-file
-                (str bfc/sql:get-file " FOR UPDATE of f")]
+                (str bfc/sql:get-minimal-file " FOR UPDATE of f")
+                bfc/sql:get-file]
                sqls)))))
+
+(defn- get-backend-pid
+  [cfg]
+  (:pid (db/exec-one! cfg ["SELECT pg_backend_pid() AS pid"])))
+
+(t/deftest locked-read-gets-the-payload-committed-by-the-lock-holder
+  ;; With READ COMMITTED, a SELECT that joins file_data and locks only file
+  ;; can return the updated file row with the old payload from its snapshot.
+  ;; Wait for PostgreSQL to confirm the reader is blocked before committing.
+  (let [{:keys [file-id page-id]} (create-file!)
+        reader-pid (promise)
+        page-path  [:data :pages-index page-id :name]
+        page-name  "Page from the committed writer"
+        reader
+        (db/tx-run!
+         th/*system*
+         (fn [cfg]
+           (let [writer-pid (get-backend-pid cfg)
+                 file       (bfc/get-file cfg file-id :lock-for-update? true :realize? true)]
+             (bfc/update-file! cfg (assoc-in file page-path page-name) :revn 1)
+             (let [reader (future
+                            (db/tx-run! th/*system*
+                                        (fn [cfg]
+                                          (deliver reader-pid (get-backend-pid cfg))
+                                          (bfc/get-file cfg file-id
+                                                        :lock-for-update? true
+                                                        :realize? true))))
+                   pid    (deref reader-pid 10000 ::timeout)]
+               (t/is (integer? pid))
+               (when (integer? pid)
+                 (let [deadline (+ (System/nanoTime) 10000000000)]
+                   (t/is (loop []
+                           (cond
+                             (:blocked (db/exec-one! cfg
+                                                     ["SELECT ?::integer = ANY(pg_blocking_pids(?::integer)) AS blocked"
+                                                      writer-pid pid]))
+                             true
+
+                             (or (realized? reader) (> (System/nanoTime) deadline))
+                             false
+
+                             :else
+                             (recur))))))
+               reader))))
+        file (deref reader 10000 ::timeout)]
+    (t/is (= 1 (:revn file)))
+    (t/is (= page-name (get-in file page-path)))))
+
+(t/deftest locked-read-skips-the-payload-when-the-file-is-locked
+  (let [{:keys [file-id]} (create-file!)]
+    (db/tx-run! th/*system*
+                (fn [cfg]
+                  (bfc/get-file cfg file-id :lock-for-update? true)
+                  (let [[file sqls] (th/read-recording-sql
+                                     #(bfc/get-file th/*system* file-id
+                                                    :lock-for-update? true
+                                                    :skip-locked? true
+                                                    :load-migrations? false))]
+                    (t/is (nil? file))
+                    (t/is (= [(str bfc/sql:get-minimal-file " FOR UPDATE of f SKIP LOCKED")]
+                             sqls)))))))
+
+(t/deftest already-locked-migration-does-not-reread-the-payload
+  (let [{:keys [file-id]} (create-file!)]
+    (force-migration! file-id)
+    (let [[file sqls] (th/read-recording-sql
+                       #(bfc/get-file th/*system* file-id :lock-for-update? true))]
+      (t/is (contains? (:migrations file) migration-name))
+      (t/is (= [(str bfc/sql:get-minimal-file " FOR UPDATE of f")
+                bfc/sql:get-file]
+               sqls)))))
+
+(t/deftest locked-payload-read-requires-an-active-transaction
+  (let [{:keys [file-id]} (create-file!)]
+    (t/is (thrown-with-msg? IllegalArgumentException #"active transaction"
+                            (bfc/get-file th/*system* file-id
+                                          :read-only? true
+                                          :lock-for-update? true)))))
 
 (t/deftest read-only-migration-never-writes
   ;; A read-only context migrates in memory: no lock, no row write and no

@@ -407,18 +407,16 @@
                       ;; When telemetry-enabled config is true, add :telemetry flag
                       (true? (c/get config :telemetry-enabled))
                       (conj :enable-telemetry))]
-    ;; :audit-log is no longer configurable: persistence follows the
-    ;; consumer flags, so a stale enable-audit-log in the environment is
-    ;; dropped instead of lingering in the set as a misleading no-op.
+    ;; A stale enable-audit-log in the environment does not control
+    ;; persistence or any consumer.
     (-> (flags/parse flags/default extra-flags (:flags config))
         (disj :audit-log))))
 
 (defn persist-audit-events?
-  "True when at least one audit-log consumer is enabled. The result is
-  computed once at boot into `audit-persist?`; event paths read that value
-  instead of checking the flags on every event."
-  [flags]
-  (boolean (some #{:nexus :admin-console} flags)))
+  "Full rows are required by the permanent file-change-refs consumer,
+  independently of external destinations."
+  [_flags]
+  true)
 
 (defn read-env
   [prefix]

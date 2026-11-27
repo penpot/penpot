@@ -178,6 +178,7 @@
                            :app.worker/dispatcher
                            :app.loggers.audit.consumers.nexus/consumer
                            :app.loggers.audit.consumers.admin-console/consumer
+                           :app.loggers.audit.consumers.file-change/consumer
                            :app.loggers.audit.consumers.telemetry/consumer)
                    (remove-job-runners))
         _      (ig/load-namespaces system)

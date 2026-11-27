@@ -3530,12 +3530,16 @@
           (t/is (= (:default-team-id profile) (get-in event [:props :team-id])))
           (t/is (= "cron-task" (get-in event [:context :triggered-by]))))))))
 
-(t/deftest file-gc-does-not-emit-an-audit-event-with-the-flag-off
+(t/deftest file-gc-emits-an-audit-event-without-external-archives
   (let [[_ file] (unused-media-fixture 2)]
     (with-mocks [audit-mock {:target 'app.loggers.audit/submit :return nil}]
-      (th/with-audit-config (disj cf/flags :nexus)
+      (th/with-audit-config (disj cf/flags :nexus :admin-console)
         (t/is (true? (th/run-task! :file-gc {:file-id (:id file)})))
-        (t/is (empty? (:call-args-list @audit-mock)))))))
+        (t/is (= [(:id file)]
+                 (into [] (comp (map second)
+                                (filter #(= "file-gc" (:name %)))
+                                (map #(get-in % [:props :file-id])))
+                       (:call-args-list @audit-mock))))))))
 
 (t/deftest file-gc-keeps-unused-media-with-the-retention-flag
   ;; A kept revision row can name a media object that the head no longer
@@ -3662,7 +3666,9 @@
                                  :file-id (:id file)
                                  :revn 0
                                  :changes [(th/add-rect-change page-id (uuid/random))]))]
-    (t/is (some #(= (str bfc/sql:get-file " FOR UPDATE of f") %) sqls))
+    (t/is (= [(str bfc/sql:get-minimal-file " FOR UPDATE of f")
+              bfc/sql:get-file]
+             sqls))
     (t/is (not-any? #(str/includes? % "FOR SHARE") sqls))))
 
 (t/deftest get-team-shared-files-does-not-return-the-applied-migrations

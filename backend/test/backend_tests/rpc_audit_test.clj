@@ -208,8 +208,9 @@
       (t/is (nil? (:error out)))
       (t/is (nil? (:result out)))
 
-      (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log"])
+      (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log where source LIKE 'telemetry:%'"])
                                 (mapv decode-row))]
+        (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (count rows)))
         ;; source is telemetry:frontend, not frontend
         (t/is (= "telemetry:frontend" (:source row)))
@@ -298,7 +299,7 @@
         (t/is (= "full-val" (get-in row [:props :full-key])))
         (t/is (not= "0.0.0.0" (str (:ip-addr row))))))))
 
-(t/deftest backend-process-event-only-telemetry
+(t/deftest backend-process-event-persists-full-row-and-telemetry-copy
   (th/with-audit-config #{:telemetry}
     (let [prof  (th/create-profile* 1 {:is-active true})
           event {:id (uuid/next)
@@ -311,8 +312,9 @@
                  :created-at (ct/now)
                  :source "backend"}]
       (audit/submit* th/*system* event)
-      (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log"])
+      (let [[row :as rows] (->> (th/db-exec! ["select * from audit_log where source LIKE 'telemetry:%'"])
                                 (mapv decode-row))]
+        (t/is (= 2 (count (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (count rows)))
         (t/is (= "telemetry:backend" (:source row)))
         (t/is (= "0.0.0.0" (str (:ip-addr row))))))))
@@ -401,9 +403,9 @@
             (t/is (= (:id (first (filter #(= "backend" (:source %)) rows)))
                      (:id task-event)))))))))
 
-(t/deftest process-event-stores-no-row-without-a-consumer
-  ;; No cursor consumer means no full row, even when a webhook is active:
-  ;; the webhook job carries the event blob and does not read the buffer.
+(t/deftest process-event-stores-full-row-without-an-archive-consumer
+  ;; The index consumer still needs the full row. The webhook job carries
+  ;; its own event blob and does not read the buffer.
   (with-mocks [submit-mock {:target 'app.jobs/submit :return nil}]
     (th/with-audit-config #{:webhooks}
       (let [prof  (th/create-profile* 1 {:is-active true})
@@ -417,7 +419,7 @@
                    :source "backend"
                    :app.loggers.webhooks/event? true}]
         (audit/submit* th/*system* event)
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))
+        (t/is (= ["backend"] (mapv :source (th/db-exec! ["select * from audit_log"]))))
         (t/is (= 1 (:call-count @submit-mock)))))))
 
 (t/deftest process-event-stores-row-with-a-single-consumer
@@ -438,9 +440,7 @@
         (t/is (= 1 (count rows)))
         (t/is (= "backend" (:source row)))))))
 
-(t/deftest push-events-disabled-when-no-flags-and-no-telemetry
-  ;; When neither persistence nor telemetry is enabled, no rows should
-  ;; be stored.
+(t/deftest push-events-persists-full-row-without-client-flags
   (th/with-audit-config #{}
     (let [prof   (th/create-profile* 1 {:is-active true})
           params {::th/type :push-audit-events
@@ -454,12 +454,12 @@
           out    (th/command! params)]
 
       (t/is (nil? (:error out)))
-      (t/is (= 0 (count (th/db-exec! ["select * from audit_log"])))))))
+      (t/is (= ["frontend"] (mapv :source (th/db-exec! ["select * from audit_log"])))))))
 
 (t/deftest push-events-error-reporting-without-a-consumer
   ;; :error-reporting tells the frontend to collect events, so the ingest
   ;; must accept the batch and hand crash events to the reporters even
-  ;; with no cursor consumer and no telemetry. No rows are stored.
+  ;; with no archive consumer and no telemetry. The full row is still stored.
   (with-mocks [db-emit {:target 'app.loggers.database/emit :return nil}
                mm-emit {:target 'app.loggers.mattermost/emit :return nil}]
     (th/with-audit-config #{:error-reporting}
@@ -476,7 +476,7 @@
         (t/is (nil? (:error out)))
         (t/is (= 1 (:call-count @db-emit)))
         (t/is (= 1 (:call-count @mm-emit)))
-        (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))))
+        (t/is (= ["frontend"] (mapv :source (th/db-exec! ["select * from audit_log"]))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GET-ENVIRONMENT-DATA
@@ -505,7 +505,7 @@
   (th/with-audit-config #{:graph}
     (let [out (th/command! {::th/type :get-environment-data})]
       (t/is (th/success? out))
-      (t/is (= #{} (-> out :result :flags))))))
+      (t/is (= #{:audit-log} (-> out :result :flags))))))
 
 (t/deftest get-enabled-flags-still-returns-flat-set
   (th/with-audit-config #{:nexus :telemetry :graph}
@@ -754,11 +754,10 @@
 ;; INSERT DEFAULTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(t/deftest insert-only-runs-when-a-consumer-is-enabled
-  ;; insert must be a no-op when no consumer is enabled
+(t/deftest insert-persists-without-an-archive-consumer
   (with-redefs [app.config/flags #{:telemetry}]
     (audit/insert th/*system* {:name "test" :type "action"})
-    (t/is (= 0 (count (th/db-exec! ["select * from audit_log"]))))))
+    (t/is (= 1 (count (th/db-exec! ["select * from audit_log"]))))))
 
 (t/deftest insert-sets-defaults
   ;; insert must set defaults and persist when a consumer is enabled

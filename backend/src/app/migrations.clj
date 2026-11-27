@@ -544,7 +544,10 @@
     :fn (mg/resource "app/migrations/sql/0159-add-file-data-storage-object-id.sql")}
 
    {:name "0159-consumer-generalization"
-    :fn (mg/resource "app/migrations/sql/0159-consumer-generalization.sql")}])
+    :fn (mg/resource "app/migrations/sql/0159-consumer-generalization.sql")}
+
+   {:name "0160-add-file-change-refs"
+    :fn (mg/resource "app/migrations/sql/0160-add-file-change-refs.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

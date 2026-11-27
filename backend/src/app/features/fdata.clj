@@ -119,6 +119,11 @@
         (assoc :data data)
         (dissoc :legacy-data))))
 
+(defn has-payload?
+  "Check whether resolved file data has a payload, without decoding it."
+  [{:keys [data]}]
+  (some? data))
+
 (defn decode-file-data
   [_cfg {:keys [data] :as file}]
   (cond-> file
@@ -465,4 +470,3 @@
                          (cond-> (reattach-all data root)
                            (contains? data :pages-index)
                            (update :pages-index reattach-all pages))))))
-

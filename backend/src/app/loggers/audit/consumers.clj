@@ -7,7 +7,7 @@
 (ns app.loggers.audit.consumers
   "The mechanics shared by the consumers of the audit log buffer.
 
-  Three consumers read the events of the buffer, each one from its own
+  Consumers read the events of the buffer, each one from its own
   position (a cursor) over `audit_log`:
 
   - the nexus consumer sends the full rows to Nexus.
@@ -15,6 +15,7 @@
     admin console.
   - the telemetry consumer sends the anonymized copies (the shadow
     rows, `source LIKE 'telemetry:%'`) to the telemetry endpoint.
+  - the permanent file-change-refs consumer schedules local indexing.
 
    Each transport lives in its own namespace (`...consumers.nexus`,
    `...consumers.admin-console`, `...consumers.telemetry`); this one
@@ -46,13 +47,16 @@
 (def telemetry 0)
 (def nexus 1)
 (def admin-console 2)
+(def file-change-refs 5)
 
 (defn- check
   "Assert the shape of a consumer definition: the keys the framework needs to
   run its loop. A plain map fails at the use without this."
   [consumer]
   (assert (integer? (:id consumer)) "consumer id must be an integer")
-  (assert (keyword? (:flag consumer)) "consumer flag must be a keyword")
+  (assert (or (true? (:always consumer))
+              (keyword? (:flag consumer)))
+          "consumer must have a flag or be always enabled")
   (assert (string? (:label consumer)) "consumer label must be a string")
   (assert (fn? (:process consumer)) "consumer process must be a function")
   (assert (or (nil? (:prepare consumer)) (fn? (:prepare consumer)))
@@ -61,11 +65,10 @@
           "consumer options must be a map"))
 
 (defn enabled?
-  "True when the flag of a consumer is on. The components use it at boot to
-  decide whether to start the loop; a direct pass of a disabled consumer
-  answers ::disabled."
+  "True when a consumer is permanent or its flag is on."
   [consumer]
-  (contains? cf/flags (:flag consumer)))
+  (or (true? (:always consumer))
+      (contains? cf/flags (:flag consumer))))
 
 (defn decode-row
   "Decode the transit-encoded columns of an audit-log row. The
@@ -497,8 +500,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn init
-  "Start the loop of a consumer when its flag is on and the database is
-  writable; nil otherwise. The optional `:prepare` of the definition runs
+  "Start the loop of an enabled consumer on a writable database; nil
+  otherwise. The optional `:prepare` of the definition runs
   only on the start path and answers the cfg the pass will use (Nexus
   resolves its uri there).
 
