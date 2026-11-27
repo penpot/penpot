@@ -10,14 +10,17 @@
    [app.binfile.common :as bfc]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.http.content-negotiation :as cnegot]
    [app.http.session :as session]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
@@ -292,6 +295,70 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBSOCKET HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-encoder
+  "Resolve the outbound message encoder for the negotiated format.
+  The transit encoding is the default for unexpected format values."
+  [format]
+  (cnegot/resolve-encoder format))
+
+(defn resolve-decoder
+  "Resolve the inbound message decoder for the negotiated format.
+  The transit decoding is the default for unexpected format values."
+  [format]
+  (case format
+    :transit t/decode-str
+    :json    #(json/decode % {:key-fn json/read-kebab-key})
+    t/decode-str))
+
+(def ^:private message-schemas
+  {:subscribe-team (sm/validator [:map [:type [:= :subscribe-team]] [:team-id :uuid]])
+   :subscribe-file (sm/validator [:map [:type [:= :subscribe-file]] [:file-id :uuid]
+                                  [:version {:optional true} [:maybe :string]]])
+   :unsubscribe-file (sm/validator [:map [:type [:= :unsubscribe-file]] [:file-id :uuid]])
+   :keepalive (sm/validator [:map [:type [:= :keepalive]]])
+   :broadcast (sm/validator [:map [:type [:= :broadcast]]])
+   :pointer-update (sm/validator [:map [:type [:= :pointer-update]]
+                                  [:file-id :uuid] [:page-id :uuid]
+                                  [:zoom {:optional true} [:maybe number?]]
+                                  [:zoom-inverse {:optional true} [:maybe number?]]
+                                  [:vbox {:optional true} [:maybe :map]]
+                                  [:vport {:optional true} [:maybe :map]]
+                                  [:position [:map [:x number?] [:y number?]]]])})
+
+(def ^:private json-message-types
+  (into {} (map (fn [k] [(name k) k])) (keys message-schemas)))
+
+(defn- safe-request-id?
+  [id]
+  (or (uuid? id)
+      (and (integer? id) (<= -9007199254740991 id 9007199254740991))
+      (and (string? id) (<= (count id) 128))))
+
+(defn prepare-message
+  "Validate a decoded client message, coercing only known JSON fields."
+  [format message]
+  (let [message (if (and (= format :json) (map? message))
+                  (let [type (get json-message-types (:type message))
+                        id-keys (case type
+                                  :subscribe-team [:team-id]
+                                  (:subscribe-file :unsubscribe-file) [:file-id]
+                                  :pointer-update [:file-id :page-id]
+                                  [])]
+                    (reduce (fn [m k]
+                              (if (string? (get m k))
+                                (update m k uuid/parse*)
+                                m))
+                            (assoc message :type type)
+                            id-keys))
+                  message)
+        validator (when (map? message) (get message-schemas (:type message)))]
+    (if (and validator (validator message))
+      {:message message}
+      {:error (cond-> {:type :error
+                       :error {:type :validation :code :invalid-websocket-message}}
+                (safe-request-id? (:request-id message))
+                (assoc :request-id (:request-id message)))})))
 
 (defmulti handle-message
   (fn [_ _ message]
@@ -607,9 +674,13 @@
             :inc 1)
   message)
 
-(defn- http-handler
+(defn http-handler
+  "The websocket upgrade request handler. Returns the upgrade
+  response containing the websocket listener built with the
+  codecs of the negotiated payload format."
   [cfg {:keys [params ::session/profile-id] :as request}]
-  (let [session-id (some-> params :session-id uuid/parse*)]
+  (let [session-id (some-> params :session-id uuid/parse*)
+        format     (cnegot/negotiate-format request)]
     (when-not (uuid? session-id)
       (ex/raise :type :validation
                 :code :missing-session-id
@@ -631,12 +702,18 @@
 
       :else
       (do
-        (l/trace :hint "websocket request" :profile-id profile-id :session-id session-id)
+        (l/trace :hint "websocket request"
+                 :profile-id profile-id
+                 :session-id session-id
+                 :format format)
         {::yws/listener (ws/listener request
                                      ::ws/on-rcv-message (partial on-rcv-message cfg)
                                      ::ws/on-snd-message (partial on-snd-message cfg)
                                      ::ws/on-connect (partial on-connect cfg)
                                      ::ws/handler (partial handle-message cfg)
+                                     ::ws/encode-fn (resolve-encoder format)
+                                     ::ws/decode-fn (resolve-decoder format)
+                                     ::ws/prepare-fn (partial prepare-message format)
                                      ::profile-id profile-id
                                      ::session-id session-id)}))))
 
