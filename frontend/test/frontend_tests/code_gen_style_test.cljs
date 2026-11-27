@@ -304,3 +304,26 @@
         markup (html/generate-markup (objects text) [text])]
     (is (str/includes? markup "<li dir=\"rtl\""))))
 
+
+;; --- Minimum and maximum sizes -------------------------------------------
+
+(deftest layout-child-board-keeps-conflicting-min-and-max-sizes
+  (testing "a board sized by its content keeps both its limits, the canvas then
+            gives the minimum precedence as CSS does"
+    (let [pid (uuid/next)
+          cid (uuid/next)
+          c   (frame cid
+                     :parent-id pid
+                     :frame-id pid
+                     :layout :flex
+                     :layout-item-h-sizing :auto
+                     :layout-item-v-sizing :auto
+                     :layout-item-min-w 200
+                     :layout-item-max-w 60
+                     :layout-item-min-h 80
+                     :layout-item-max-h 30)
+          objs (objects (frame pid :layout :flex :shapes [cid]) c)]
+      (is (= "200px" (css/get-css-value objs c :min-width)))
+      (is (= "60px" (css/get-css-value objs c :max-width)))
+      (is (= "80px" (css/get-css-value objs c :min-height)))
+      (is (= "30px" (css/get-css-value objs c :max-height))))))

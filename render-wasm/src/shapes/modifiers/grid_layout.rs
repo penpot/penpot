@@ -10,7 +10,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use super::common::{has_non_absolute_children, GetBounds};
+use super::common::{clamp_size, has_non_absolute_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -49,16 +49,41 @@ pub fn calculate_tracks(
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
-    let layout_size = if is_column {
-        layout_bounds.width() - layout_data.padding_left - layout_data.padding_right
-    } else {
-        layout_bounds.height() - layout_data.padding_top - layout_data.padding_bottom
-    };
-
     let auto_layout = if is_column {
         shape.is_layout_horizontal_auto()
     } else {
         shape.is_layout_vertical_auto()
+    };
+
+    calculate_sized_tracks(
+        is_column,
+        auto_layout,
+        layout_data,
+        grid_data,
+        layout_bounds,
+        cells,
+        shapes,
+        bounds,
+    )
+}
+
+/// The tracks of an axis, sized by their content when `auto_layout`, otherwise laid out in
+/// the size of `layout_bounds`.
+#[allow(clippy::too_many_arguments)]
+fn calculate_sized_tracks(
+    is_column: bool,
+    auto_layout: bool,
+    layout_data: &LayoutData,
+    grid_data: &GridData,
+    layout_bounds: &Bounds,
+    cells: &Vec<GridCell>,
+    shapes: ShapesPoolRef,
+    bounds: &HashMap<Uuid, Bounds>,
+) -> Vec<TrackData> {
+    let layout_size = if is_column {
+        layout_bounds.width() - layout_data.padding_left - layout_data.padding_right
+    } else {
+        layout_bounds.height() - layout_data.padding_top - layout_data.padding_bottom
     };
 
     let grid_tracks = if is_column {
@@ -78,7 +103,13 @@ pub fn calculate_tracks(
         layout_size,
         auto_layout,
     );
-    stretch_tracks(is_column, shape, layout_data, &mut tracks, layout_size);
+    stretch_tracks(
+        is_column,
+        auto_layout,
+        layout_data,
+        &mut tracks,
+        layout_size,
+    );
     assign_anchors(is_column, layout_data, layout_bounds, &mut tracks);
     tracks
 }
@@ -396,18 +427,15 @@ fn set_fr_value(
 
 fn stretch_tracks(
     column: bool,
-    shape: &Shape,
+    auto_layout: bool,
     layout_data: &LayoutData,
     tracks: &mut [TrackData],
     layout_size: f32,
 ) {
-    if (tracks.is_empty()
-        || column
-            && (layout_data.justify_content != JustifyContent::Stretch
-                || shape.is_layout_horizontal_auto()))
-        || (!column
-            && (layout_data.align_content != AlignContent::Stretch
-                || shape.is_layout_vertical_auto()))
+    if tracks.is_empty()
+        || auto_layout
+        || (column && layout_data.justify_content != JustifyContent::Stretch)
+        || (!column && layout_data.align_content != AlignContent::Stretch)
     {
         return;
     }
@@ -741,10 +769,10 @@ pub fn reflow_grid_layout(
     bounds: &mut HashMap<Uuid, Bounds>,
 ) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
-    let layout_bounds = bounds.find(shape);
+    let mut layout_bounds = bounds.find(shape);
     let children: HashSet<Uuid> = shape.children_ids_iter(true).copied().collect();
 
-    let column_tracks = calculate_tracks(
+    let mut column_tracks = calculate_tracks(
         true,
         shape,
         layout_data,
@@ -755,7 +783,7 @@ pub fn reflow_grid_layout(
         bounds,
     );
 
-    let row_tracks = calculate_tracks(
+    let mut row_tracks = calculate_tracks(
         false,
         shape,
         layout_data,
@@ -765,6 +793,102 @@ pub fn reflow_grid_layout(
         shapes,
         bounds,
     );
+
+    // Like the CLJS layout, skip auto-size when every child is absolute: the
+    // size comes from the tracks, and hidden children still count.
+    let auto_width = shape.is_layout_horizontal_auto();
+    let auto_height = shape.is_layout_vertical_auto();
+    let auto_scale = if (auto_width || auto_height) && has_non_absolute_children(shape, shapes) {
+        let width = layout_bounds.width();
+        let height = layout_bounds.height();
+
+        let content_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
+            + layout_data.padding_left
+            + layout_data.padding_right
+            + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
+        let content_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
+            + layout_data.padding_top
+            + layout_data.padding_bottom
+            + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
+
+        // A board sized by its content keeps its own minimum and maximum sizes, as the
+        // generated CSS does
+        let item = shape.layout_item;
+        let new_width = if auto_width {
+            clamp_size(
+                content_width,
+                item.and_then(|i| i.min_w),
+                item.and_then(|i| i.max_w),
+            )
+        } else {
+            width
+        };
+        let new_height = if auto_height {
+            clamp_size(
+                content_height,
+                item.and_then(|i| i.min_h),
+                item.and_then(|i| i.max_h),
+            )
+        } else {
+            height
+        };
+
+        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
+
+        let parent_transform_inv = &parent_transform.invert().ok_or(Error::RecoverableError(
+            "Failed to invert parent transform".to_string(),
+        ))?;
+        let origin = parent_transform_inv.map_point(layout_bounds.nw);
+
+        let scale_width = if auto_width { new_width / width } else { 1.0 };
+        let scale_height = if auto_height {
+            new_height / height
+        } else {
+            1.0
+        };
+
+        let mut scale = Matrix::scale((scale_width, scale_height));
+        scale.post_translate(origin);
+        scale.post_concat(&parent_transform);
+        scale.pre_translate(-origin);
+        scale.pre_concat(parent_transform_inv);
+
+        // When those sizes change the size of the board, the tracks of the constrained axes
+        // are sized and placed again in that size, and so are the children in their cells.
+        // The tracks of the other axis keep their sizes, which gave the board its size on
+        // that axis (a percentage would otherwise be measured again in it): they are only
+        // placed again in the new bounds
+        let fixed_width = auto_width && (new_width - content_width).abs() > MIN_SIZE;
+        let fixed_height = auto_height && (new_height - content_height).abs() > MIN_SIZE;
+        let layout_bounds_after = layout_bounds.transform(&scale);
+
+        if fixed_width || fixed_height {
+            layout_bounds = layout_bounds_after;
+            for (is_column, fixed, tracks) in [
+                (true, fixed_width, &mut column_tracks),
+                (false, fixed_height, &mut row_tracks),
+            ] {
+                if fixed {
+                    *tracks = calculate_sized_tracks(
+                        is_column,
+                        false,
+                        layout_data,
+                        grid_data,
+                        &layout_bounds,
+                        &grid_data.cells,
+                        shapes,
+                        bounds,
+                    );
+                } else {
+                    assign_anchors(is_column, layout_data, &layout_bounds, tracks);
+                }
+            }
+        }
+
+        Some((scale, layout_bounds_after))
+    } else {
+        None
+    };
 
     let cells = create_cell_data(
         &layout_bounds,
@@ -890,47 +1014,7 @@ pub fn reflow_grid_layout(
         }
     }
 
-    // Like the CLJS layout, skip auto-size when every child is absolute: the
-    // size comes from the tracks, and hidden children still count.
-    if (shape.is_layout_horizontal_auto() || shape.is_layout_vertical_auto())
-        && has_non_absolute_children(shape, shapes)
-    {
-        let width = layout_bounds.width();
-        let height = layout_bounds.height();
-
-        let mut scale_width = 1.0;
-        let mut scale_height = 1.0;
-
-        if shape.is_layout_horizontal_auto() {
-            let auto_width = column_tracks.iter().map(|t| t.size).sum::<f32>()
-                + layout_data.padding_left
-                + layout_data.padding_right
-                + column_tracks.len().saturating_sub(1) as f32 * layout_data.column_gap;
-            scale_width = auto_width / width;
-        }
-
-        if shape.is_layout_vertical_auto() {
-            let auto_height = row_tracks.iter().map(|t| t.size).sum::<f32>()
-                + layout_data.padding_top
-                + layout_data.padding_bottom
-                + row_tracks.len().saturating_sub(1) as f32 * layout_data.row_gap;
-            scale_height = auto_height / height;
-        }
-
-        let parent_transform = layout_bounds.transform_matrix().unwrap_or_default();
-
-        let parent_transform_inv = &parent_transform.invert().ok_or(Error::RecoverableError(
-            "Failed to invert parent transform".to_string(),
-        ))?;
-        let origin = parent_transform_inv.map_point(layout_bounds.nw);
-
-        let mut scale = Matrix::scale((scale_width, scale_height));
-        scale.post_translate(origin);
-        scale.post_concat(&parent_transform);
-        scale.pre_translate(-origin);
-        scale.pre_concat(parent_transform_inv);
-
-        let layout_bounds_after = layout_bounds.transform(&scale);
+    if let Some((scale, layout_bounds_after)) = auto_scale {
         result.push_back(Modifier::parent(shape.id, scale));
         bounds.insert(shape.id, layout_bounds_after);
     }

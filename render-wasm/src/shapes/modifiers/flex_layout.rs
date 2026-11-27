@@ -9,7 +9,7 @@ use crate::uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
 
-use super::common::{has_in_flow_children, GetBounds};
+use super::common::{clamp_size, has_in_flow_children, GetBounds};
 
 const MIN_SIZE: f32 = 0.01;
 const MAX_SIZE: f32 = f32::INFINITY;
@@ -96,6 +96,46 @@ impl LayoutAxis {
                 is_wrap: flex_data.is_wrap(),
             }
         }
+    }
+
+    /// The axis with the sizes of `main` and `across` fixed, those given no longer sized by
+    /// the content: the children are then laid out and aligned in that size.
+    fn with_fixed_sizes(mut self, main: Option<f32>, across: Option<f32>) -> Self {
+        if let Some(main) = main {
+            self.main_size = main;
+            self.is_auto_main = false;
+        }
+        if let Some(across) = across {
+            self.across_size = across;
+            self.is_auto_across = false;
+        }
+        self
+    }
+
+    /// The sizes (main, across) of the content laid out in `tracks`, paddings included.
+    fn content_sizes(&self, tracks: &[TrackData]) -> (f32, f32) {
+        let across = tracks.iter().map(|track| track.across_size).sum::<f32>()
+            + (tracks.len() as f32 - 1.0) * self.gap_across
+            + self.padding_across_start
+            + self.padding_across_end;
+
+        let main = tracks
+            .iter()
+            .map(|track| {
+                let nshapes = usize::max(track.shapes.len(), 1);
+                track
+                    .shapes
+                    .iter()
+                    .map(|s| s.margin_main_start + s.margin_main_end + s.main_size)
+                    .sum::<f32>()
+                    + (nshapes as f32 - 1.0) * self.gap_main
+            })
+            .reduce(f32::max)
+            .unwrap_or(MIN_SIZE)
+            + self.padding_main_start
+            + self.padding_main_end;
+
+        (main, across)
     }
 
     fn main_space(&self) -> f32 {
@@ -245,7 +285,13 @@ fn initialize_tracks(
         let main_space = layout_axis.main_space();
         let exceeds_main_space = next_main_size > main_space + TRACK_TOLERANCE;
 
-        if !layout_axis.is_auto_main && flex_data.is_wrap() && exceeds_main_space {
+        // A child wider than the main space starts no new track when the current one is
+        // still empty: it would leave an empty track (and a gap) before it
+        if !layout_axis.is_auto_main
+            && flex_data.is_wrap()
+            && exceeds_main_space
+            && !current_track.shapes.is_empty()
+        {
             tracks.push(current_track);
 
             current_track = TrackData {
@@ -459,33 +505,27 @@ fn calculate_track_data(
     layout_data: &LayoutData,
     flex_data: &FlexData,
     layout_bounds: &Bounds,
+    layout_axis: &LayoutAxis,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
-    let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
-    let mut tracks = initialize_tracks(
-        shape,
-        layout_bounds,
-        &layout_axis,
-        flex_data,
-        shapes,
-        bounds,
-    );
+    let mut tracks =
+        initialize_tracks(shape, layout_bounds, layout_axis, flex_data, shapes, bounds);
 
-    distribute_fill_main_space(&layout_axis, &mut tracks);
-    distribute_fill_across_space(&layout_axis, &mut tracks);
+    distribute_fill_main_space(layout_axis, &mut tracks);
+    distribute_fill_across_space(layout_axis, &mut tracks);
 
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>();
 
     let stretch_tracks = !layout_axis.is_wrap || layout_data.align_content == AlignContent::Stretch;
 
     if !layout_axis.is_auto_across && stretch_tracks {
-        stretch_tracks_sizes(&layout_axis, &mut tracks, total_across_size);
+        stretch_tracks_sizes(layout_axis, &mut tracks, total_across_size);
     }
 
     calculate_track_positions(
         layout_data,
-        &layout_axis,
+        layout_axis,
         layout_bounds,
         &mut tracks,
         total_across_size,
@@ -613,8 +653,74 @@ pub fn reflow_flex_layout(
 ) -> Result<VecDeque<Modifier>> {
     let mut result = VecDeque::new();
     let layout_bounds = &bounds.find(shape);
-    let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
-    let tracks = calculate_track_data(shape, layout_data, flex_data, layout_bounds, shapes, bounds);
+    let mut layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
+    let mut tracks = calculate_track_data(
+        shape,
+        layout_data,
+        flex_data,
+        layout_bounds,
+        &layout_axis,
+        shapes,
+        bounds,
+    );
+
+    // A board sized by its content keeps its own minimum and maximum sizes, as the
+    // generated CSS does, whether or not it is itself a layout item.
+    // When they change its size, the children are laid out again in that size, so they
+    // are aligned in the space left (a centered child stays centered in a minimum height)
+    let (is_auto_main, is_auto_across) = (layout_axis.is_auto_main, layout_axis.is_auto_across);
+    let item = shape.layout_item;
+    let (min_w, max_w, min_h, max_h) = (
+        item.and_then(|i| i.min_w),
+        item.and_then(|i| i.max_w),
+        item.and_then(|i| i.min_h),
+        item.and_then(|i| i.max_h),
+    );
+    let ((min_main, max_main), (min_across, max_across)) = if flex_data.is_row() {
+        ((min_w, max_w), (min_h, max_h))
+    } else {
+        ((min_h, max_h), (min_w, max_w))
+    };
+    // The constrained size of an axis sized by its content, when it differs from it
+    let constrained = |auto: bool, size: f32, min: Option<f32>, max: Option<f32>| {
+        if !auto {
+            return None;
+        }
+        let clamped = clamp_size(size, min, max);
+        ((clamped - size).abs() > MIN_SIZE).then_some(clamped)
+    };
+
+    // The main size first: a constrained one can wrap the children into more tracks
+    let (content_main, _) = layout_axis.content_sizes(&tracks);
+    let fixed_main = constrained(is_auto_main, content_main, min_main, max_main);
+    if let Some(main) = fixed_main {
+        layout_axis = layout_axis.with_fixed_sizes(Some(main), None);
+        tracks = calculate_track_data(
+            shape,
+            layout_data,
+            flex_data,
+            layout_bounds,
+            &layout_axis,
+            shapes,
+            bounds,
+        );
+    }
+
+    // Then the across size, measured on the tracks of the final main size
+    let (_, content_across) = layout_axis.content_sizes(&tracks);
+    let fixed_across = constrained(is_auto_across, content_across, min_across, max_across);
+    if let Some(across) = fixed_across {
+        layout_axis = layout_axis.with_fixed_sizes(None, Some(across));
+        tracks = calculate_track_data(
+            shape,
+            layout_data,
+            flex_data,
+            layout_bounds,
+            &layout_axis,
+            shapes,
+            bounds,
+        );
+    }
 
     for track in tracks.iter() {
         let total_shapes_size = track
@@ -688,49 +794,21 @@ pub fn reflow_flex_layout(
 
     // With nothing to place, keep the size instead of collapsing to padding.
     // CLJS would also size to hidden children; flex here leaves them out.
-    if (layout_axis.is_auto_across || layout_axis.is_auto_main)
-        && has_in_flow_children(shape, shapes)
-    {
+    if (is_auto_across || is_auto_main) && has_in_flow_children(shape, shapes) {
         let width = layout_bounds.width();
         let height = layout_bounds.height();
 
-        let auto_across_size = if layout_axis.is_auto_across {
-            tracks.iter().map(|track| track.across_size).sum::<f32>()
-                + (tracks.len() as f32 - 1.0) * layout_axis.gap_across
-                + layout_axis.padding_across_start
-                + layout_axis.padding_across_end
-        } else {
-            0.0
-        };
-
-        let auto_main_size = if layout_axis.is_auto_main {
-            tracks
-                .iter()
-                .map(|track| {
-                    let nshapes = usize::max(track.shapes.len(), 1);
-                    track
-                        .shapes
-                        .iter()
-                        .map(|s| s.margin_main_start + s.margin_main_end + s.main_size)
-                        .sum::<f32>()
-                        + (nshapes as f32 - 1.0) * layout_axis.gap_main
-                })
-                .reduce(f32::max)
-                .unwrap_or(MIN_SIZE)
-                + layout_axis.padding_main_start
-                + layout_axis.padding_main_end
-        } else {
-            0.0
-        };
+        let auto_main_size = fixed_main.unwrap_or(content_main);
+        let auto_across_size = fixed_across.unwrap_or(content_across);
 
         let (scale_width, scale_height) = if flex_data.is_row() {
             (
-                if layout_axis.is_auto_main {
+                if is_auto_main {
                     auto_main_size / width
                 } else {
                     1.0
                 },
-                if layout_axis.is_auto_across {
+                if is_auto_across {
                     auto_across_size / height
                 } else {
                     1.0
@@ -738,12 +816,12 @@ pub fn reflow_flex_layout(
             )
         } else {
             (
-                if layout_axis.is_auto_across {
+                if is_auto_across {
                     auto_across_size / width
                 } else {
                     1.0
                 },
-                if layout_axis.is_auto_main {
+                if is_auto_main {
                     auto_main_size / height
                 } else {
                     1.0

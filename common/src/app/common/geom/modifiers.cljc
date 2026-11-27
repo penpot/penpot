@@ -21,6 +21,7 @@
    [app.common.geom.shapes.points :as gpo]
    [app.common.geom.shapes.transforms :as gtr]
    [app.common.geom.shapes.tree-seq :as cgst]
+   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]))
@@ -200,7 +201,10 @@
    (reduce #(set-modifiers-layout objects bounds ignore-constraints %1 %2) modif-tree shapes)))
 
 (defn- calc-auto-modifiers
-  "Calculates the modifiers to adjust the bounds for auto-width/auto-height shapes"
+  "Calculates the modifiers to adjust the bounds for auto-width/auto-height
+  shapes. Returns them in `:modifiers`, with in `:fixed-axes` the axes
+  (`:width`, `:height`) sized by the content whose minimum or maximum size
+  changes that size"
   [objects bounds parent]
   (let [parent-id     (:id parent)
         parent-bounds (get bounds parent-id)
@@ -249,14 +253,59 @@
                   layout-data (gcgl/calc-layout-data parent @parent-bounds children bounds objects)]
               (gcgl/layout-content-bounds bounds parent layout-data))))
 
-        auto-width (when content-bounds (gpo/width-points content-bounds))
-        auto-height (when content-bounds (gpo/height-points content-bounds))]
-    (cond-> (ctm/empty)
-      (and (some? auto-width) auto-width?)
-      (set-parent-auto-width auto-width)
+        ;; A board sized by its content keeps its own minimum and
+        ;; maximum sizes, as the generated CSS does, whether or not it
+        ;; is itself a layout item. As in CSS, the minimum wins over a
+        ;; smaller maximum
+        clamp
+        (fn [size min-size max-size]
+          (cond-> size
+            (some? max-size) (min max-size)
+            (some? min-size) (max min-size)))
 
-      (and (some? auto-height) auto-height?)
-      (set-parent-auto-height auto-height))))
+        content-width  (when content-bounds (gpo/width-points content-bounds))
+        content-height (when content-bounds (gpo/height-points content-bounds))
+
+        auto-width (when content-bounds
+                     (clamp content-width
+                            (:layout-item-min-w parent)
+                            (:layout-item-max-w parent)))
+        auto-height (when content-bounds
+                      (clamp content-height
+                             (:layout-item-min-h parent)
+                             (:layout-item-max-h parent)))
+
+        fixed?
+        (fn [size content-size]
+          (and (some? size) (not (mth/close? size content-size 0.01))))]
+
+    {:modifiers
+     (cond-> (ctm/empty)
+       (and (some? auto-width) auto-width?)
+       (set-parent-auto-width auto-width)
+
+       (and (some? auto-height) auto-height?)
+       (set-parent-auto-height auto-height))
+
+     :fixed-axes
+     (cond-> #{}
+       (and (ctl/auto-width? parent) (fixed? auto-width content-width))
+       (conj :width)
+
+       (and (ctl/auto-height? parent) (fixed? auto-height content-height))
+       (conj :height))}))
+
+(defn- fix-axes
+  "`objects` with the `axes` of the layout `layout-id` no longer sized by
+  their content: its children are then laid out in its size on them, as
+  for a fixed size (a row wraps in its maximum width)"
+  [objects layout-id axes]
+  (cond-> objects
+    (contains? axes :width)
+    (assoc-in [layout-id :layout-item-h-sizing] :fix)
+
+    (contains? axes :height)
+    (assoc-in [layout-id :layout-item-v-sizing] :fix)))
 
 (defn find-auto-layouts
   [objects shapes]
@@ -283,13 +332,18 @@
   "Recalculates the layouts to adjust the sizing: auto new sizes"
   [modif-tree sizing-auto-layouts objects bounds ignore-constraints]
 
-  (let [calculate-modifiers
-        (fn [[modif-tree bounds] layout-id]
+  (let [resize-layout
+        (fn [[modif-tree bounds objects] layout-id]
           (let [layout (get objects layout-id)
-                auto-modifiers (calc-auto-modifiers objects bounds layout)]
+                {auto-modifiers :modifiers fixed-axes :fixed-axes}
+                (calc-auto-modifiers objects bounds layout)
+
+                ;; The axes fixed by their limits stay so for the
+                ;; layouts recalculated next, the ones above included
+                objects (fix-axes objects layout-id fixed-axes)]
 
             (if (and (ctm/empty? auto-modifiers) (not (ctl/grid-layout? layout)))
-              [modif-tree bounds]
+              [modif-tree bounds objects]
 
               (let [from-layout
                     (->> (cfh/get-parent-ids objects layout-id)
@@ -305,10 +359,24 @@
 
                     bounds (cgb/transform-bounds-map bounds objects auto-modif-tree)
                     modif-tree (cgt/merge-modif-tree modif-tree auto-modif-tree)]
-                [modif-tree bounds]))))]
+                [modif-tree bounds objects]))))
+
+        calculate-modifiers
+        (fn [state layout-id]
+          (let [[_ _ objects :as resized] (resize-layout state layout-id)
+                [_ _ prev-objects] state
+                layout (get objects layout-id)]
+            ;; A flex layout laid out in a size fixed by its limits can
+            ;; wrap its children into more lines: the other axis, still
+            ;; sized by its content, is measured again on them
+            (if (and (ctl/flex-layout? layout)
+                     (ctl/auto? layout)
+                     (not= layout (get prev-objects layout-id)))
+              (resize-layout resized layout-id)
+              resized)))]
     (->> sizing-auto-layouts
          (reverse)
-         (reduce calculate-modifiers [modif-tree bounds])
+         (reduce calculate-modifiers [modif-tree bounds objects])
          (first))))
 
 (defn filter-layouts-ids

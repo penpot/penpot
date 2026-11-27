@@ -31,3 +31,10 @@ pub fn has_non_absolute_children(shape: &Shape, shapes: ShapesPoolRef) -> bool {
         .filter_map(|id| shapes.get(id))
         .any(|child| !child.is_absolute())
 }
+
+/// The size of a board sized by its content once its own minimum and maximum sizes apply,
+/// as in CSS: the minimum wins over a smaller maximum.
+pub fn clamp_size(size: f32, min: Option<f32>, max: Option<f32>) -> f32 {
+    let size = max.map_or(size, |max| f32::min(size, max));
+    min.map_or(size, |min| f32::max(size, min))
+}
