@@ -13,19 +13,11 @@
    [app.main.data.common :as dcm]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as deprecated-icons]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.util.i18n :as i18n :refer  [tr]]
    [app.util.theme :as theme]
    [rumext.v2 :as mf]))
-
-(def ^:private neutral-icon
-  (deprecated-icons/icon-xref :msg-neutral (stl/css :icon)))
-
-(def ^:private error-icon
-  (deprecated-icons/icon-xref :delete-text (stl/css :icon)))
-
-(def ^:private close-icon
-  (deprecated-icons/icon-xref :close (stl/css :close-icon)))
 
 (mf/defc progress-notification-widget*
   []
@@ -67,9 +59,8 @@
      (when visible?
        [:div {:class (stl/css-case :progress-modal true
                                    :has-error error?)}
-        (if error?
-          error-icon
-          neutral-icon)
+        [:> icon* {:icon-id (if error? i/delete-text i/msg-neutral)
+                   :class (stl/css :icon)}]
 
         [:div {:class (stl/css :title)}
          [:div {:class (stl/css :title-text)} hint]
@@ -82,9 +73,12 @@
            [:span {:class (stl/css :progress)}
             (dm/str progress " / " total)])]
 
-        [:button {:class (stl/css :progress-close-button)
-                  :on-click toggle-detail-visibility}
-         close-icon]
+        [:> icon-button* {:variant "action"
+                          :aria-label (tr "labels.close")
+                          :tooltip-class (stl/css :progress-close-button)
+                          :tooltip-placement "top-left"
+                          :on-click toggle-detail-visibility
+                          :icon i/close}]
 
         (when-not error?
           [:svg {:class (stl/css :progress-bar)

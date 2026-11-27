@@ -579,6 +579,42 @@ test.describe("Dashboard list controls", () => {
   });
 });
 
+test.describe("Progress notification controls", () => {
+  test("Restore progress and close button", async ({ page }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    await DashboardPage.mockConfigFlags(page, ["disable-onboarding"]);
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    // Deleted files due in 2100, so the trash keeps them.
+    await dashboardPage.mockRPC(
+      "get-team-deleted-files?team-id=*",
+      "dashboard/get-team-deleted-files-pending.json",
+    );
+    await dashboardPage.mockRPC(
+      "get-projects?team-id=*",
+      "dashboard/get-projects-deleted.json",
+    );
+    // Never answer the restore, so the notification stays on screen.
+    await page.route(/restore-deleted-team-files/, () => {});
+    await dashboardPage.goToDeleted();
+
+    await page.getByRole("button", { name: "Restore All" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    const notification = page.locator(
+      "[class*='components_progress__progress-modal']",
+    );
+    await expect(notification).toBeVisible();
+    await page.mouse.move(10, 10);
+    await expect(notification).toHaveScreenshot(shot);
+    await notification.getByRole("button").hover();
+    await expect(notification).toHaveScreenshot(shot);
+
+    await notification.getByRole("button").click();
+    await expect(notification).toBeHidden();
+  });
+});
+
 test.describe("Team modals controls", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 

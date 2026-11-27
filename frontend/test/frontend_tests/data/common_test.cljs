@@ -207,3 +207,35 @@
     (t/is (false? (get-in state [:team :permissions :can-edit])))
     (t/is (false? (get-in state [:teams current-team-id :permissions :can-edit])))
     (t/is (true? (get-in state [:teams other-team-id :permissions :can-edit])))))
+
+;; --- Progress notification
+
+(def ^:private progress-hints
+  {:normal (constantly "Restoring files…")
+   :slow   (constantly "Restore unexpectedly slow")})
+
+(defn- progress-state
+  [threshold]
+  (ptk/update (dcm/initialize-progress {:total 3
+                                        :slow-progress-threshold threshold
+                                        :hints progress-hints})
+              {}))
+
+(t/deftest initialize-progress-shows-the-normal-hint
+  (let [progress (:progress (progress-state 60000))]
+    (t/is (= "Restoring files…" (:hint progress)))
+    (t/is (true? (:healthy progress)))
+    (t/is (= 0 (:progress progress)))))
+
+(t/deftest update-progress-within-the-threshold-stays-healthy
+  (let [state    (progress-state 60000)
+        progress (:progress (ptk/update (dcm/update-progress {:index 1 :total 3}) state))]
+    (t/is (= 1 (:progress progress)))
+    (t/is (true? (:healthy progress)))
+    (t/is (= "Restoring files…" (:hint progress)))))
+
+(t/deftest update-progress-past-the-threshold-shows-the-slow-hint
+  (let [state    (progress-state 0)
+        progress (:progress (ptk/update (dcm/update-progress {:index 1 :total 3}) state))]
+    (t/is (false? (:healthy progress)))
+    (t/is (= "Restore unexpectedly slow" (:hint progress)))))
