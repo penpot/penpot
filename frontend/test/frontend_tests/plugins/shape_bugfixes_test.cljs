@@ -7,7 +7,10 @@
 (ns frontend-tests.plugins.shape-bugfixes-test
   (:require
    [app.common.data :as d]
+   [app.common.test-helpers.components :as cthc]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as thi]
+   [app.common.test-helpers.shapes :as cths]
    [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
@@ -27,7 +30,8 @@
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.mock :as mock]
    [frontend-tests.helpers.state :as ths]
-   [frontend-tests.helpers.wasm :as thw]))
+   [frontend-tests.helpers.wasm :as thw]
+   [potok.v2.core :as ptk]))
 
 (def ^:private plugin-id "00000000-0000-0000-0000-000000000000")
 
@@ -535,3 +539,69 @@
             (t/is (= 1 (count @errors)))
             (t/is (= variant-append-msg (last (first @errors))))
             (t/is (empty? @emitted))))))))
+
+;; ---------------------------------------------------------------------------
+;; resetOverrides
+;; ---------------------------------------------------------------------------
+
+(defn- reset-overrides-setup
+  "A consumer file with a copy (and a child inside it) of a component of a
+   library. `library-fn` receives the library and returns the entry stored in
+   `:files` for it."
+  [library-fn]
+  (let [library  (-> (cthf/sample-file :library-file :page-label :library-page)
+                     (cths/add-sample-shape :main :type :frame)
+                     (cths/add-sample-shape :main-child :parent-label :main)
+                     (cthc/make-component :comp :main))
+        file     (-> (cthf/sample-file :consumer-file :page-label :consumer-page)
+                     (cthc/instantiate-component :comp :copy
+                                                 :library library
+                                                 :children-labels [:copy-child]))
+        store    (ths/setup-store file {:libraries [(library-fn library file)]})]
+    (ptk/emit! store #(assoc-in % [:plugins :flags plugin-id :throw-validation-errors] true))
+    {:file file :store store}))
+
+(defn- reset-overrides-on
+  "Calls `resetOverrides` on the shape labelled `label`; returns the thrown
+   message (or nil) and the emitted events."
+  [{:keys [file store]} label]
+  (let [events (atom [])]
+    (mock/with-mocks*
+      {st/state           store
+       st/emit!           (mock/stub (fn [& emitted] (swap! events into emitted)))
+       r/check-permission (mock/stub (constantly true))}
+      (let [shape (shape/shape-proxy plugin-id (:id file) (:id (cthf/current-page file)) (thi/id label))
+            error (try (.resetOverrides shape) nil
+                       (catch js/Error cause (ex-message cause)))]
+        {:error error :events @events}))))
+
+(t/deftest ^:async reset-overrides-rejects-a-copy-of-a-library-without-data
+  (let [setup  (reset-overrides-setup (fn [library _] (select-keys library [:id :name])))
+        result (await (reset-overrides-on setup :copy))]
+    (t/is (re-find #"main component does not exist" (:error result)))
+    (t/is (empty? (:events result)))))
+
+(t/deftest ^:async reset-overrides-rejects-a-copy-of-a-deleted-component
+  (let [setup  (reset-overrides-setup
+                (fn [library file]
+                  (-> library
+                      (assoc :library-of (:id file))
+                      (assoc-in [:data :components (thi/id :comp) :deleted] true))))
+        result (await (reset-overrides-on setup :copy))]
+    (t/is (re-find #"main component does not exist" (:error result)))
+    (t/is (empty? (:events result)))))
+
+(t/deftest ^:async reset-overrides-resets-the-copy-of-an-existing-component
+  (let [setup  (reset-overrides-setup (fn [library file] (assoc library :library-of (:id file))))
+        result (await (reset-overrides-on setup :copy))
+        event  (first (:events result))]
+    (t/is (nil? (:error result)))
+    (t/is (= 1 (count (:events result))))
+    (t/is (= ::dwl/reset-component (ptk/type event)))
+    (t/is (= (thi/id :copy) (.-id event)))))
+
+(t/deftest ^:async reset-overrides-rejects-a-nested-shape
+  (let [setup  (reset-overrides-setup (fn [library file] (assoc library :library-of (:id file))))
+        result (await (reset-overrides-on setup :copy-child))]
+    (t/is (re-find #"not a component copy head" (:error result)))
+    (t/is (empty? (:events result)))))

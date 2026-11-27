@@ -17,6 +17,7 @@
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.versions :as dwv]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.main.worker :as mw]
@@ -181,7 +182,7 @@
     :validate
     (fn []
       (let [file      (u/locate-file id)
-            libraries (get @st/state :files)]
+            libraries (refs/select-libraries (:files @st/state) id)]
         (try
           (->> (cfv/validate-file file libraries)
                (map (fn [{:keys [code hint shape-id page-id]}]

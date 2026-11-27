@@ -41,6 +41,7 @@
    [app.main.data.workspace.shortcuts]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors :as errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.debug :as dbg]
@@ -546,7 +547,7 @@
   ([] (validate nil))
   ([shape-id]
    (let [file       (dsh/lookup-file @st/state)
-         libraries  (get @st/state :files)]
+         libraries  (refs/select-libraries (:files @st/state) (:id file))]
      (try
        (->> (if-let [shape-id (some-> shape-id uuid/parse)]
               (let [page (dm/get-in file [:data :pages-index (get @st/state :current-page-id)])]
@@ -575,7 +576,7 @@
              sid      (:session-id state)
 
              file     (dsh/lookup-file state)
-             libs     (get state :files)
+             libs     (refs/select-libraries (:files state) (:id file))
 
              errors   (cfv/validate-file file libs)
              _        (l/dbg :hint "repair current file" :errors (count errors))
