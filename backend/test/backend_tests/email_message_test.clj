@@ -211,3 +211,20 @@
       (t/is (nil? (handler nil {:to "one@example.com"
                                 :subject "subject"
                                 :body "hello"}))))))
+
+(t/deftest select-log-body
+  (doseq [[description body expected]
+          [["plain string" "plain text" "plain text"]
+           ["text and html" {"text/plain" "plain text"
+                             "text/html" "<p>html text</p>"} "plain text"]
+           ["html only" {"text/html" "<p>html text</p>"} nil]
+           ["empty map" {} nil]]]
+    (t/testing description
+      (t/is (= expected (#'emails/select-log-body body))))))
+
+(t/deftest select-log-body-from-rendered-template
+  (let [email (emails/render emails/register {:to "example@app.io" :name "foo"})
+        body  (:body email)
+        text  (get body "text/plain")]
+    (t/is (string? text))
+    (t/is (= text (#'emails/select-log-body body)))))

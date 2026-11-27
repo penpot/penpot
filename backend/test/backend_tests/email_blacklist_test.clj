@@ -56,11 +56,37 @@
       (with-redefs [cf/flags (conj cf/flags :email-blacklist)
                     cf/config (assoc cf/config :email-domain-blacklist path)]
         (let [cfg {::email/blacklist (ig/init-key ::email/blacklist {})}]
-          ;; Known bug: blank lines are kept as empty domains (issue #13363).
-          (t/is (= #{"spam.net" "sub.bad.com" ""} (::email/blacklist cfg)))
+          (t/is (= #{"spam.net" "sub.bad.com"} (::email/blacklist cfg)))
           (t/is (true? (blacklist/enabled? cfg)))
           (t/is (true? (blacklist/contains? cfg "a@sub.bad.com"))))))))
 
 (t/deftest test-init-is-disabled-without-flag
   (with-redefs [cf/flags (disj cf/flags :email-blacklist)]
     (t/is (nil? (ig/init-key ::email/blacklist {})))))
+
+(t/deftest test-file-ignores-blank-lines
+  (let [file (java.io.File/createTempFile "blacklist" ".txt")]
+    (try
+      (spit file "\n  \t\n# comment\n EXAMPLE.COM \nexample.com\n Spam.NET\t\n")
+      (with-redefs [cf/flags #{:email-blacklist}
+                    cf/get   (constantly (.getPath file))]
+        (let [domains (ig/init-key ::email/blacklist nil)
+              cfg     {::email/blacklist domains}]
+          (t/is (= #{"example.com" "spam.net"} domains))
+          (t/is (true? (blacklist/enabled? cfg)))
+          (t/is (true? (blacklist/contains? cfg "user@sub.example.com")))
+          (t/is (false? (blacklist/contains? cfg "user@other.com")))))
+      (finally
+        (.delete file)))))
+
+(t/deftest test-blank-only-file-disables-blacklist
+  (let [file (java.io.File/createTempFile "blacklist" ".txt")]
+    (try
+      (spit file "\n \t\n# comment\n")
+      (with-redefs [cf/flags #{:email-blacklist}
+                    cf/get   (constantly (.getPath file))]
+        (let [domains (ig/init-key ::email/blacklist nil)]
+          (t/is (nil? domains))
+          (t/is (false? (blacklist/enabled? {::email/blacklist domains})))))
+      (finally
+        (.delete file)))))

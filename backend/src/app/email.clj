@@ -380,6 +380,12 @@
    ::jobs/decoder   (sm/decoder schema:params sm/json-transformer)
    ::jobs/validator (sm/validator schema:params)})
 
+(defn- select-log-body
+  [body]
+  (if (string? body)
+    body
+    (get body "text/plain")))
+
 (defn- send-to-logger!
   [_ email]
   (let [body (:body email)
@@ -387,12 +393,7 @@
                (println "email console dump:")
                (println "******** start email" (:id email) "**********")
                (pp/pprint (dissoc email :body))
-               (if (string? body)
-                 (println body)
-                 (println (->> body
-                               (filter #(= "text/plain" (:type %)))
-                               (map :content)
-                               first)))
+               (println (select-log-body body))
                (println "******** end email" (:id email) "**********"))]
     (l/raw! :info out)))
 
