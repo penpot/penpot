@@ -91,16 +91,24 @@
           factor)))))
 
 (defn scale-state-for-selection
-  "Starts a scale session at 1x for the selected IDs."
-  [selected]
-  {:selection selected :factor 1})
+  "Starts a scale session for the selected IDs, remembering the size the
+  selection had at that moment."
+  [selected size]
+  {:selection selected :initial-size size})
 
 (defn selection-scale-factor
-  "Returns 1x when the stored scale belongs to a different selection."
-  [scale-state selected]
-  (if (= selected (:selection scale-state))
-    (:factor scale-state)
-    1))
+  "Returns the scale applied since the session started. Canvas resizes in
+  scale mode keep the proportions, so the ratio between the live size and
+  the size the session started with is the factor."
+  [scale-state selected size]
+  (let [initial-size (:initial-size scale-state)]
+    (if (and (= selected (:selection scale-state))
+             (some? initial-size)
+             (not (mth/almost-zero? initial-size))
+             (some? size)
+             (not (mth/almost-zero? size)))
+      (/ size initial-size)
+      1)))
 
 (defn selection-anchor
   "Returns the saved anchor, or the center for a new non-empty selection."
@@ -109,11 +117,6 @@
     (if (= selected (:selection anchor-state))
       (:anchor anchor-state)
       default-anchor)))
-
-(defn calculate-scale-after-dimension-change
-  "Updates the current scale factor by a width or height change ratio."
-  [factor dimension new-dimension]
-  (* factor (/ new-dimension dimension)))
 
 (defn- apply-preview-modifiers
   [shapes modifiers wasm-modifiers wasm?]
@@ -128,8 +131,7 @@
   [factor value]
   (when-let [new-factor (parse-factor value)]
     (when-not (mth/close? new-factor factor)
-      {:multiplier (/ new-factor factor)
-       :factor new-factor})))
+      (/ new-factor factor))))
 
 (mf/defc anchor-point-selector*
   {::mf/private true}
@@ -189,9 +191,9 @@
         width-disabled  (or disabled (mth/almost-zero? (d/nilv width 0)))
         height-disabled (or disabled (mth/almost-zero? (d/nilv height 0)))
 
-        scale-state* (mf/use-state (scale-state-for-selection selected))
+        scale-state* (mf/use-state (scale-state-for-selection selected size))
         scale-state  (deref scale-state*)
-        factor       (selection-scale-factor scale-state selected)
+        factor       (selection-scale-factor scale-state selected size)
 
         factor-str (factor->string factor)
         factor-id  (str factor-str)
@@ -230,37 +232,34 @@
 
         scale-by
         (mf/use-fn
-         (mf/deps size anchor factor selected)
-         (fn [multiplier new-factor]
+         (mf/deps size anchor)
+         (fn [multiplier]
            (when (and (some? size)
                       (pos? size)
                       (pos? multiplier))
              (st/emit! (dw/scale-selected multiplier
-                                          (or anchor default-anchor)))
-             (reset! scale-state* {:selection selected :factor new-factor}))))
+                                          (or anchor default-anchor))))))
 
         on-width-change
         (mf/use-fn
-         (mf/deps width factor scale-by)
+         (mf/deps width scale-by)
          (fn [value]
            (when (and (number? value) (some? width) (pos? width) (pos? value))
-             (scale-by (/ value width)
-                       (calculate-scale-after-dimension-change factor width value)))))
+             (scale-by (/ value width)))))
 
         on-height-change
         (mf/use-fn
-         (mf/deps height factor scale-by)
+         (mf/deps height scale-by)
          (fn [value]
            (when (and (number? value) (some? height) (pos? height) (pos? value))
-             (scale-by (/ value height)
-                       (calculate-scale-after-dimension-change factor height value)))))
+             (scale-by (/ value height)))))
 
         on-scale-change
         (mf/use-fn
          (mf/deps factor scale-by reset-scale-input)
          (fn [value]
-           (if-let [{:keys [multiplier factor]} (scale-input-operation factor value)]
-             (scale-by multiplier factor)
+           (if-let [multiplier (scale-input-operation factor value)]
+             (scale-by multiplier)
              ;; Normalize the display without scaling for invalid or unchanged input.
              (reset-scale-input))))
 
@@ -274,10 +273,21 @@
         (mf/use-fn
          #(st/emit! (dw/remove-layout-flag :scale-text)))]
 
-    (mf/with-layout-effect [selected]
-      (when-not (= selected (:selection (deref scale-state*)))
-        (reset! scale-state* (scale-state-for-selection selected))
-        (reset! anchor* nil)))
+    (mf/with-layout-effect [selected size]
+      (let [current      (deref scale-state*)
+            initial-size (:initial-size current)]
+        (cond
+          (not= selected (:selection current))
+          (do
+            (reset! scale-state* (scale-state-for-selection selected size))
+            (reset! anchor* nil))
+
+          ;; The session started without a usable size, so take the first one
+          ;; that arrives as the baseline.
+          (and (or (nil? initial-size) (mth/almost-zero? initial-size))
+               (some? size)
+               (not (mth/almost-zero? size)))
+          (swap! scale-state* assoc :initial-size size))))
 
     [:div {:class (stl/css :scale-sidebar)}
      [:> panel-title* {:class (stl/css :scale-title)

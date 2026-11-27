@@ -53,26 +53,34 @@
   (t/is (= height (:height rect))))
 
 (t/deftest scale-sidebar-factor-starts-at-one-for-a-new-selection
-  (let [selection #{:shape}
-        state     (scale/scale-state-for-selection selection)]
-    (t/is (= 1 (scale/selection-scale-factor state selection)))))
+  (doseq [selection [#{:shape}
+                     #{:shape-1 :shape-2}]]
+    (let [state (scale/scale-state-for-selection selection 100)]
+      (t/is (= 1 (scale/selection-scale-factor state selection 100))
+            (str "starts at 1x for selection " selection)))))
 
-(t/deftest scale-sidebar-factor-resets-after-deselecting-and-reselecting
-  (let [selection  #{:shape}
-        scaled     {:selection selection :factor 1.5}
-        deselected (scale/scale-state-for-selection #{})
-        reselected (scale/scale-state-for-selection selection)]
-    (t/is (= 1 (scale/selection-scale-factor deselected #{})))
-    (t/is (= 1 (scale/selection-scale-factor reselected selection)))
-    (t/is (= 1 (scale/selection-scale-factor scaled #{})))))
+(t/deftest scale-sidebar-factor-resets-for-a-different-selection
+  (let [state (scale/scale-state-for-selection #{:shape-1} 100)]
+    (t/is (= 1 (scale/selection-scale-factor state #{:shape-1 :shape-2} 300)))))
 
-(t/deftest scale-sidebar-factor-is-independent-of-canvas-resize
-  (let [selection #{:shape}
-        state     {:selection selection :factor 1.5}]
-    (t/is (= 1.5 (scale/selection-scale-factor state selection)))))
+(t/deftest scale-sidebar-factor-is-one-without-a-usable-size
+  (t/is (= 1 (scale/selection-scale-factor
+              (scale/scale-state-for-selection #{:shape} nil)
+              #{:shape}
+              nil)))
+  (t/is (= 1 (scale/selection-scale-factor
+              (scale/scale-state-for-selection #{:shape} 0)
+              #{:shape}
+              100))))
 
-(t/deftest scale-sidebar-factor-updates-after-dimension-input
-  (t/is (= 1.5 (scale/calculate-scale-after-dimension-change 1 100 150))))
+(t/deftest scale-sidebar-factor-updates-after-canvas-resize
+  (doseq [selection [#{:shape}
+                     #{:shape-1 :shape-2}]]
+    (let [state (scale/scale-state-for-selection selection 100)]
+      (t/is (= 1.5 (scale/selection-scale-factor state selection 150))
+            (str "updates the factor for selection " selection))
+      (t/is (= 2 (scale/selection-scale-factor state selection 200))
+            (str "tracks cumulative canvas resizing for selection " selection)))))
 
 (t/deftest scale-sidebar-size-uses-live-resize-modifiers
   (let [file       (-> (cthf/sample-file :file1)
@@ -124,8 +132,7 @@
   (t/is (nil? (scale-input-operation 1 "1x"))))
 
 (t/deftest scale-sidebar-builds-an-operation-for-a-new-scale-factor
-  (t/is (= {:multiplier 1.5 :factor 1.5}
-           (scale-input-operation 1 "1.5x"))))
+  (t/is (= 1.5 (scale-input-operation 1 "1.5x"))))
 
 (t/deftest scale-selected-keeps-the-center-anchor-in-place
   (t/async
