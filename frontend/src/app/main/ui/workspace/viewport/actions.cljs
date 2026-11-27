@@ -202,7 +202,8 @@
    (mf/deps @hover @hover-ids selected @hover-top-frame-id drawing-path? edition drawing-tool @z? read-only?)
    (fn [event]
      (dom/stop-propagation event)
-     (when-not @z?
+     (when-not (or @z?
+                   (dom/get-parent-with-selector (dom/get-target event) ".text-editor"))
        (let [ctrl? (kbd/ctrl? event)
              shift? (kbd/shift? event)
              alt? (kbd/alt? event)
