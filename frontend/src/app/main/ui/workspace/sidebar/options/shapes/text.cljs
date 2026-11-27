@@ -206,6 +206,15 @@
               (wasm.text-editor/get-cached-content id)
               (wasm.text-editor/text-editor-get-selection)))
 
+        ;; A warichu note never crosses spans, and turns back to plain
+        ;; text whole.
+        warichu-selection-active
+        (and text-selection-active
+             text-editor-wasm?
+             (wasm.text-editor/single-span-selection?
+              (wasm.text-editor/get-cached-content id)
+              (wasm.text-editor/text-editor-get-selection)))
+
         zhuyin-selection-active
         (and reading-selection-active
              (wasm.text-editor/zhuyin-selection?
@@ -263,6 +272,7 @@
         :text-selection-active text-selection-active
         :text-selection-key text-selection-key
         :reading-selection-active reading-selection-active
+        :warichu-selection-active warichu-selection-active
         :zhuyin-selection-active zhuyin-selection-active
         :libraries libraries
         :file-id file-id
@@ -319,6 +329,7 @@
          :ruby-values ruby-values
          :text-selection-active text-selection-active
          :reading-selection-active reading-selection-active
+         :warichu-selection-active warichu-selection-active
          :zhuyin-selection-active zhuyin-selection-active
          :libraries libraries
          :file-id file-id

@@ -745,9 +745,76 @@ fn remap_ids(body: &str, prefix: &str) -> String {
 /// Skia's SVG backend appends a trailing comma to list-valued `<text>` attrs
 /// (`x`, `y`, `dx`, `dy`). Firefox rejects the malformed list and drops the
 /// glyph positioning (text vanishes or mis-renders).
+/// Unified ideograph of each Kangxi radical, U+2F00 to U+2FD5: their
+/// compatibility (NFKC) mappings.
+const KANGXI_IDEOGRAPHS: [u32; 214] = [
+    0x4E00, 0x4E28, 0x4E36, 0x4E3F, 0x4E59, 0x4E85, 0x4E8C, 0x4EA0, 0x4EBA, 0x513F, 0x5165, 0x516B,
+    0x5182, 0x5196, 0x51AB, 0x51E0, 0x51F5, 0x5200, 0x529B, 0x52F9, 0x5315, 0x531A, 0x5338, 0x5341,
+    0x535C, 0x5369, 0x5382, 0x53B6, 0x53C8, 0x53E3, 0x56D7, 0x571F, 0x58EB, 0x5902, 0x590A, 0x5915,
+    0x5927, 0x5973, 0x5B50, 0x5B80, 0x5BF8, 0x5C0F, 0x5C22, 0x5C38, 0x5C6E, 0x5C71, 0x5DDB, 0x5DE5,
+    0x5DF1, 0x5DFE, 0x5E72, 0x5E7A, 0x5E7F, 0x5EF4, 0x5EFE, 0x5F0B, 0x5F13, 0x5F50, 0x5F61, 0x5F73,
+    0x5FC3, 0x6208, 0x6236, 0x624B, 0x652F, 0x6534, 0x6587, 0x6597, 0x65A4, 0x65B9, 0x65E0, 0x65E5,
+    0x66F0, 0x6708, 0x6728, 0x6B20, 0x6B62, 0x6B79, 0x6BB3, 0x6BCB, 0x6BD4, 0x6BDB, 0x6C0F, 0x6C14,
+    0x6C34, 0x706B, 0x722A, 0x7236, 0x723B, 0x723F, 0x7247, 0x7259, 0x725B, 0x72AC, 0x7384, 0x7389,
+    0x74DC, 0x74E6, 0x7518, 0x751F, 0x7528, 0x7530, 0x758B, 0x7592, 0x7676, 0x767D, 0x76AE, 0x76BF,
+    0x76EE, 0x77DB, 0x77E2, 0x77F3, 0x793A, 0x79B8, 0x79BE, 0x7A74, 0x7ACB, 0x7AF9, 0x7C73, 0x7CF8,
+    0x7F36, 0x7F51, 0x7F8A, 0x7FBD, 0x8001, 0x800C, 0x8012, 0x8033, 0x807F, 0x8089, 0x81E3, 0x81EA,
+    0x81F3, 0x81FC, 0x820C, 0x821B, 0x821F, 0x826E, 0x8272, 0x8278, 0x864D, 0x866B, 0x8840, 0x884C,
+    0x8863, 0x897E, 0x898B, 0x89D2, 0x8A00, 0x8C37, 0x8C46, 0x8C55, 0x8C78, 0x8C9D, 0x8D64, 0x8D70,
+    0x8DB3, 0x8EAB, 0x8ECA, 0x8F9B, 0x8FB0, 0x8FB5, 0x9091, 0x9149, 0x91C6, 0x91CC, 0x91D1, 0x9577,
+    0x9580, 0x961C, 0x96B6, 0x96B9, 0x96E8, 0x9751, 0x975E, 0x9762, 0x9769, 0x97CB, 0x97ED, 0x97F3,
+    0x9801, 0x98A8, 0x98DB, 0x98DF, 0x9996, 0x9999, 0x99AC, 0x9AA8, 0x9AD8, 0x9ADF, 0x9B25, 0x9B2F,
+    0x9B32, 0x9B3C, 0x9B5A, 0x9CE5, 0x9E75, 0x9E7F, 0x9EA5, 0x9EBB, 0x9EC3, 0x9ECD, 0x9ED1, 0x9EF9,
+    0x9EFD, 0x9F0E, 0x9F13, 0x9F20, 0x9F3B, 0x9F4A, 0x9F52, 0x9F8D, 0x9F9C, 0x9FA0,
+];
+
+/// The character Skia's SVG device should have written for `ch`. It writes a
+/// glyph back as the first code point the font maps to it, and CJK fonts map a
+/// radical and its unified ideograph to one glyph: 山 comes out as the radical
+/// ⼭ (U+2F2D), which search, copy and screen readers take for another
+/// character. Texts hardly ever hold the radicals themselves.
+fn unified_ideograph(ch: char) -> char {
+    let cp = ch as u32;
+    let mapped = match cp {
+        0x2F00..=0x2FD5 => KANGXI_IDEOGRAPHS[(cp - 0x2F00) as usize],
+        0x2E9F => 0x6BCD,
+        0x2EF3 => 0x9F9F,
+        _ => cp,
+    };
+    char::from_u32(mapped).unwrap_or(ch)
+}
+
+/// Removes `<text>` elements with no character, which Skia writes for runs of
+/// zero-width controls such as a WORD JOINER.
+fn drop_empty_text_elements(out: &mut String) {
+    let mut search_from = 0;
+    while let Some(rel) = out[search_from..].find("<text") {
+        let start = search_from + rel;
+        // Not `<textPath`: the tag name ends there.
+        if !matches!(out[start + "<text".len()..].chars().next(), Some(' ' | '>')) {
+            search_from = start + "<text".len();
+            continue;
+        }
+        let Some(open_end) = out[start..].find('>').map(|i| start + i + 1) else {
+            break;
+        };
+        let Some(close) = out[open_end..].find("</text>").map(|i| open_end + i) else {
+            break;
+        };
+        let content = &out[open_end..close];
+        if !out[start..open_end].ends_with("/>") && content.trim().is_empty() {
+            out.replace_range(start..close + "</text>".len(), "");
+            search_from = start;
+        } else {
+            search_from = open_end;
+        }
+    }
+}
+
 fn sanitize_skia_svg_fragment(body: &str) -> String {
     const LIST_ATTRS: [&str; 4] = ["x=\"", "y=\"", "dx=\"", "dy=\""];
-    let mut out = body.to_string();
+    let mut out: String = body.chars().map(unified_ideograph).collect();
+    drop_empty_text_elements(&mut out);
 
     for attr in LIST_ATTRS {
         let mut search_from = 0;
@@ -777,6 +844,22 @@ fn sanitize_skia_svg_fragment(body: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::sanitize_skia_svg_fragment;
+
+    #[test]
+    fn writes_unified_ideographs_instead_of_radicals() {
+        let out = sanitize_skia_svg_fragment(
+            "<text x=\"0\" y=\"0\">\u{2F2D}\u{2F0A}\u{2FBB}\u{2E9F}の</text>",
+        );
+        assert!(out.contains("山入骨母の"), "{out}");
+    }
+
+    #[test]
+    fn drops_text_elements_without_characters() {
+        let out = sanitize_skia_svg_fragment(
+            "<g><text x=\"\" y=\"\">\n\t\t</text><text x=\"1\" y=\"2\">紅</text></g>",
+        );
+        assert_eq!(out, "<g><text x=\"1\" y=\"2\">紅</text></g>");
+    }
 
     #[test]
     fn strips_trailing_comma_from_text_position_lists() {

@@ -107,12 +107,30 @@ pub(crate) fn horizontal_jlreq_justify_spacing(
         return spacing;
     };
     for line in justified {
-        let slack = width - line.width as f32 - JUSTIFY_EPSILON;
+        let start = chars.partition_point(|c| c.utf16 < line.start_index);
+        let end = chars.partition_point(|c| c.utf16 < line.end_excluding_whitespaces);
+        // A comma or closing bracket ending the line sheds its trailing aki,
+        // so its ink meets the line end; the rest spreads as slack.
+        let end_shed = end
+            .checked_sub(1)
+            .filter(|at| *at >= start)
+            .map(|at| {
+                let ch = &chars[at];
+                let aki = match ch.class {
+                    JlreqClass::ClosingBracket | JlreqClass::Comma => ch.font_size / 2.0,
+                    _ => 0.0,
+                };
+                (at, aki)
+            })
+            .filter(|(_, aki)| *aki > 0.0);
+        let slack =
+            width - line.width as f32 - JUSTIFY_EPSILON + end_shed.map_or(0.0, |(_, aki)| aki);
         if slack <= 0.0 {
             continue;
         }
-        let start = chars.partition_point(|c| c.utf16 < line.start_index);
-        let end = chars.partition_point(|c| c.utf16 < line.end_excluding_whitespaces);
+        if let Some((at, aki)) = end_shed {
+            spacing[chars[at].span].push((chars[at].index, -aki));
+        }
         // (char before the gap, priority, cap)
         let gaps: Vec<(usize, u8, f32)> = (start..end.saturating_sub(1))
             .filter(|at| !chars[at + 1].after_note)

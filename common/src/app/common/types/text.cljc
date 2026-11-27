@@ -293,10 +293,23 @@
   [text]
   (subs text 0 (min 280 (count text))))
 
+(def ^:private compared-text-attrs
+  "Attrs that make a text style difference: the span attrs, and the paragraph
+   and root attrs (alignment, language, writing mode...), which a component
+   copy can override too."
+  (set text-style-attrs))
+
+(defn- text-attr-default
+  [key]
+  (cond
+    (contains? default-text-attrs key) (get default-text-attrs key)
+    (contains? default-root-attrs key) (get default-root-attrs key)
+    :else                              (cjk/enum-default key)))
+
 (defn- compare-text-attr
   "Compare two attribute values and return true if they are different.
    Take into account the following:
-    - Only process keys that belong to text node attrs (ignore deprecated
+    - Only process keys that belong to text style attrs (ignore deprecated
       attributes or other things that may be attached).
     - Consider nil values, empty strings or empty lists all equal.
     - Normalize numeric values (legacy) into strings.
@@ -305,8 +318,8 @@
       editor/WASM round-trips like \"1.3333333333333333\" vs \"1.33333\"
       do not count as a real style change (avoids detaching tokens)."
   [key value1 value2]
-  (when (text-node-attr? key)
-    (let [default-value (get default-text-attrs key)
+  (when (contains? compared-text-attrs key)
+    (let [default-value (text-attr-default key)
           normalize-value (fn [value]
                             (as-> value $
                               (if (number? $) (str $) $)
@@ -612,3 +625,13 @@
       [{:type "paragraph-set"
         :children paragraphs}]}
      root-styles)))
+
+(defn proportional-features-for
+  "`content` with its proportional metrics turned to the axis of
+  `writing-mode`: `vpal` in vertical-rl text, `palt` in any other. The
+  renderer reads each feature in its own axis only."
+  [content writing-mode]
+  (let [[from to] (if (= "vertical-rl" writing-mode) ["palt" "vpal"] ["vpal" "palt"])]
+    (transform-nodes #(and (is-text-node? %) (= from (:font-features %)))
+                     #(assoc % :font-features to)
+                     content)))

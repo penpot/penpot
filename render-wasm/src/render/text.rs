@@ -4,7 +4,7 @@ use crate::{
     error::Result,
     math::Rect,
     shapes::{
-        add_horizontal_span, calculate_text_layout_data, set_paint_fill, text_vertical,
+        add_horizontal_span_pieces, calculate_text_layout_data, set_paint_fill, text_vertical,
         vertical_align_offset, HorizontalOffsets, HorizontalSpanRange, Paragraph as TextParagraph,
         ParagraphBuilderGroup, ParagraphLayout, Stroke, StrokeKind, TextContent,
         TextDecorationSegment,
@@ -72,14 +72,18 @@ pub fn render_vertical_text(
             drop_shadows.extend(inherited_shadows);
         }
         if !drop_shadows.is_empty() {
+            // The shadow is cast by the stroked silhouette, as in horizontal
+            // text.
+            let strokes: Vec<&Stroke> = shape.visible_strokes().collect();
             let canvas = state.surfaces.canvas_and_mark_dirty(fills_surface_id);
             for shadow in &drop_shadows {
-                text_vertical::paint_shadow(
+                text_vertical::paint_shadow_silhouette(
                     canvas,
                     &layout,
                     &bounds,
                     vertical_align,
                     shadow,
+                    &strokes,
                     GlyphOutput::Text,
                 );
             }
@@ -285,7 +289,16 @@ pub fn stroke_paragraph_builder_group_from_text(
                     paragraph.line_height(),
                 );
                 builder.push_style(&stroke_style);
-                add_horizontal_span(builder, span, text, &sheds, &extra, &stroke_style, fonts);
+                add_horizontal_span_pieces(
+                    builder,
+                    span,
+                    text,
+                    plan.warichu_pieces(span_index),
+                    &sheds,
+                    &extra,
+                    &stroke_style,
+                    fonts,
+                );
             }
         }
 

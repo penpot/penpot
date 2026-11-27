@@ -301,6 +301,8 @@
                      (unchecked-get o-props "textSelectionKey"))
          (identical? (unchecked-get n-props "readingSelectionActive")
                      (unchecked-get o-props "readingSelectionActive"))
+         (identical? (unchecked-get n-props "warichuSelectionActive")
+                     (unchecked-get o-props "warichuSelectionActive"))
          (identical? (unchecked-get n-props "languageView")
                      (unchecked-get o-props "languageView"))
          (identical? (unchecked-get n-props "onOpenLanguageView")
@@ -360,7 +362,7 @@
   Language panel offers no options."
   {::mf/wrap [#(mf/memo' % check-props)]}
   [{:keys [ids type values ruby-values text-selection-active text-selection-key
-           reading-selection-active zhuyin-selection-active
+           reading-selection-active zhuyin-selection-active warichu-selection-active
            applied-tokens libraries file-id typographies
            language-view on-open-language-view on-close-language-view has-ruby]}]
 
@@ -549,8 +551,12 @@
            (ts/schedule
             100
             (fn []
-              (when (not= "INPUT" (-> (dom/get-active) dom/get-tag-name))
-                (dom/focus! (txu/get-text-editor-content)))))))
+              ;; Back to the text after a pick, but not when the keyboard
+              ;; moved the focus to another control (Tab).
+              (let [active (dom/get-active)]
+                (when-not (or (= "INPUT" (dom/get-tag-name active))
+                              (and (some? active) (.matches ^js active ":focus-visible")))
+                  (dom/focus! (txu/get-text-editor-content))))))))
 
         common-props (mf/props
                       {:ids         ids
@@ -567,6 +573,7 @@
           :text-selection-active       text-selection-active
           :selection-key               text-selection-key
           :reading-selection-active    reading-selection-active
+          :warichu-selection-active    warichu-selection-active
           :zhuyin-selection-active     zhuyin-selection-active
           :on-change                   on-change
           :on-ruby-presentation-change on-ruby-presentation-change

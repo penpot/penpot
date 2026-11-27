@@ -817,7 +817,23 @@ pub fn delete_char_after(text_content: &mut TextContent, cursor: &TextPositionWi
     }
 }
 
+/// Spans of the ruby base whose text the character offset `offset` falls
+/// strictly inside of, if any.
+fn ruby_base_cut_at(para: &Paragraph, offset: usize) -> Option<std::ops::Range<usize>> {
+    let mut starts = Vec::with_capacity(para.children().len() + 1);
+    let mut position = 0;
+    for span in para.children() {
+        starts.push(position);
+        position += span.text.chars().count();
+    }
+    starts.push(position);
+    para.ruby_groups()
+        .into_iter()
+        .find(|group| starts[group.start] < offset && offset < starts[group.end])
+}
+
 /// Split a paragraph at the cursor position. Returns true if split was successful.
+/// A reading cannot cover two paragraphs: splitting its base drops it.
 pub fn split_paragraph_at_cursor(
     text_content: &mut TextContent,
     cursor: &TextPositionWithAffinity,
@@ -825,6 +841,12 @@ pub fn split_paragraph_at_cursor(
     let paragraphs = text_content.paragraphs_mut();
     if cursor.paragraph >= paragraphs.len() {
         return false;
+    }
+
+    if let Some(group) = ruby_base_cut_at(&paragraphs[cursor.paragraph], cursor.offset) {
+        for span in &mut paragraphs[cursor.paragraph].children_mut()[group] {
+            span.drop_annotations();
+        }
     }
 
     let para = &paragraphs[cursor.paragraph];
@@ -1201,6 +1223,25 @@ mod tests {
     }
 
     #[test]
+    fn text_typed_after_combined_digits_is_not_combined() {
+        let mut digits = span("12");
+        digits.text_combine_upright = crate::shapes::TextCombineUpright::All;
+        let mut content = reading_paragraph(vec![span("第"), digits, span("回")]);
+        type_at(&mut content, 0, 3, "月");
+        let spans = content.paragraphs()[0].children();
+        let texts: Vec<(&str, bool)> = spans
+            .iter()
+            .map(|span| {
+                (
+                    span.text.as_str(),
+                    span.text_combine_upright == crate::shapes::TextCombineUpright::All,
+                )
+            })
+            .collect();
+        assert_eq!(texts, [("第", false), ("12", true), ("月回", false)]);
+    }
+
+    #[test]
     fn text_typed_between_two_readings_stays_out_of_both() {
         let mut content = reading_paragraph(vec![
             reading("漢字", "かんじ"),
@@ -1230,6 +1271,42 @@ mod tests {
             spans_of(&content, 0),
             pairs(&[("漢X", "かんじ"), ("字", "かんじ")])
         );
+    }
+
+    #[test]
+    fn splitting_a_paragraph_inside_a_reading_base_drops_the_reading() {
+        let mut content = reading_paragraph(vec![reading("日本", "にほん"), span("語")]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 1)));
+        assert_eq!(spans_of(&content, 0), pairs(&[("日", "")]));
+        assert_eq!(spans_of(&content, 1), pairs(&[("本", ""), ("語", "")]));
+        assert!(content.paragraphs()[0].children()[0].annotations_dropped);
+        assert!(content.paragraphs()[1].children()[0].annotations_dropped);
+
+        // Between two spans of one reading the caret is inside its base.
+        let joined = TextSpan {
+            ruby_joins_previous: true,
+            ..reading("本", "にほん")
+        };
+        let mut content = reading_paragraph(vec![reading("日", "にほん"), joined]);
+        assert!(split_paragraph_at_cursor(&mut content, &caret(0, 1)));
+        assert_eq!(spans_of(&content, 0), pairs(&[("日", "")]));
+        assert_eq!(spans_of(&content, 1), pairs(&[("本", "")]));
+    }
+
+    #[test]
+    fn splitting_a_paragraph_at_the_edges_of_a_reading_keeps_it() {
+        for offset in [0, 2] {
+            let mut content = reading_paragraph(vec![reading("日本", "にほん"), span("語")]);
+            assert!(split_paragraph_at_cursor(&mut content, &caret(0, offset)));
+            let spans: Vec<(String, String)> = content
+                .paragraphs()
+                .iter()
+                .flat_map(|para| para.children().iter())
+                .filter(|span| !span.text.is_empty())
+                .map(|span| (span.text.clone(), span.ruby.clone()))
+                .collect();
+            assert_eq!(spans, pairs(&[("日本", "にほん"), ("語", "")]), "{offset}");
+        }
     }
 
     #[test]

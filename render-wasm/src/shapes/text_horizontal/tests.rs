@@ -4,7 +4,7 @@ use super::ruby::{
     split_counts_by_extent, RubyGlyphRef, RubyLine,
 };
 use super::*;
-use crate::shapes::text_paragraph::LayoutParagraph;
+use crate::shapes::text_paragraph::{HorizontalBuilder, LayoutParagraph};
 use crate::shapes::text_policy::TextLayoutPolicy;
 use crate::shapes::{LineAdjustment, TextAlign, TextDirection, TextTransform};
 use crate::Uuid;
@@ -498,9 +498,10 @@ fn horizontal_ruby_ranges_use_utf16_across_spans() {
     let paragraph = make_paragraph(vec![astral, kanji], 0.0);
     let offsets = HorizontalOffsets::new(&paragraph);
 
+    // The paragraph starts with a reading base: a spacer joiner leads it.
     assert_eq!(
         horizontal_ruby_targets(&paragraph, &offsets),
-        vec![(0, 0..2), (1, 2..3)]
+        vec![(0, 1..3), (1, 3..4)]
     );
 }
 
@@ -692,7 +693,7 @@ fn layout_span_texts_keeps_ruby_atomic_without_japanese_text() {
     let paragraph = make_paragraph(vec![group], 0.0);
     assert_eq!(
         paragraph.layout_span_texts().0,
-        vec!["a\u{2060}b".to_string()]
+        vec!["\u{2060}a\u{2060}b".to_string()]
     );
 }
 
@@ -742,20 +743,20 @@ fn horizontal_long_ruby_spreads_its_base_without_overhang() {
 }
 
 #[test]
-fn horizontal_ruby_base_at_paragraph_start_takes_all_spacing_after() {
+fn horizontal_ruby_base_at_paragraph_start_centres_after_a_spacer() {
     init_state();
     let mut base = make_span("i", 0.0);
     base.ruby = "MMMMMMMM".to_string();
     base.ruby_overhang = RubyOverhang::None;
     let paragraph = make_paragraph(vec![base, make_span("b", 0.0)], 0.0);
+    let (texts, _) = paragraph.layout_span_texts();
+    assert_eq!(texts[0], "\u{2060}i", "a spacer joiner leads the base");
     let spacing = test_ruby_spacing(&paragraph);
     let gap = spacing.base_gaps[0];
     assert!(gap > 0.0);
-    assert_eq!(
-        spacing.leading_gaps[0], 0.0,
-        "nothing sticks out before the line start"
-    );
-    assert_eq!(spacing.adjustments[0], vec![(0, gap / 2.0), (0, gap / 2.0)]);
+    // Half the gap before the base, on the spacer, inside the line.
+    assert_eq!(spacing.leading_gaps[0], gap / 2.0);
+    assert_eq!(spacing.adjustments[0], vec![(1, gap / 2.0), (0, gap / 2.0)]);
 }
 
 #[test]
@@ -775,7 +776,7 @@ fn horizontal_long_ruby_counts_only_source_characters_of_its_base() {
     let gap = spacing.base_gaps[0];
     assert_eq!(
         spacing.adjustments[0],
-        vec![(0, gap), (last, gap / 2.0), (last, gap / 2.0)]
+        vec![(1, gap), (last, gap / 2.0), (0, gap / 2.0)]
     );
 }
 
@@ -905,7 +906,7 @@ fn horizontal_ruby_is_atomic() {
     let paragraph = make_paragraph(vec![group], 0.0);
     assert_eq!(
         paragraph.layout_span_texts().0,
-        vec!["日\u{2060}本".to_string()]
+        vec!["\u{2060}日\u{2060}本".to_string()]
     );
 }
 
@@ -1209,6 +1210,81 @@ fn horizontal_position_data_carries_warichu_lines_and_emphasis_marks() {
         .map(|entry| (entry.start_pos, entry.end_pos))
         .collect();
     assert_eq!(marks, vec![(0, 1), (2, 3)], "A and B are marked; 、 is not");
+}
+
+#[test]
+fn warichu_pieces_map_to_their_own_builder_boxes() {
+    init_state();
+    let mut warichu = make_span("あいうえおか", 0.0);
+    warichu.warichu = true;
+    let paragraph = make_paragraph(vec![make_span("本", 0.0), warichu], 0.0);
+    let (texts, map) = paragraph.layout_span_texts();
+    let offsets = HorizontalOffsets::from_layout_texts(&paragraph, &texts, map, &[vec![], vec![4]]);
+    let note = &offsets.ranges[1];
+    assert_eq!(note.pieces.len(), 2);
+    assert_eq!(
+        note.builder_end - note.builder_start,
+        2 * HORIZONTAL_WARICHU_BUILDER_LEN
+    );
+    // A character of the second piece maps to its box, and back.
+    assert_eq!(
+        offsets.transformed_to_builder(1 + 5),
+        note.piece_builder_start(1)
+    );
+    assert_eq!(
+        offsets.builder_to_transformed(note.piece_builder_start(1)),
+        1 + 4
+    );
+}
+
+#[test]
+fn horizontal_long_warichu_continues_on_later_lines_inside_the_box() {
+    init_state();
+    let mut warichu = make_span(
+        "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほ",
+        0.0,
+    );
+    warichu.warichu = true;
+    // The test font sets the note 15 half-size columns wide at about 44 px.
+    let width = 30.0;
+    let mut content = super::super::text::TextContent::new(
+        crate::math::Rect::from_xywh(0.0, 0.0, width, 400.0),
+        crate::shapes::GrowType::Fixed,
+    );
+    content.add_paragraph(make_paragraph(
+        vec![make_span("本文", 0.0), warichu, make_span("後", 0.0)],
+        0.0,
+    ));
+    let mut shape = crate::shapes::Shape::new(Uuid::nil());
+    shape.set_selrect(0.0, 0.0, width, 400.0);
+    let mut resources =
+        crate::render::RenderResources::try_new_headless().expect("headless resources");
+    let _guard = crate::globals::TestRenderResourcesGuard::install(&mut resources);
+
+    let data = super::super::text::calculate_position_data(&shape, &content, false);
+
+    let strips: Vec<_> = data.iter().filter(|entry| entry.span == 1).collect();
+    assert!(strips.len() > 2, "the note is cut into pieces");
+    for strip in &strips {
+        assert!(
+            strip.x + strip.width <= width + 0.5,
+            "a piece runs to {} past the box width {width}",
+            strip.x + strip.width
+        );
+    }
+    // The sub-lines of the pieces cover the note in reading order.
+    let mut covered = 0;
+    for strip in &strips {
+        assert_eq!(strip.start_pos, covered);
+        covered = strip.end_pos;
+    }
+    assert_eq!(covered, 30);
+    // The first piece shares the line of 本文.
+    let base = data
+        .iter()
+        .find(|entry| entry.span == 0)
+        .expect("base text");
+    assert!(strips[0].y < base.y + base.height);
 }
 
 #[test]
@@ -3119,4 +3195,71 @@ fn push_in_squeeze_keeps_the_character_after_a_warichu_note() {
         after_note.iter().any(|entry| entry.width > 16.0),
         "あ after the note keeps its width: {after_note:?}"
     );
+}
+
+#[test]
+fn fallback_fonts_and_inserted_breaks_keep_the_line_height() {
+    use crate::shapes::text_vertical::test_support::{
+        provider_with_fallback, TEST_FONT, VPAL_TEST_FONT,
+    };
+    init_state();
+    let mut fonts = skia::textlayout::FontCollection::new();
+    fonts.set_asset_font_manager(Some(
+        provider_with_fallback(TEST_FONT, VPAL_TEST_FONT).into(),
+    ));
+    let line_heights = |text: &str, language: &str, width: f32, line_height: f32| -> Vec<f32> {
+        let mut span = make_span(text, 0.0);
+        span.font_size = 20.0;
+        span.line_height = line_height;
+        let mut paragraph = make_paragraph(vec![span], 0.0);
+        paragraph.set_language(language.to_string());
+        let plan = HorizontalParagraphPlan::new(&paragraph);
+        let mut paragraph_style = paragraph.paragraph_to_style();
+        paragraph_style.set_apply_rounding_hack(false);
+        let mut builder = HorizontalBuilder::new(&paragraph_style, &fonts);
+        let span = &paragraph.children()[0];
+        let mut style = span.to_style(
+            &crate::math::Rect::from_xywh(0.0, 0.0, width, 200.0),
+            &crate::render::FallbackFonts::default(),
+            false,
+            line_height,
+        );
+        let mut families: Vec<String> = style.font_families().iter().map(str::to_string).collect();
+        families.push("fallback".to_string());
+        style.set_font_families(&families);
+        builder.push_style(&style);
+        add_horizontal_span(
+            &mut builder,
+            span,
+            &plan.texts[0],
+            &plan.pair_spacing[0],
+            &plan.ruby_spacing.adjustments[0],
+            &style,
+            &fonts,
+        );
+        builder.pop();
+        let mut layout = LayoutParagraph::build(&mut builder);
+        layout.layout(width);
+        layout
+            .get_line_metrics()
+            .iter()
+            .map(|line| line.height as f32)
+            .collect()
+    };
+    for (text, language, width, line_height) in [
+        ("あく", "", 1000.0, 1.5),
+        ("あa く", "", 1000.0, 1.5),
+        ("Aa", "", 1000.0, 1.5),
+        ("あくあくあ。くあくあ", "ja", 101.0, 1.5),
+        ("あく", "ja", 1000.0, 2.0),
+    ] {
+        let heights = line_heights(text, language, width, line_height);
+        assert!(!heights.is_empty());
+        for height in heights {
+            assert!(
+                (height - 20.0 * line_height).abs() < 0.01,
+                "{text:?}: line height {height}"
+            );
+        }
+    }
 }

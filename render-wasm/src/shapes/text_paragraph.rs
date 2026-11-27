@@ -6,6 +6,12 @@
 //! character. That centers span tracking, but letter-spacing added to single
 //! characters (justification, distribution, squeezing, ruby room) must only
 //! open the gap after them, so each line takes back half of that extra.
+//!
+//! As in CSS, a line is as tall as the boxes of the spans on it, each in the
+//! span's own font, whatever fonts draw the glyphs. Skia measures each run
+//! in its own font instead, so the builder records the boxes of spans drawn
+//! from fallback fonts (`fallback_run_heights`) and each line takes the
+//! largest box that touches it.
 
 use skia_safe::{
     textlayout::{
@@ -29,6 +35,15 @@ pub trait SpacedParagraphBuilder {
     fn extra_spacing(&self) -> &[(usize, f32)] {
         &[]
     }
+
+    /// Records that the line holding any of the builder's UTF-16 `range` is
+    /// at least `ascent` above and `descent` below its baseline.
+    fn add_line_box(&mut self, _range: Range<usize>, _ascent: f32, _descent: f32) {}
+
+    /// Line boxes as (UTF-16 range, ascent, descent).
+    fn line_boxes(&self) -> &[(Range<usize>, f32, f32)] {
+        &[]
+    }
 }
 
 impl SpacedParagraphBuilder for ParagraphBuilder {
@@ -42,6 +57,7 @@ impl SpacedParagraphBuilder for ParagraphBuilder {
 pub struct HorizontalBuilder {
     builder: ParagraphBuilder,
     extra_spacing: Vec<(usize, f32)>,
+    line_boxes: Vec<(Range<usize>, f32, f32)>,
 }
 
 impl HorizontalBuilder {
@@ -49,6 +65,7 @@ impl HorizontalBuilder {
         Self {
             builder: ParagraphBuilder::new(style, fonts),
             extra_spacing: Vec::new(),
+            line_boxes: Vec::new(),
         }
     }
 }
@@ -64,6 +81,14 @@ impl SpacedParagraphBuilder for HorizontalBuilder {
 
     fn extra_spacing(&self) -> &[(usize, f32)] {
         &self.extra_spacing
+    }
+
+    fn add_line_box(&mut self, range: Range<usize>, ascent: f32, descent: f32) {
+        self.line_boxes.push((range, ascent, descent));
+    }
+
+    fn line_boxes(&self) -> &[(Range<usize>, f32, f32)] {
+        &self.line_boxes
     }
 }
 
@@ -88,11 +113,29 @@ impl DerefMut for HorizontalBuilder {
     }
 }
 
+/// Ascent and descent of `line`: its runs' and those of the `boxes` of the
+/// spans on it.
+fn line_extent(boxes: &[(Range<usize>, f32, f32)], line: &LineMetrics) -> (f32, f32) {
+    let on_line = line.start_index..line.end_excluding_whitespaces.max(line.start_index + 1);
+    boxes
+        .iter()
+        .filter(|(range, _, _)| range.start < on_line.end && range.end > on_line.start)
+        .fold(
+            (line.ascent as f32, line.descent as f32),
+            |(ascent, descent), (_, box_ascent, box_descent)| {
+                (ascent.max(*box_ascent), descent.max(*box_descent))
+            },
+        )
+}
+
 #[derive(Debug)]
 pub struct LayoutParagraph {
     inner: Paragraph,
     text: String,
     extra_spacing: Vec<(usize, f32)>,
+    line_boxes: Vec<(Range<usize>, f32, f32)>,
+    /// Ascent and descent of each line, span boxes included.
+    line_extents: Vec<(f32, f32)>,
     shifts: Vec<f32>,
     x_shifts: Vec<f32>,
     height: f32,
@@ -102,12 +145,15 @@ pub struct LayoutParagraph {
 impl LayoutParagraph {
     pub fn build(builder: &mut impl SpacedParagraphBuilder) -> Self {
         let extra_spacing = builder.extra_spacing().to_vec();
+        let line_boxes = builder.line_boxes().to_vec();
         let builder = builder.paragraph_builder();
         let text = builder.get_text().to_owned();
         Self {
             inner: builder.build(),
             text,
             extra_spacing,
+            line_boxes,
+            line_extents: Vec::new(),
             shifts: Vec::new(),
             x_shifts: Vec::new(),
             height: 0.0,
@@ -126,10 +172,13 @@ impl LayoutParagraph {
         let anchor = lines
             .first()
             .map_or(0.0, |line| (line.baseline - line.ascent) as f32);
+        self.line_extents.clear();
         for line in &lines {
+            let (ascent, descent) = line_extent(&self.line_boxes, line);
+            self.line_extents.push((ascent, descent));
             self.shifts
-                .push(self.height + line.ascent as f32 + anchor - line.baseline as f32);
-            self.height += (line.ascent + line.descent) as f32;
+                .push(self.height + ascent + anchor - line.baseline as f32);
+            self.height += ascent + descent;
             let first = self
                 .extra_spacing
                 .binary_search_by_key(&line.start_index, |(at, _)| *at)
@@ -229,6 +278,11 @@ impl LayoutParagraph {
         self.height
     }
 
+    /// The builder text laid out.
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
     pub fn ideographic_baseline(&self) -> f32 {
         self.inner.ideographic_baseline() + self.line_shift(0)
     }
@@ -253,6 +307,10 @@ impl LayoutParagraph {
         for (index, line) in lines.iter_mut().enumerate() {
             line.left += self.line_x_shift(index) as f64;
             line.baseline += self.line_shift(index) as f64;
+            if let Some(&(ascent, descent)) = self.line_extents.get(index) {
+                line.ascent = ascent as f64;
+                line.descent = descent as f64;
+            }
             line.height = line.ascent + line.descent;
         }
         lines

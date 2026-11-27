@@ -84,6 +84,22 @@
 (def text-content-attrs
   [:ruby :ruby-group :warichu])
 
+(defn without-own-text-attrs
+  "`span` without what belongs to its own characters, for new text taking
+  its style: its reading, warichu note and whole-span tate-chu-yoko."
+  [span]
+  (cond-> (apply dissoc span text-content-attrs)
+    (= "all" (:text-combine-upright span)) (dissoc :text-combine-upright)))
+
+(defn applicable-span-attrs
+  "Span `attrs` to merge into `span`: a warichu note draws no emphasis
+  marks, so it takes none, though removing them still applies."
+  [span attrs]
+  (cond-> attrs
+    (and (= "warichu" (:warichu span))
+         (not (contains? #{nil "none"} (:text-emphasis attrs))))
+    (dissoc :text-emphasis)))
+
 ;; Values of the span attrs above when a span does not store them.
 (def span-attr-defaults
   (into {:ruby "" :ruby-group "" :ruby-hidden false :ruby-zhuyin false}
@@ -323,12 +339,18 @@
 (defn chosen-language-attrs
   "Paragraph attrs a text takes when `tag` is chosen as its language. A
   Korean text breaks between words unless it already has a wrapping in
-  `values`; texts without one keep breaking between syllables."
+  `values`; texts without one keep breaking between syllables. Without a
+  CJK language a distributed text is drawn aligned to the start, so it
+  takes that alignment."
   [tag values]
   (cond-> {:text-language tag}
     (and (= :korean (language-family tag))
          (nil? (:korean-wrap values)))
-    (assoc :korean-wrap "keep-words")))
+    (assoc :korean-wrap "keep-words")
+
+    (and (nil? (language-family tag))
+         (= "distribute" (:text-align values)))
+    (assoc :text-align "left")))
 
 (def ^:private ruby-attrs
   (into #{:ruby :ruby-group} ruby-presentation-attrs))

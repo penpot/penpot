@@ -69,6 +69,24 @@
     (t/is (= {:width 100 :height 360}
              (dwwt/resolve-text-size selrect :auto-height content dimension)))))
 
+(t/deftest only-auto-height-texts-turning-axis-swap-their-size
+  (let [text    (fn [grow-type writing-mode]
+                  (cts/setup-shape {:type :text :width 100 :height 60
+                                    :grow-type grow-type
+                                    :content (writing-mode-content writing-mode)}))
+        auto-h  (text :auto-height "horizontal-tb")
+        auto-v  (text :auto-height "vertical-rl")
+        fixed   (text :fixed "horizontal-tb")
+        objects (into {} (map (juxt :id identity)) [auto-h auto-v fixed])
+        turning (fn [attrs]
+                  (set (#'dwt/axis-turning-ids objects (keys objects) attrs)))]
+    (t/is (= #{(:id auto-h)} (turning {:writing-mode "vertical-rl"})))
+    (t/is (= #{(:id auto-v)} (turning {:writing-mode "horizontal-tb"})))
+    ;; Without a CJK language a vertical text is laid out horizontally.
+    (t/is (= #{(:id auto-v)} (turning {:text-language nil})))
+    (t/is (= #{} (turning {:text-language "ko"})))
+    (t/is (= #{} (turning {:font-size "20"})))))
+
 (t/deftest vertical-auto-grow-keeps-the-block-anchor
   (with-redefs [cts/wasm-enabled? true]
     (doseq [[align expected-x] [["top" -90] ["center" -40] ["bottom" 10]]]
@@ -1025,6 +1043,19 @@
         result (dwt/update-text-range-attrs shape 0 3 {:font-size "30"})]
     (t/is (= [["本文" "30" nil] ["割注" "30" "warichu"]]
              (mapv (juxt :text :font-size :warichu) (content-spans result))))))
+
+(t/deftest range-emphasis-skips-a-warichu-note
+  (let [shape  {:type :text
+                :content (spans-content {:text "本文"}
+                                        {:text "割注" :warichu "warichu" :text-emphasis "open-dot"}
+                                        {:text "です"})}
+        marked (dwt/update-text-range-attrs shape 0 6 {:text-emphasis "filled-sesame"})
+        none   (dwt/update-text-range-attrs shape 0 6 {:text-emphasis "none"})]
+    (t/is (= ["filled-sesame" "open-dot" "filled-sesame"]
+             (mapv :text-emphasis (content-spans marked))))
+    ;; Removing the marks clears one stored on the note too.
+    (t/is (= ["none" "none" "none"]
+             (mapv :text-emphasis (content-spans none))))))
 
 (t/deftest single-span-range-is-false-across-span-boundaries
   (let [content (spans-content {:text "漢" :font-weight "700"}

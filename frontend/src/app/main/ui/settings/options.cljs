@@ -135,12 +135,19 @@
   the profiles in the order of the profile lists, None first."
   {::mf/private true}
   [{:keys [language]}]
-  (let [options
-        (mf/with-memo []
-          (into [{:id no-text-language :label (tr "dashboard.text-language.none")}]
-                (comp (remove :header)
-                      (map (fn [{:keys [id]}] {:id id :label (tl/language-label id)})))
-                (tl/language-options nil)))
+  (let [;; The labels follow the UI language as soon as it changes.
+        locale  (mf/deref i18n/locale)
+        options
+        (mf/with-memo [locale language]
+          (let [listed (into [{:id no-text-language :label (tr "dashboard.text-language.none")}]
+                             (comp (remove :header)
+                                   (map (fn [{:keys [id]}] {:id id :label (tl/language-label id)})))
+                             (tl/language-options nil))]
+            ;; A stored profile outside the list shows as its tag, not as
+            ;; None.
+            (cond-> listed
+              (and (some? language) (not-any? #(= language (:id %)) listed))
+              (conj {:id language :label language}))))
 
         handle-change
         (mf/use-fn
@@ -167,7 +174,10 @@
   []
   (let [profile      (mf/deref refs/profile)
         renderer     (or (-> profile :props :renderer) :svg)
-        cjk-feature? (features/use-feature "cjk-support")]
+        ;; Outside a team (a direct load of this page) the store has no
+        ;; features yet, so the global flags count too.
+        cjk-feature? (or (features/use-feature "cjk-support")
+                         (contains? features/global-enabled-features "cjk-support"))]
     (mf/use-effect
      #(dom/set-html-title (tr "title.settings.options")))
 

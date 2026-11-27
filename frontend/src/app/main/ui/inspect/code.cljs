@@ -101,7 +101,7 @@
     (str/format page-template style-code markup-code)))
 
 (mf/defc code*
-  [{:keys [shapes frame on-expand from]}]
+  [{:keys [shapes frame on-expand from objects]}]
   (let [style-type*    (mf/use-state "css")
         markup-type*   (mf/use-state "html")
         fontfaces-css* (mf/use-state nil)
@@ -121,7 +121,10 @@
         ;; With render-wasm active, never use classic SVG codegen for SVG markup.
         wasm-svg-markup? (features/use-feature "render-wasm/v1")
 
-        objects        (use-objects from)
+        page-objects   (use-objects from)
+        ;; The viewer passes the objects of the page it shows: its route has no
+        ;; page until it picks one.
+        objects        (or objects page-objects)
 
         shapes
         (mf/with-memo [shapes frame]

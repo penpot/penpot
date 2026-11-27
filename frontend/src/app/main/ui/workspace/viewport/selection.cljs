@@ -578,10 +578,13 @@
                  (and (= shape-type :text)
                       (= grow-type :auto-width)
                       wrap-axis-resize?)
+                 ;; The resize that follows lays the text out; same width,
+                 ;; same layout without it. No text reflow to wait for.
                  (st/emit! (dwsh/update-shapes [shape-id]
                                                #(assoc %
                                                        :grow-type :auto-height
-                                                       :last-resize-direction resize-direction)))
+                                                       :last-resize-direction resize-direction)
+                                               {:text-reflow? false}))
 
                  (and (= shape-type :text)
                       (= grow-type :auto-height)

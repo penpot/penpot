@@ -58,6 +58,36 @@ impl TextPaths {
                 origin,
                 &mut paths,
             );
+            // Readings, emphasis marks and warichu notes are painted apart
+            // from the base glyphs; outline them too.
+            crate::shapes::visit_horizontal_warichu(
+                text_paragraph,
+                plan,
+                paragraph,
+                origin.x,
+                origin.y,
+                |line, at| Self::collect_glyph_paths(line, Point::new(at.0, at.1), &mut paths),
+            );
+            crate::shapes::visit_horizontal_emphasis(
+                text_paragraph,
+                plan,
+                paragraph,
+                origin.x,
+                origin.y,
+                |mark, at| Self::collect_glyph_paths(mark, Point::new(at.0, at.1), &mut paths),
+            );
+            crate::shapes::visit_horizontal_ruby_glyphs(
+                &self.0,
+                index,
+                paragraph,
+                origin.x,
+                origin.y,
+                |font, glyph, at, _| {
+                    if let Some(path) = font.get_path(glyph) {
+                        paths.push(path.with_offset(Point::new(at.0, at.1)));
+                    }
+                },
+            );
             offset_y += paragraph.height();
         }
 
@@ -77,6 +107,15 @@ impl TextPaths {
             paths.push(builder.detach());
         }
 
+        Self::collect_glyph_paths(paragraph, origin, paths);
+    }
+
+    /// Outlines of the glyphs of a laid-out `paragraph` painted at `origin`.
+    fn collect_glyph_paths(
+        paragraph: &mut SkiaParagraph,
+        origin: Point,
+        paths: &mut Vec<skia::Path>,
+    ) {
         let shifts: Vec<_> = (0..paragraph.get_line_metrics().len())
             .map(|line| Point::new(paragraph.line_x_shift(line), paragraph.line_shift(line)))
             .collect();

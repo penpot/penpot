@@ -330,6 +330,14 @@
       :else
       (st/emit! (dwsh/update-shapes [id] #(assoc % :exports value))))))
 
+(defn- inside-surrogate-pair?
+  "Whether the UTF-16 offset `at` of `text` falls between the two halves of
+  a surrogate pair."
+  [text at]
+  (and (< 0 at (count text))
+       (<= 0xD800 (.charCodeAt ^js text (dec at)) 0xDBFF)
+       (<= 0xDC00 (.charCodeAt ^js text at) 0xDFFF)))
+
 (defn shape-proxy? [p]
   (obj/type-of? p "ShapeProxy"))
 
@@ -1426,7 +1434,12 @@
                  ;; Clamp the end to the actual character count so an
                  ;; out-of-bounds range yields the trailing text instead of
                  ;; reading past the content.
-                 (let [end (min end (count (txt/content->text (:content shape))))]
+                 (let [text  (txt/content->text (:content shape))
+                       end   (min end (count text))
+                       ;; A range never splits a surrogate pair: its ends move
+                       ;; out to the whole character.
+                       start (cond-> start (inside-surrogate-pair? text start) dec)
+                       end   (cond-> end (inside-surrogate-pair? text end) inc)]
                    (text/text-range-proxy plugin-id file-id page-id id start end)))))
 
            :applyTypography

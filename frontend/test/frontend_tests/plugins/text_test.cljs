@@ -72,7 +72,7 @@
   (doseq [[property attr accepted rejected]
           [["textEmphasisPosition" :text-emphasis-position ["auto" "over-right" "over-left" "under-right" "under-left"] ["over" "right"]]
            ["textUnderlinePosition" :text-underline-position ["auto" "under" "left" "right" "under-left" "under-right"] ["above"]]
-           ["fontFeatures" :font-features ["none" "palt" "vpal"] ["liga" "palt,vpal"]]
+           ["fontFeatures" :font-features ["none" "palt"] ["liga" "palt,vpal"]]
            ["annotationClearance" :annotation-clearance ["none" "auto"] ["always"]]
            ["rubySize" :ruby-size ["half" "third" "quarter"] ["full"]]
            ["rubyAlign" :ruby-align ["space-around" "center" "start" "space-between"] ["end"]]
@@ -85,6 +85,27 @@
     (doseq [value rejected]
       (t/is (nil? (apply-range-property property value))
             (str property " rejects " (pr-str value))))))
+
+(t/deftest proportional-metrics-take-the-feature-of-the-text-axis
+  (let [set-features
+        (fn [writing-mode value]
+          (let [captured (atom nil)
+                range    (plugins.text/text-range-proxy
+                          plugin-id (random-uuid) (random-uuid) (random-uuid) 0 4)
+                content  {:type "root"
+                          :children [{:type "paragraph-set"
+                                      :children [(cond-> {:type "paragraph" :children [{:text "日本語"}]}
+                                                   writing-mode (assoc :writing-mode writing-mode))]}]}]
+            (with-redefs [r/check-permission (constantly true)
+                          u/page-active? (constantly true)
+                          u/proxy->shape (constantly {:content content})
+                          dwt/update-text-range (fn [_ _ _ attrs] (reset! captured attrs) :update)
+                          st/emit! mock/noop]
+              (unchecked-set range "fontFeatures" value)
+              @captured)))]
+    (t/is (= {:font-features "palt"} (set-features nil "vpal")))
+    (t/is (= {:font-features "vpal"} (set-features "vertical-rl" "palt")))
+    (t/is (= {:font-features "none"} (set-features "vertical-rl" "none")))))
 
 (t/deftest text-range-japanese-properties-read-span-values
   (let [file-id  (random-uuid)
@@ -167,7 +188,8 @@
       (t/is (= [{:id shape-id :start 1 :end 4 :attrs {:text-combine-upright "digits2"}}
                 {:id shape-id :start 1 :end 4 :attrs {:text-emphasis "filled-dot"}}
                 {:id shape-id :start 1 :end 4 :attrs {:warichu "warichu"}}
-                {:id shape-id :start 1 :end 4 :attrs {:font-features "vpal"}}
+                ;; A horizontal text takes `palt` for proportional metrics.
+                {:id shape-id :start 1 :end 4 :attrs {:font-features "palt"}}
                 {:id shape-id :start 1 :end 4 :attrs {:annotation-clearance "auto"}}
                 {:id shape-id :start 1 :end 4 :attrs {:ruby "かんじ"}}
                 {:id shape-id :start 1 :end 4 :attrs {:ruby-size "third"}}
@@ -296,6 +318,8 @@
                   dwt/update-text-range
                   (fn [_ _ _ attrs] (swap! captured assoc :attrs attrs) :update)
                   dwt/update-attrs
+                  (fn [_ attrs] (swap! captured assoc :attrs attrs) :update)
+                  dwt/update-all-spans
                   (fn [_ attrs] (swap! captured assoc :attrs attrs) :update)
                   st/emit! mock/noop]
       (unchecked-set target property value)

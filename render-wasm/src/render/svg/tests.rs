@@ -4051,3 +4051,13 @@ fn exports_the_stroke_of_vertical_text_as_stroked_outlines() {
         );
     }
 }
+
+#[test]
+fn reads_the_font_families_the_text_elements_name() {
+    let families = super::written_font_families(
+        r#"<text font-family="Noto Sans JP" x="0">骨</text><text font-family="'Source Sans Pro', serif">a</text>"#,
+    );
+    let mut families: Vec<_> = families.into_iter().collect();
+    families.sort();
+    assert_eq!(families, ["Noto Sans JP", "Source Sans Pro", "serif"]);
+}

@@ -92,6 +92,7 @@
 (def comma? (is-key? ","))
 (def backspace? (is-key? "Backspace"))
 (def home? (is-key? "Home"))
+(def end? (is-key? "End"))
 (def tab? (is-key? "Tab"))
 (def delete? (is-key? "Delete"))
 

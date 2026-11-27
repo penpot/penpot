@@ -291,7 +291,10 @@ body {
 
 (defn generate-text-css
   [shape]
-  (let [selector   (cgc/shape->selector shape)
+  (let [;; The attrs the renderer draws: a CJK attr the text's language does
+        ;; not use stays in the content but is not code.
+        shape      (update shape :content cjk/active-content)
+        selector   (cgc/shape->selector shape)
         content    (legacy.txt/index-content (:content shape))
         joined     (joined-ruby-ids content)
         node-rules (mapcat (fn [node]

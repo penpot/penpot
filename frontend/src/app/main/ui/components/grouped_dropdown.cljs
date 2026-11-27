@@ -58,6 +58,29 @@
   is the row shown when `options` is empty."
   [{:keys [show on-close container options on-select class
            search-term search-placeholder on-search-change empty-label]}]
+  ;; While the list is open, Escape and Tab are its own: they never reach
+  ;; the workspace shortcuts or the text editor (Escape would deselect or
+  ;; leave edit mode, Tab select the next layer). Escape closes the list on
+  ;; key-up, so the key-up dies here too; Tab still moves the focus.
+  (mf/with-effect [show on-close]
+    (when show
+      (let [on-key-down (fn [event]
+                          (cond
+                            (kbd/esc? event)
+                            (do (dom/prevent-default event)
+                                (dom/stop-propagation event))
+
+                            (kbd/tab? event)
+                            (dom/stop-propagation event)))
+            on-key-up   (fn [event]
+                          (when (kbd/esc? event)
+                            (dom/stop-propagation event)
+                            (on-close)))]
+        (.addEventListener js/document "keydown" on-key-down true)
+        (.addEventListener js/document "keyup" on-key-up true)
+        (fn []
+          (.removeEventListener js/document "keydown" on-key-down true)
+          (.removeEventListener js/document "keyup" on-key-up true)))))
   [:& dropdown {:show show
                 :on-close on-close
                 :container container}
@@ -73,7 +96,10 @@
           :role "listbox"}
      (if (empty? options)
        [:li {:class (stl/css :empty)} empty-label]
-       (for [option options]
+       (for [option options
+             ;; A header without label only separates groups, which the
+             ;; headers of the other groups already do.
+             :when (not (and (:header option) (nil? (:label option))))]
          (if (:header option)
            [:li {:key (:id option)
                  :class (stl/css :header)

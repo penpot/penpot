@@ -112,11 +112,13 @@ impl ShapedRun {
         } else {
             horizontal
         };
+        // Marks and variation selectors shape with no horizontal advance;
+        // `vmtx` still gives them a full em down the column.
         vertical_metrics(&self.font)
             .map(|vm| {
-                self.glyphs[glyph..glyph + count]
-                    .iter()
-                    .map(|g| vm.advance(*g, font_size))
+                (glyph..glyph + count)
+                    .filter(|&index| count == 1 || self.advances[index] > 0.0)
+                    .map(|index| vm.advance(self.glyphs[index], font_size))
                     .sum::<f32>()
             })
             .filter(|advance| *advance > 0.0)

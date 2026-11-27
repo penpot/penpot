@@ -8462,7 +8462,7 @@ msgstr "ゴマ点（白）"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-orientation-mixed"
-msgstr "混在"
+msgstr "欧文横倒し"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.text-orientation-upright"

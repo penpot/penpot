@@ -723,7 +723,8 @@
   `:pp` tracks paragraph attrs independently of span styling, including
   when a merge removes all the surviving paragraph's original characters.
   `:d` marks a span that takes the style of its source span but not its
-  reading or warichu note (`cjk/text-content-attrs`).
+  reading, warichu note or whole-span tate-chu-yoko
+  (`cjk/without-own-text-attrs`).
 
   exported  vector of paragraphs, each a vector of `{:pp 0 :p 0 :s 0 :d false :t \"text\"}`
   content   existing Penpot content map (root -> paragraph-set -> …)"
@@ -748,7 +749,7 @@
                          (-> orig-para :children last)
                          template-span)]
             (if (true? d)
-              (apply dissoc span cjk/text-content-attrs)
+              (cjk/without-own-text-attrs span)
               span)))
 
         new-paras
@@ -763,7 +764,7 @@
                                  spans)
                            ;; A paragraph with no spans is dropped on the way
                            ;; back to WASM (and fails the content schema).
-                           [(-> (apply dissoc template-span cjk/text-content-attrs)
+                           [(-> (cjk/without-own-text-attrs template-span)
                                 (assoc :text ""))]))))
               (range (count exported))
               exported)
@@ -1027,21 +1028,42 @@
            (str/blank? (:ruby-group span)))))
 
 (defn- annotation-style-range
+  "[start end] widened over the annotated spans `styles` must cover whole:
+  decorations cover a warichu note or an ungrouped reading; the
+  presentation of a reading (its size, side...) covers every span of it."
   [paragraph start end styles]
-  (if (and (< start end)
-           (map? styles)
-           (some #(contains? styles %) [:text-emphasis :text-emphasis-position
-                                        :text-decoration :text-underline-position :annotation-clearance]))
-    (let [[start end]
-          (reduce (fn [[from to offset] span]
-                    (let [span-end (+ offset (count (:text span)))]
-                      (if (and (< offset end) (< start span-end) (whole-base-span? span))
-                        [(min from offset) (max to span-end) span-end]
-                        [from to span-end])))
-                  [start end 0]
-                  (:children paragraph))]
-      [start end])
-    [start end]))
+  (let [presentation? (and (map? styles)
+                           (some #(contains? styles %) cjk/ruby-presentation-attrs))
+        decoration?   (and (map? styles)
+                           (some #(contains? styles %) [:text-emphasis :text-emphasis-position
+                                                        :text-decoration :text-underline-position
+                                                        :annotation-clearance]))
+        spans         (:children paragraph)
+        bounds        (:spans (reduce (fn [{:keys [offset] :as acc} span]
+                                        (let [span-end (+ offset (count (:text span)))]
+                                          (-> acc
+                                              (update :spans conj [offset span-end span])
+                                              (assoc :offset span-end))))
+                                      {:offset 0 :spans []}
+                                      spans))
+        touched?      (fn [[from to _]] (and (< from end) (< start to)))
+        whole?        (fn [span]
+                        (or (and decoration? (whole-base-span? span))
+                            (and presentation? (cjk/ruby-span? span))))
+        groups        (when presentation?
+                        (into #{}
+                              (comp (filter touched?)
+                                    (keep (fn [[_ _ span]] (not-empty (:ruby-group span)))))
+                              bounds))]
+    (if (and (< start end) (or presentation? decoration?))
+      (reduce (fn [[from to] [offset span-end span :as bound]]
+                (if (or (and (touched? bound) (whole? span))
+                        (contains? groups (:ruby-group span)))
+                  [(min from offset) (max to span-end)]
+                  [from to]))
+              [start end]
+              bounds)
+      [start end])))
 
 (defn apply-attrs-to-paragraph
   "Apply `styles` (attrs map, or a fn per span) within [sel-start, sel-end),
@@ -1068,11 +1090,20 @@
                                                             (<= sel-start pos sel-end)))]
                                   (if (not has-overlap?)
                                     (recur (rest spans) span-end (conj acc span))
-                                    (let [before   (when (> ol-start pos)
+                                    (let [;; Pieces of a split reading stay one base: an
+                                          ;; ungrouped one takes a group for its pieces.
+                                          span     (if (and (cjk/ruby-span? span)
+                                                            (str/blank? (:ruby-group span))
+                                                            (or (> ol-start pos) (< ol-end span-end))
+                                                            (not (and (map? styles)
+                                                                      (contains? styles :ruby))))
+                                                     (assoc span :ruby-group (str (uuid/next)))
+                                                     span)
+                                          before   (when (> ol-start pos)
                                                      (assoc span :text (subs text 0 (- ol-start pos))))
                                           selected (-> (if (fn? styles)
                                                          (styles span)
-                                                         (merge span styles))
+                                                         (merge span (cjk/applicable-span-attrs span styles)))
                                                        (assoc :text (subs text (- ol-start pos) (- ol-end pos))))
                                           after    (when (< ol-end span-end)
                                                      (assoc span :text (subs text (- ol-end pos))))]
@@ -1297,12 +1328,17 @@
 
 (defn apply-paragraph-attrs-to-range
   "Apply paragraph attrs to the paragraphs `selection` touches (a caret
-   touches one). Whole-text attrs (writing mode, orientation, language) go
-   to every paragraph; a nil value removes them."
+   touches one). Whole-text attrs (writing mode, orientation, language, and
+   the Korean wrapping chosen with a language) go to every paragraph; a nil
+   value removes them."
   [content selection attrs]
   (let [{:keys [start-para end-para]} (normalize-selection selection)
-        whole-attrs    (select-keys attrs cjk/whole-text-paragraph-attrs)
-        range-attrs    (apply dissoc attrs cjk/whole-text-paragraph-attrs)
+        ;; Choosing a language sets its Korean wrapping on the whole text
+        ;; too; on its own, the wrapping changes the touched paragraphs.
+        whole-keys     (cond-> cjk/whole-text-paragraph-attrs
+                         (contains? attrs :text-language) (conj :korean-wrap))
+        whole-attrs    (select-keys attrs whole-keys)
+        range-attrs    (apply dissoc attrs whole-keys)
         apply-whole    (fn [para]
                          (reduce-kv (fn [para attr value]
                                       (if (some? value)

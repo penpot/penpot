@@ -403,13 +403,17 @@ impl TextEditorState {
         self.last_blink_time_ms = 0.0;
         if !same_shape {
             self.selection.reset();
+            self.composition = TextComposition::new();
         }
         self.is_pointer_selection_active = false;
         self.is_overtype_mode = false;
         self.pending_events.clear();
     }
 
+    /// Losing focus ends an open composition: its preview stays as typed
+    /// text, and the next one starts from the caret.
     pub fn blur(&mut self) {
+        self.composition = TextComposition::new();
         self.has_focus = false;
         // self.active_shape_id = None;
         self.cursor_visible = false;
@@ -421,6 +425,7 @@ impl TextEditorState {
     }
 
     pub fn dispose(&mut self) {
+        self.composition = TextComposition::new();
         self.has_focus = false;
         self.active_shape_id = None;
         self.cursor_visible = false;
@@ -510,18 +515,18 @@ impl TextEditorState {
             return;
         }
 
+        // Words are runs of one script, as `Intl.Segmenter` splits Japanese:
+        // テキスト is a word apart from the kanji and kana around it.
+        let classes = word_classes(&chars);
         let mut offset = position.offset.min(chars.len());
 
         if offset == chars.len() {
             offset = offset.saturating_sub(1);
-        } else if !text_helpers::is_word_char(chars[offset])
-            && offset > 0
-            && text_helpers::is_word_char(chars[offset - 1])
-        {
+        } else if classes[offset].is_none() && offset > 0 && classes[offset - 1].is_some() {
             offset -= 1;
         }
 
-        if !text_helpers::is_word_char(chars[offset]) {
+        let Some(class) = classes[offset] else {
             self.set_caret_from_position(&TextPositionWithAffinity::new_downstream_affinity(
                 position.paragraph,
                 position.offset.min(chars.len()),
@@ -530,15 +535,15 @@ impl TextEditorState {
             self.reset_blink();
             self.push_event(TextEditorEvent::SelectionChanged);
             return;
-        }
+        };
 
         let mut start = offset;
-        while start > 0 && text_helpers::is_word_char(chars[start - 1]) {
+        while start > 0 && classes[start - 1] == Some(class) {
             start -= 1;
         }
 
         let mut end = offset + 1;
-        while end < chars.len() && text_helpers::is_word_char(chars[end]) {
+        while end < chars.len() && classes[end] == Some(class) {
             end += 1;
         }
 
@@ -903,7 +908,23 @@ impl TextEditorState {
             return false;
         }
 
-        // With a range selected, Left/Right collapse to that edge and stop.
+        // In vertical-rl, Up/Down move by character along the column and
+        // Left/Right cross columns (columns advance right-to-left).
+        let is_vertical = text_content.is_vertical();
+        let direction = if is_vertical {
+            match direction {
+                CursorDirection::Backward => CursorDirection::LineAfter, // Left -> next column
+                CursorDirection::Forward => CursorDirection::LineBefore, // Right -> prev column
+                CursorDirection::LineBefore => CursorDirection::Backward, // Up -> prev char
+                CursorDirection::LineAfter => CursorDirection::Forward,  // Down -> next char
+                other => other,
+            }
+        } else {
+            direction
+        };
+
+        // With a range selected, a move along the line (Left/Right, Up/Down
+        // in vertical text) collapses to that edge and stops.
         // Extending (Shift) keeps the normal move-from-focus path below.
         if self.selection.is_selection() && !extend_selection {
             let edge = match direction {
@@ -930,21 +951,6 @@ impl TextEditorState {
             )
         } else {
             TextDirection::LTR
-        };
-
-        // In vertical-rl, Up/Down move by character along the column and
-        // Left/Right cross columns (columns advance right-to-left).
-        let is_vertical = text_content.is_vertical();
-        let direction = if is_vertical {
-            match direction {
-                CursorDirection::Backward => CursorDirection::LineAfter, // Left -> next column
-                CursorDirection::Forward => CursorDirection::LineBefore, // Right -> prev column
-                CursorDirection::LineBefore => CursorDirection::Backward, // Up -> prev char
-                CursorDirection::LineAfter => CursorDirection::Forward,  // Down -> next char
-                other => other,
-            }
-        } else {
-            direction
         };
 
         // For horizontal navigation, swap Backward/Forward when in RTL text
@@ -1030,6 +1036,46 @@ impl Default for TextEditorState {
 
 fn is_word_char(c: char) -> bool {
     c.is_alphanumeric() || c == '_'
+}
+
+/// Script of a word character, which double-click selects a run of.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum WordClass {
+    Han,
+    Hiragana,
+    Katakana,
+    Hangul,
+    Other,
+}
+
+/// Word class of each of `chars`, or None for characters outside words.
+/// Variation selectors and joiners take the class of the character before.
+fn word_classes(chars: &[char]) -> Vec<Option<WordClass>> {
+    let mut classes: Vec<Option<WordClass>> = Vec::with_capacity(chars.len());
+    for &c in chars {
+        let attached =
+            matches!(u32::from(c), 0x200C..=0x200D | 0xFE00..=0xFE0F | 0xE0100..=0xE01EF);
+        let class = if attached {
+            classes.last().copied().flatten()
+        } else {
+            match u32::from(c) {
+                0x3005
+                | 0x3006
+                | 0x3007
+                | 0x3400..=0x4DBF
+                | 0x4E00..=0x9FFF
+                | 0xF900..=0xFAFF
+                | 0x20000..=0x3134F => Some(WordClass::Han),
+                0x3041..=0x309F => Some(WordClass::Hiragana),
+                0x30A0..=0x30FF | 0x31F0..=0x31FF | 0xFF66..=0xFF9F => Some(WordClass::Katakana),
+                0x1100..=0x11FF | 0x3130..=0x318F | 0xAC00..=0xD7AF => Some(WordClass::Hangul),
+                _ if is_word_char(c) => Some(WordClass::Other),
+                _ => None,
+            }
+        };
+        classes.push(class);
+    }
+    classes
 }
 
 #[cfg(test)]
@@ -1213,6 +1259,27 @@ mod tests {
     }
 
     #[test]
+    fn vertical_moves_along_the_column_collapse_a_selection() {
+        // Up/Down run along a vertical column, as Left/Right do along a
+        // horizontal line: with a range, they collapse to its edge.
+        let mut content = content("あいうえおかきくけこ");
+        content.paragraphs_mut()[0].set_writing_mode(crate::shapes::WritingMode::VerticalRl);
+        for (direction, offset) in [
+            (CursorDirection::LineAfter, 3),
+            (CursorDirection::LineBefore, 1),
+        ] {
+            let mut editor = TextEditorState::new();
+            editor.selection.set_caret(pos(1));
+            editor.selection.extend_to(pos(3));
+
+            editor.move_cursor(&content, &Shape::new(Uuid::nil()), direction, false, false);
+
+            assert!(editor.selection.is_collapsed());
+            assert_eq!(editor.selection.focus.offset, offset);
+        }
+    }
+
+    #[test]
     fn move_backward_with_full_selection_collapses_to_document_start() {
         let content = content("Hello");
         let mut editor = TextEditorState::new();
@@ -1311,5 +1378,54 @@ mod tests {
 
         composition.end();
         assert!(composition.start.is_none());
+    }
+
+    #[test]
+    fn leaving_a_text_ends_its_open_composition() {
+        let a = Uuid::new_v4();
+        let b = Uuid::new_v4();
+        let mut editor = TextEditorState::new();
+        editor.focus(a);
+        editor.composition.start();
+        editor.composition.update("にほんご");
+        editor.composition.start = Some(TextPositionWithAffinity::new_downstream_affinity(0, 2));
+        editor.composition.update("にほんご");
+        editor.blur();
+        editor.focus(b);
+        editor
+            .selection
+            .set_caret(TextPositionWithAffinity::new_downstream_affinity(0, 7));
+        assert!(editor.composition.start());
+        let selection = editor.composition.get_selection(&editor.selection);
+        assert_eq!(selection.start().offset, 7);
+        assert_eq!(selection.end().offset, 7);
+    }
+
+    #[test]
+    fn words_are_runs_of_one_script() {
+        let chars: Vec<char> = "日本語のテキスト、葛\u{E0100}城 abc".chars().collect();
+        let classes = word_classes(&chars);
+        use WordClass::*;
+        assert_eq!(
+            classes,
+            vec![
+                Some(Han),
+                Some(Han),
+                Some(Han),
+                Some(Hiragana),
+                Some(Katakana),
+                Some(Katakana),
+                Some(Katakana),
+                Some(Katakana),
+                None,
+                Some(Han),
+                Some(Han),
+                Some(Han),
+                None,
+                Some(Other),
+                Some(Other),
+                Some(Other),
+            ]
+        );
     }
 }

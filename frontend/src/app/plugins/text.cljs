@@ -92,6 +92,28 @@
           (recur (when continue? (rest styles)) taking? to result))
         result))))
 
+(defn- style-bounds
+  "Characters whose style a text range [start, end) of `content` reads: its
+  own, or for a collapsed range the one at its position, or the one before it
+  at the end of the text. Nil for an empty text."
+  [content start end]
+  (if (= start end)
+    (let [size (count (txt/content->text content))]
+      (cond
+        (< start size) [start (inc start)]
+        (pos? start)   [(dec start) start]))
+    [start end]))
+
+(defn- content-range->styles
+  "Styles of the characters [start, end) of `content`, for the style getters
+  of a text range. A collapsed range reads the character at its position, or
+  the one before it at the end of the text, as the caret there would: every
+  getter reports a value instead of \"mixed\"."
+  [content start end]
+  (if-let [[start end] (style-bounds content start end)]
+    (content-range->text+styles content start end)
+    []))
+
 (def ^:private cjk-range-defaults
   ;; A range without ruby reports null to plugins.
   (assoc cjk/span-attr-defaults :ruby nil))
@@ -101,7 +123,7 @@
    unset. A blank reading is no reading."
   [node attr]
   (let [value (get node attr (get cjk-range-defaults attr))]
-    (if (= attr :ruby) (not-empty value) value)))
+    (if (and (= attr :ruby) (str/blank? value)) nil value)))
 
 (defn- shape-cjk-value
   "Value of a CJK span `attr` over a whole text shape proxy, with unset
@@ -121,7 +143,7 @@
 (defn- range-cjk-value
   "Value of a CJK span `attr` over a text range proxy's characters."
   [range-proxy start end attr]
-  (->> (-> range-proxy u/proxy->shape :content (content-range->text+styles start end))
+  (->> (-> range-proxy u/proxy->shape :content (content-range->styles start end))
        (map #(span-cjk-value % attr))
        (u/mixed-value)))
 
@@ -129,8 +151,10 @@
   "Value of a paragraph `attr` over the paragraphs a text range proxy
    touches, with unset paragraphs at their default."
   [range-proxy start end attr]
-  (let [default (get txt/default-paragraph-attrs attr)]
-    (->> (-> range-proxy u/proxy->shape :content (dwt/range-paragraphs start end))
+  (let [default (get txt/default-paragraph-attrs attr)
+        content (-> range-proxy u/proxy->shape :content)
+        [start end] (or (style-bounds content start end) [start end])]
+    (->> (dwt/range-paragraphs content start end)
          (map #(get % attr default))
          (u/mixed-value))))
 
@@ -152,9 +176,15 @@
       (sm/validate ctst/schema:text-language value)))
 
 (defn- language-attrs
-  "Update attrs for a language value; nil or '' removes the language."
-  [attrs]
-  (update attrs :text-language not-empty))
+  "Update attrs of the text `shape` for a language value; nil or '' removes
+  the language. A language gets the defaults it gets in the UI
+  (`cjk/chosen-language-attrs`)."
+  [shape attrs]
+  (let [paragraphs (txt/node-seq txt/is-paragraph-node? (:content shape))
+        values     {:korean-wrap (some :korean-wrap paragraphs)
+                    :text-align  (when (some #(= "distribute" (:text-align %)) paragraphs)
+                                   "distribute")}]
+    (merge attrs (cjk/chosen-language-attrs (not-empty (:text-language attrs)) values))))
 
 (defn- attr-setter
   "Property setter that checks `valid?` and the plugin's write access before
@@ -181,10 +211,26 @@
                (fn [_ attrs] (dwt/update-text-range id start end attrs))))
 
 (defn- shape-attr-setter
-  "Setter of a text attribute over the whole text shape."
+  "Setter of a text attribute over the whole text shape. CJK span attrs go
+   to every span also while the text is edited, where `update-attrs` would
+   set the caret or the selected range only."
   [plugin-id page-id prop attr valid?]
   (attr-setter plugin-id page-id prop attr valid?
-               (fn [self attrs] (dwt/update-attrs (obj/get self "$id") attrs))))
+               (fn [self attrs]
+                 (let [id (obj/get self "$id")]
+                   (if (some #{attr} cjk/span-attrs)
+                     (dwt/update-all-spans [id] attrs)
+                     (dwt/update-attrs id attrs))))))
+
+(defn- axis-features-setter
+  "Wraps the `fontFeatures` `setter` so proportional metrics take the
+  feature of the text's axis, `vpal` in vertical text and `palt` in any
+  other: the renderer reads each in its own axis only."
+  [setter]
+  (fn [self value]
+    (setter self (if (contains? #{"palt" "vpal"} value)
+                   (if (cjk/stored-vertical? (-> self u/proxy->shape :content)) "vpal" "palt")
+                   value))))
 
 (def ^:private multi-span-annotation-message
   "A ruby reading or warichu note must cover characters of a single text span")
@@ -199,22 +245,35 @@
 
 (defn- annotation-setter
   "Wraps `setter` so a reading or note is only added over characters [start,
-   end) of one text span: copying it to several spans would repeat it."
-  [plugin-id prop attr start end setter]
+   end) of one text span: copying it to several spans would repeat it. A
+   plugin that cannot write, or a page that is not active, is reported
+   first, as `attr-setter` does."
+  [plugin-id page-id prop attr start end setter]
   (fn [self value]
-    (if (and (annotating? attr value)
+    ;; A reading is stored trimmed; a blank one removes it.
+    (let [value (if (and (= attr :ruby) (string? value)) (str/trim value) value)]
+      (cond
+        (not (r/check-permission plugin-id "content:write"))
+        (u/not-valid plugin-id prop "Plugin doesn't have 'content:write' permission")
+
+        (not (u/page-active? page-id))
+        (u/not-valid plugin-id prop "Cannot modify a page that is not currently active")
+
+        (and (annotating? attr value)
              (not (dwt/single-span-range? (-> self u/proxy->shape :content) start end)))
-      (u/not-valid plugin-id prop multi-span-annotation-message)
-      (setter self value))))
+        (u/not-valid plugin-id prop multi-span-annotation-message)
+
+        :else
+        (setter self value)))))
 
 (defn- range-annotation-setter
   [plugin-id page-id id start end prop attr valid?]
-  (annotation-setter plugin-id prop attr start end
+  (annotation-setter plugin-id page-id prop attr start end
                      (range-attr-setter plugin-id page-id id start end prop attr valid?)))
 
 (defn- shape-annotation-setter
   [plugin-id page-id prop attr valid?]
-  (annotation-setter plugin-id prop attr 0 ##Inf
+  (annotation-setter plugin-id page-id prop attr 0 ##Inf
                      (shape-attr-setter plugin-id page-id prop attr valid?)))
 
 (defn text-range-proxy?
@@ -247,7 +306,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-id) u/mixed-value)))
 
      :set
@@ -272,7 +331,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-family) u/mixed-value)))
 
      :set
@@ -297,7 +356,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-variant-id) u/mixed-value)))
      :set
      (fn [self value]
@@ -322,7 +381,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-size) u/mixed-value)))
      :set
      (fn [_ value]
@@ -345,7 +404,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-weight) u/mixed-value)))
 
      :set
@@ -375,7 +434,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :font-style) u/mixed-value)))
      :set
      (fn [self value]
@@ -404,7 +463,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :line-height) u/mixed-value)))
      :set
      (fn [_ value]
@@ -427,7 +486,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :letter-spacing) u/mixed-value)))
      :set
      (fn [_ value]
@@ -450,7 +509,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :text-transform) u/mixed-value)))
      :set
      (fn [_ value]
@@ -472,7 +531,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :text-decoration) u/mixed-value)))
      :set
      (fn [_ value]
@@ -492,7 +551,8 @@
     :fontFeatures
     {:this true
      :get (fn [self] (range-cjk-value self start end :font-features))
-     :set (range-attr-setter plugin-id page-id id start end :fontFeatures :font-features (enum-value? :font-features))}
+     :set (axis-features-setter
+           (range-attr-setter plugin-id page-id id start end :fontFeatures :font-features (enum-value? :font-features)))}
 
     :textCombineUpright
     {:this true
@@ -563,12 +623,14 @@
     {:this true
      :get
      (fn [self]
-       (->> (-> self u/proxy->shape :content (content-range->text+styles start end))
+       (->> (-> self u/proxy->shape :content (content-range->styles start end))
             (map :text-language)
             (u/mixed-value)))
      :set
      (attr-setter plugin-id page-id :lang :text-language language-tag?
-                  (fn [_ attrs] (dwt/update-text-range id start end (language-attrs attrs))))}
+                  (fn [self attrs]
+                    (dwt/update-text-range id start end
+                                           (language-attrs (u/proxy->shape self) attrs))))}
 
     :direction
     {:this true
@@ -615,7 +677,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->styles start end))]
          (->> range-data (map :fills) u/mixed-value fills/format-fills)))
      :set
      (fn [_ value]
@@ -1010,7 +1072,8 @@
 
      {:name "fontFeatures"
       :get #(shape-cjk-value % :font-features)
-      :set (shape-attr-setter plugin-id page-id :fontFeatures :font-features (enum-value? :font-features))}
+      :set (axis-features-setter
+            (shape-attr-setter plugin-id page-id :fontFeatures :font-features (enum-value? :font-features)))}
 
      {:name "annotationClearance"
       :get #(shape-cjk-value % :annotation-clearance)
@@ -1048,7 +1111,8 @@
       :get #(-> % u/proxy->shape text-props :text-language format/format-mixed)
       :set (attr-setter plugin-id page-id :lang :text-language language-tag?
                         (fn [self attrs]
-                          (dwt/update-attrs (obj/get self "$id") (language-attrs attrs))))}
+                          (dwt/update-attrs (obj/get self "$id")
+                                            (language-attrs (u/proxy->shape self) attrs))))}
 
      {:name "textBounds"
       :get #(-> % u/proxy->shape gst/shape->bounds format/format-geom-rect)})))

@@ -51,6 +51,11 @@
       (contains? language-paragraph-attrs attr)
       (get obj attr)
 
+      ;; A text that stores no writing mode is horizontal: it differs from a
+      ;; vertical one.
+      (contains? cjk/paragraph-attr-defaults attr)
+      (get obj attr (get cjk/paragraph-attr-defaults attr))
+
       :else
       (get obj attr ::unset))))
 

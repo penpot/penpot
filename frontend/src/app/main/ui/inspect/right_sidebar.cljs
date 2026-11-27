@@ -204,6 +204,7 @@
               :code
               [:> code* {:frame frame
                          :shapes shapes
+                         :objects objects
                          :on-expand handle-expand
                          :from from}])]
            [:> tab-switcher* {:tabs tabs
@@ -224,6 +225,7 @@
               :code
               [:> code* {:frame frame
                          :shapes shapes
+                         :objects objects
                          :on-expand handle-expand
                          :from from}])])]]
 

@@ -61,11 +61,13 @@
 (defn language-options
   "Rows of the profile lists: one group per language, a header row
   `{:id :label :header true}` and then its languages, the `selected` tag
-  checked."
+  checked. A group of one language has a header without label, a mere
+  separator: the label would repeat its only option."
   [selected]
   (into []
         (mapcat (fn [{:keys [id languages]}]
-                  (into [{:id id :header true :label (get-group-label id)}]
+                  (into [{:id id :header true
+                          :label (when (> (count languages) 1) (get-group-label id))}]
                         (map (fn [tag]
                                {:id tag :label (language-label tag) :selected (= selected tag)}))
                         languages)))

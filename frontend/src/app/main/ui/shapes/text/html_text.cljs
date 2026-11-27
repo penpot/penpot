@@ -157,9 +157,11 @@
   [{:keys [shape grow-type is-code]} ref]
   (let [{:keys [id x y width height content]} shape
 
-        ;; Generated code keeps the writing mode whatever the renderer.
+        ;; Generated code keeps the writing mode whatever the renderer, and
+        ;; holds the attrs the renderer draws: a CJK attr the text's language
+        ;; does not use is no code.
         content (if is-code
-                  (legacy.txt/index-content content)
+                  (legacy.txt/index-content (cjk/active-content content))
                   (wm/renderable-content content))
 
         ;; Vertical text anchors columns to the box edges, so it skips the oversized auto-grow box.

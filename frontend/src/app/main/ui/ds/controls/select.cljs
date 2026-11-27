@@ -43,6 +43,15 @@
     (reset! focused* id)
     (dom/scroll-into-view-if-needed! node)))
 
+(defn- enabled-index
+  "Index of the first enabled option of `options` from `index` on, walking by
+  `step` (1 or -1) and wrapping around, or nil when all are disabled."
+  [options index step]
+  (let [len (count options)]
+    (->> (range len)
+         (map #(mod (+ index (* step %)) len))
+         (d/seek #(not (get (nth options %) :disabled))))))
+
 (defn- handle-selection
   [focused* selected* open*]
   (when-let [focused (deref focused*)]
@@ -90,6 +99,7 @@
         nodes-ref    (mf/use-ref nil)
         options-ref  (mf/use-ref nil)
         select-ref   (mf/use-ref nil)
+        esc-closed-ref (mf/use-ref false)
 
         container    (hooks/use-portal-container :popup)
         dropdown-wrapper-ref (mf/use-ref nil)
@@ -145,7 +155,7 @@
 
         on-button-key-down
         (mf/use-fn
-         (mf/deps focused-id disabled)
+         (mf/deps focused-id disabled is-open)
          (fn [event]
            (dom/stop-propagation event)
            (when-not disabled
@@ -153,28 +163,50 @@
                    len     (count options)
                    index   (d/index-of-pred options #(= focused-id (get % :id)))
                    nodes   (mf/ref-val nodes-ref)]
+               ;; Disabled options (such as "Mixed") are never focused nor picked.
                (cond
                  (kbd/home? event)
-                 (handle-focus-change options focused-id* 0 nodes)
+                 (when-let [i (enabled-index options 0 1)]
+                   (handle-focus-change options focused-id* i nodes))
+
+                 (kbd/end? event)
+                 (when-let [i (enabled-index options (dec len) -1)]
+                   (handle-focus-change options focused-id* i nodes))
 
                  (kbd/up-arrow? event)
-                 (handle-focus-change options focused-id* (mod (- index 1) len) nodes)
+                 (when-let [i (enabled-index options (mod (- (or index 0) 1) len) -1)]
+                   (handle-focus-change options focused-id* i nodes))
 
                  (kbd/down-arrow? event)
-                 (handle-focus-change options focused-id* (mod (+ index 1) len) nodes)
+                 (when-let [i (enabled-index options (mod (+ (or index -1) 1) len) 1)]
+                   (handle-focus-change options focused-id* i nodes))
 
                  (or (kbd/space? event)
                      (kbd/enter? event))
                  (when (deref is-open*)
                    (dom/prevent-default event)
-                   (handle-selection focused-id* selected-id* is-open*)
-                   (when (and (fn? on-change)
-                              (some? focused-id))
-                     (on-change focused-id)))
+                   (let [focused (d/seek #(= focused-id (get % :id)) options)]
+                     (if (and (some? focused-id) (get focused :disabled))
+                       (reset! focused-id* nil)
+                       (do
+                         (handle-selection focused-id* selected-id* is-open*)
+                         (when (and (fn? on-change)
+                                    (some? focused-id))
+                           (on-change focused-id))))))
 
                  (kbd/esc? event)
-                 (do (reset! is-open* false)
+                 (do (mf/set-ref-val! esc-closed-ref is-open)
+                     (reset! is-open* false)
                      (reset! focused-id* nil)))))))
+
+        ;; The Escape that closed the list ends there: its key-up does not
+        ;; reach the document listeners, such as the text editor's.
+        on-button-key-up
+        (mf/use-fn
+         (fn [event]
+           (when (and (kbd/esc? event) (mf/ref-val esc-closed-ref))
+             (mf/set-ref-val! esc-closed-ref false)
+             (dom/stop-propagation event))))
 
         props
         (mf/spread-props props {:class [class (stl/css :select) (stl/css-case :variant-ghost (= variant "ghost"))]
@@ -184,6 +216,7 @@
                                 :aria-activedescendant focused-id
                                 :aria-expanded is-open
                                 :on-key-down on-button-key-down
+                                :on-key-up on-button-key-up
                                 :disabled disabled
                                 :on-click on-click})
 

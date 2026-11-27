@@ -244,7 +244,7 @@
              used
              unicode-ranges))
 
-(defn- language->cjk-font
+(defn language->cjk-font
   "CJK font class implied by a BCP 47 language tag or an app locale
    (`ja`, `zh-Hant-TW`, `zh_hant`), or nil for a non-CJK language."
   [language]

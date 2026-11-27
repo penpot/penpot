@@ -1064,10 +1064,12 @@
             (rx/empty)))))))
 
 (defn- as-content [text]
-  (let [paragraphs (->> (str/lines text)
+  (let [language   (tc/new-text-language-attrs)
+        paragraphs (->> (str/lines text)
                         (map str/trim)
-                        (mapv #(hash-map :type "paragraph"
-                                         :children [(merge (txt/get-default-text-attrs) {:text %})])))]
+                        (mapv #(merge {:type "paragraph"
+                                       :children [(merge (txt/get-default-text-attrs) {:text %})]}
+                                      language)))]
     ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
     (when (d/not-empty? paragraphs)
       {:type "root"

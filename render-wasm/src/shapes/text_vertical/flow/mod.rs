@@ -160,11 +160,12 @@ fn can_hang(c: char) -> bool {
     matches!(c, '、' | '。' | '，' | '．')
 }
 
-/// True when `item` would overflow a column already filled to `cursor`.
+/// True when `item` would overflow a column already filled to `cursor`. A
+/// comma or period hangs only when it starts inside the column, so one mark
+/// at most hangs below it.
 fn overflows(cursor: f32, item: &FlowItem, max_height: f32) -> bool {
-    cursor > 0.0
-        && cursor + item.extent - item.end_slack > max_height + FIT_TOLERANCE
-        && !item.ch.is_some_and(can_hang)
+    let hangs = item.ch.is_some_and(can_hang) && cursor <= max_height + FIT_TOLERANCE;
+    cursor > 0.0 && cursor + item.extent - item.end_slack > max_height + FIT_TOLERANCE && !hangs
 }
 
 /// Why a column may not break before `items[at]`.
@@ -687,10 +688,16 @@ pub(super) fn plan_with_edge_trimming(
     classes: &[Option<JlreqClass>],
     pair_spacing_em: &mut [f32],
     max_height: f32,
+    line_adjustment: LineAdjustment,
 ) -> Vec<(usize, f32)> {
     let mut placements = plan_jlreq_columns(&flow_items(cells), max_height);
     for _ in 0..cells.len() {
         if !discard_explicit_spacing_at_column_edges(cells, classes, pair_spacing_em, &placements) {
+            break;
+        }
+        // Push-out-only never pulls a character back into a column: the
+        // discarded space at its edge leaves the columns as they were.
+        if line_adjustment == LineAdjustment::PushOutOnly {
             break;
         }
         placements = plan_jlreq_columns(&flow_items(cells), max_height);

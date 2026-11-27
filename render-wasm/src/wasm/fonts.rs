@@ -132,3 +132,12 @@ pub extern "C" fn mark_font_as_fallback(a: u32, b: u32, c: u32, d: u32, weight: 
     let family = FontFamily::new(id, weight, font_style.into());
     get_resources().fonts.mark_as_fallback(&family);
 }
+
+/// Sets the CJK face the UI locale prefers for Han text without a language:
+/// 1 SC, 2 TC, 3 HK, 4 JP, 5 KR, 0 none.
+#[no_mangle]
+pub extern "C" fn set_cjk_locale(code: u8) {
+    get_resources()
+        .fonts
+        .set_locale_face(crate::render::CjkFace::from_code(code));
+}

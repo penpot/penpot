@@ -46,6 +46,6 @@ pub use paint::{
     paint_text_vertical, paint_text_vertical_with, vertical_text_paths, GlyphOutput,
 };
 pub use positions::{
-    caret_column_edge, caret_column_step, caret_from_point, caret_rect_with_affinity, intersects,
-    position_data, range_rects,
+    caret_column_edge, caret_column_step, caret_from_point, caret_inside_combined,
+    caret_rect_with_affinity, intersects, position_data, range_rects,
 };

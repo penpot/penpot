@@ -8,7 +8,10 @@
   "Restyles the text WASM just inserted from a paste fragment (see
   `app.util.text.clipboard`), with run overrides or full Penpot styles."
   (:require
+   [app.common.data :as d]
    [app.common.types.text :as txt]
+   [app.common.types.text.cjk-layout :as cjk]
+   [app.common.uuid :as uuid]
    [app.main.fonts :as fonts]
    [app.render-wasm.text-editor :as text-editor]
    [cuerdas.core :as str]))
@@ -99,31 +102,49 @@
 
 (defn content->fragment
   "The paste fragment for Penpot `content`. Its attrs are whole paragraph and span
-  styles, not overrides."
+  styles, not overrides. A pasted reading is a base of its own: its
+  `:ruby-group` is renamed, so it never joins the reading it was copied from."
   [content]
-  (->> (-> content :children first :children)
-       (mapv (fn [paragraph]
-               {:attrs (dissoc paragraph :type :children)
-                :children (into []
-                                (comp (filter (comp seq :text))
-                                      (map (fn [span] {:text (:text span) :attrs (dissoc span :text)})))
-                                (:children paragraph))}))))
+  (let [paragraphs (-> content :children first :children)
+        groups     (into {}
+                         (comp (mapcat :children)
+                               (keep (comp not-empty :ruby-group))
+                               (distinct)
+                               (map (fn [group] [group (str (uuid/next))])))
+                         paragraphs)
+        rename     (fn [attrs] (d/update-when attrs :ruby-group #(get groups % %)))]
+    (mapv (fn [paragraph]
+            {:attrs (dissoc paragraph :type :children)
+             :children (into []
+                             (comp (filter (comp seq :text))
+                                   (map (fn [span] {:text (:text span)
+                                                    :attrs (rename (dissoc span :text))})))
+                             (:children paragraph))})
+          paragraphs)))
 
 (defn- restyle
   "`node` with its style replaced by `attrs`."
   [node attrs]
   (merge (apply dissoc node style-attrs) attrs))
 
+(def ^:private whole-text-attrs
+  "Paragraph attrs a text has one value of: its language and writing."
+  (into cjk/whole-text-paragraph-attrs cjk/language-paragraph-attrs))
+
 (defn apply-content-styles
   "Restyles the Penpot `fragment` text WASM inserted at `start` in `content`. The
-  first paragraph keeps the style of the one it went into; the others bring their own."
+  first paragraph keeps the style of the one it went into; the others bring their
+  own, but for the language and writing of the text they go into."
   [content fragment start]
-  (let [content (reduce (fn [content {:keys [range attrs]}]
+  (let [target  (-> (get-in content [:children 0 :children (:para start)])
+                    (select-keys whole-text-attrs))
+        content (reduce (fn [content {:keys [range attrs]}]
                           (text-editor/apply-styles-over-range content range #(restyle % attrs)))
                         content
                         (styled-ranges fragment start))]
     (reduce (fn [content [idx {:keys [attrs]}]]
-              (update-in content [:children 0 :children (+ (:para start) idx)] restyle attrs))
+              (update-in content [:children 0 :children (+ (:para start) idx)]
+                         restyle (merge (apply dissoc attrs whole-text-attrs) target)))
             content
             (rest (map-indexed vector fragment)))))
 

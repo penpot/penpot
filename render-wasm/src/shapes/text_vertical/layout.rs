@@ -247,8 +247,19 @@ struct ColumnGeometry {
 }
 
 impl ColumnGeometry {
-    fn new(paragraph: &Paragraph) -> Self {
-        let spans = paragraph.children();
+    /// Geometry of a column of `paragraph` holding the spans `in_column`
+    /// selects: the base width follows the whole paragraph, the annotation
+    /// gutters only the spans in the column, as horizontal text reserves
+    /// room only on the lines with annotations.
+    fn new(paragraph: &Paragraph, in_column: impl Fn(usize) -> bool) -> Self {
+        let all_spans = paragraph.children();
+        let spans: Vec<&TextSpan> = all_spans
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| in_column(*index))
+            .map(|(_, span)| span)
+            .collect();
+        let spans = spans.as_slice();
         let line_height = if paragraph.line_height() > 0.0 {
             paragraph.line_height()
         } else {
@@ -257,7 +268,7 @@ impl ColumnGeometry {
         // The largest span sets the column; a paragraph without spans
         // takes 12px. Seeding the maximum with 12 widened every column of
         // smaller text to that size.
-        let max_font_size = spans
+        let max_font_size = all_spans
             .iter()
             .map(|s| s.font_size)
             .reduce(f32::max)
@@ -273,7 +284,7 @@ impl ColumnGeometry {
                 .filter(|span| {
                     span.annotation_clearance.is_auto() && span.has_ruby() && span.ruby_side == side
                 })
-                .map(TextSpan::ruby_font_size)
+                .map(|span| span.ruby_font_size())
                 .fold(0.0, f32::max);
             let emphasis = spans
                 .iter()
@@ -517,12 +528,32 @@ fn jlreq_aligned_tops(
         column_used[*column] = column_used[*column].max(top + flow.cell.extent);
     }
     let expansion = if matches!(align, TextAlign::Justify) && is_bounded(max_height) {
+        // A comma or closing bracket ending a justified column sets its
+        // trailing aki aside, so its ink meets the column end.
+        let mut justified_used = column_used.clone();
+        for (index, (flow, (column, top))) in flow.iter().zip(placements).enumerate() {
+            let last_in_column = placements
+                .get(index + 1)
+                .is_none_or(|(next_column, _)| next_column != column);
+            let sheds = matches!(
+                classes.get(index).copied().flatten(),
+                Some(JlreqClass::Comma | JlreqClass::ClosingBracket)
+            );
+            let aki = flow.cell.extent - 0.5 * flow.cell.h_advance.max(0.0);
+            if last_in_column
+                && sheds
+                && aki > 0.0
+                && top + flow.cell.extent >= justified_used[*column]
+            {
+                justified_used[*column] -= aki.min(0.5 * flow.cell.extent);
+            }
+        }
         ordered_expansion_offsets(
             flow,
             classes,
             pair_spacing_em,
             placements,
-            &column_used,
+            &justified_used,
             max_height,
         )
     } else {
@@ -623,8 +654,13 @@ impl PlannedParagraph {
                 max_height,
                 line_adjustment,
             );
-            let placements =
-                plan_with_edge_trimming(&mut flow, &classes, &mut pair_spacing_em, max_height);
+            let placements = plan_with_edge_trimming(
+                &mut flow,
+                &classes,
+                &mut pair_spacing_em,
+                max_height,
+                line_adjustment,
+            );
             let split = if warichu_splits.len() < MAX_WARICHU_SPLITS {
                 next_warichu_split(
                     &cells.notes,
@@ -718,6 +754,52 @@ fn place_columns_right_to_left(columns: &mut [VerticalColumn]) -> f32 {
     width
 }
 
+/// How far the readings and emphasis marks reach past the left and right
+/// edges of a block `width` wide.
+fn annotation_overflow(
+    columns: &[VerticalColumn],
+    cells: &[VerticalCell],
+    ruby_cells: &[RubyCell],
+    emphasis_marks: &[EmphasisMark],
+    width: f32,
+) -> (f32, f32) {
+    let mut left = 0.0f32;
+    let mut right = width;
+    let mut reach = |column: &VerticalColumn, base_size: f32, offset: f32, size: f32, side| {
+        let center = column_base_center(column);
+        match side {
+            AnnotationSide::Over => right = right.max(center + base_size / 2.0 + offset + size),
+            AnnotationSide::Under => left = left.min(center - base_size / 2.0 - offset - size),
+        }
+    };
+    for ruby in ruby_cells {
+        if let Some(column) = columns.get(ruby.column) {
+            reach(
+                column,
+                ruby.base_font_size,
+                ruby.outside_offset,
+                ruby.font_size,
+                ruby.side,
+            );
+        }
+    }
+    for mark in emphasis_marks {
+        let Some(cell) = cells.get(mark.cell) else {
+            continue;
+        };
+        if let Some(column) = columns.get(cell.column) {
+            reach(
+                column,
+                cell.h_advance,
+                mark.outside_offset,
+                mark.font_size,
+                mark.side,
+            );
+        }
+    }
+    (-left, right - width)
+}
+
 /// Lay out the whole content vertically. Pure of global state: fonts come
 /// through the provider/fallback arguments so native tests can supply
 /// their own.
@@ -764,22 +846,38 @@ pub fn layout_vertical(
 
         let column_base = columns.len();
         let columns_used = planned.columns_used();
-        columns.extend(std::iter::repeat_n(
-            ColumnGeometry::new(paragraph).column(),
-            columns_used,
-        ));
+        let mut placed = planned.place(paragraph.text_align(), max_height, column_base);
+        columns.extend((column_base..column_base + columns_used).map(|column| {
+            ColumnGeometry::new(paragraph, |span| {
+                placed
+                    .iter()
+                    .any(|cell| cell.column == column && cell.span == span)
+            })
+            .column()
+        }));
         paragraph_columns.push((column_base, column_base + columns_used));
 
-        let mut placed = planned.place(paragraph.text_align(), max_height, column_base);
         spread_ruby_base_cells(&mut placed, &planned.ruby_units, max_height);
         cells.extend(placed);
         ruby_rooms_by_span.extend(ruby_rooms(paragraph_index, &planned.ruby_units));
     }
 
-    let width = place_columns_right_to_left(&mut columns);
+    let mut width = place_columns_right_to_left(&mut columns);
     let (ruby_runs, ruby_cells) = layout_ruby(text_content, &cells, &fonts, &ruby_rooms_by_span);
     let (emphasis_runs, emphasis_marks) =
         layout_emphasis(text_content, &cells, &runs, &text_maps, &fonts);
+    // Readings and marks beside the outer columns stay inside the block (as
+    // the first line of horizontal text keeps its readings in its ascent):
+    // the block widens by what they overflow, its columns moving away from
+    // the left edge.
+    let (left_overflow, right_overflow) =
+        annotation_overflow(&columns, &cells, &ruby_cells, &emphasis_marks, width);
+    if left_overflow > 0.0 {
+        for column in &mut columns {
+            column.x += left_overflow;
+        }
+    }
+    width += left_overflow + right_overflow;
     let height = cells
         .iter()
         .map(|c| c.top + c.extent)

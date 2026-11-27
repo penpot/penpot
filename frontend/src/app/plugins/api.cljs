@@ -57,6 +57,7 @@
    [app.plugins.viewport :as viewport]
    [app.util.code-gen :as cg]
    [app.util.object :as obj]
+   [app.util.text.content :as tc]
    [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -432,6 +433,14 @@
                         (update :content txt/change-text text
                                 ;; Text should be given a color by default
                                 {:fills [{:fill-color "#000000" :fill-opacity 1}]})
+                        ;; The language new texts take, as with the text tool.
+                        (update :content
+                                (fn [content]
+                                  (if-let [language (tc/new-text-language-attrs)]
+                                    (txt/transform-nodes txt/is-paragraph-node?
+                                                         #(merge % language)
+                                                         content)
+                                    content)))
                         (dissoc :position-data))
 
               changes

@@ -83,13 +83,15 @@ impl<'a> VectorRenderer<'a> {
         let layout = text_content.vertical_layout(&bounds);
         let output = crate::render::svg::vertical_glyph_output();
 
+        let strokes: Vec<&crate::shapes::Stroke> = shape.visible_strokes().collect();
         for shadow in &shape.drop_shadow_paints() {
-            text_vertical::paint_shadow(
+            text_vertical::paint_shadow_silhouette(
                 self.canvas,
                 &layout,
                 &bounds,
                 vertical_align,
                 shadow,
+                &strokes,
                 output,
             );
         }

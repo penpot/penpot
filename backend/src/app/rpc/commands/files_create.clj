@@ -109,9 +109,13 @@
                      (set/difference cfeat/frontend-only-features)
                      (set/union features))
 
-        ;; New files start with the text language the profile picked.
-        language (-> (profile/get-profile conn profile-id)
-                     (get-in [:props :default-text-language]))
+        ;; New files start with the text language the profile picked, when
+        ;; the client declares CJK support: without it nothing would show
+        ;; or remove the language. That feature is frontend only, so the
+        ;; client's declaration is the only one there is.
+        language (when (contains? (:features params) "cjk-support")
+                   (-> (profile/get-profile conn profile-id)
+                       (get-in [:props :default-text-language])))
 
         params   (-> params
                      (assoc :profile-id profile-id)

@@ -247,11 +247,13 @@
         show     (mf/use-fn #(reset! open* true))
         hide     (mf/use-fn #(reset! open* false))
 
-        toggle
+        ;; Hovering opens the list already, so a click (or Enter) opens it
+        ;; too instead of closing it.
+        open-list
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! open* not)))
+           (reset! open* true)))
 
         handle-select
         (mf/use-fn
@@ -265,7 +267,7 @@
     [:> dropdown-menu-item* {:class (stl/css-case :base-menu-item true
                                                   :language-menu-item true
                                                   :disabled disabled)
-                             :on-click (when-not disabled toggle)
+                             :on-click (when-not disabled open-list)
                              :on-pointer-enter (when-not disabled show)
                              :on-pointer-leave (when-not disabled hide)
                              :aria-disabled disabled

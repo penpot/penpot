@@ -57,10 +57,13 @@ fn render_cursor(
     };
 
     // In vertical writing the caret is a thin horizontal bar across the
-    // column; in horizontal writing a thin vertical bar.
+    // column, but a vertical one between the characters of a tate-chu-yoko
+    // cell, which run left to right; in horizontal writing a vertical bar.
     let thin = editor_state.theme.cursor_width / zoom * dpr;
     let mut cursor_rect = Rect::new_empty();
-    if text_content.is_vertical() {
+    if text_content.is_vertical()
+        && !vertical_caret_inside_combined(editor_state, text_content, shape)
+    {
         cursor_rect.set_xywh(
             rect.x(),
             rect.y(),
@@ -225,6 +228,16 @@ fn vertical_layout_for_shape(
     let origin_x =
         text_vertical::block_axis_offset(selrect.width(), layout.width, shape.vertical_align());
     (layout, origin_x)
+}
+
+fn vertical_caret_inside_combined(
+    editor_state: &TextEditorState,
+    text_content: &TextContent,
+    shape: &Shape,
+) -> bool {
+    let cursor = editor_state.selection.focus;
+    let (layout, _) = vertical_layout_for_shape(text_content, shape);
+    text_vertical::caret_inside_combined(&layout, cursor.paragraph, cursor.offset)
 }
 
 fn calculate_vertical_cursor_rect(
@@ -435,6 +448,7 @@ pub(crate) fn caret_line_step(
     // Inside a warichu note, the other sub-line is one line away.
     if let Some((offset, upstream)) = crate::shapes::horizontal_warichu_step(
         model,
+        &plan.offsets,
         laid_out,
         focus.offset,
         focus.is_upstream(),
@@ -576,9 +590,13 @@ fn horizontal_caret_rect_with_offsets(
     upstream: bool,
     offsets: &crate::shapes::HorizontalOffsets,
 ) -> Rect {
-    if let Some(rect) =
-        crate::shapes::horizontal_warichu_caret_rect(para, laid_out_para, char_pos, upstream)
-    {
+    if let Some(rect) = crate::shapes::horizontal_warichu_caret_rect(
+        para,
+        offsets,
+        laid_out_para,
+        char_pos,
+        upstream,
+    ) {
         return rect;
     }
     let para_char_count: usize = para
@@ -749,6 +767,7 @@ fn range_rects(
             // laid-out paragraph indexes the kinsoku-shifted text.
             let warichu_rects = crate::shapes::horizontal_warichu_range_rects(
                 para,
+                &plan.offsets,
                 laid_out_para,
                 range_start,
                 range_end,

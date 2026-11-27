@@ -19,8 +19,11 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -69,8 +72,25 @@
         (merge (select-keys head bool/style-properties))
         (path/update-bool-shape objects))))
 
+(declare create-bool)
+
+(defn- await-text-fonts-then-create
+  "With WASM, the texts among `shapes` and their descendants are outlined
+  once their fonts are loaded: a font just chosen may still be on its way
+  (as in `convert-selected-to-path`). Then creates the boolean."
+  [state type ids shape-id shapes]
+  (let [objects (dsh/lookup-page-objects state)
+        all     (into []
+                      (comp (mapcat #(cons (:id %) (cph/get-children-ids objects (:id %))))
+                            (keep objects))
+                      shapes)]
+    (->> (rx/concat
+          (wasm.api/await-text-fonts all)
+          (rx/of (create-bool type :ids ids :force-shape-id shape-id :fonts-loaded true)))
+         (wrf/with-pending :font ids))))
+
 (defn create-bool
-  [type & {:keys [ids force-shape-id]}]
+  [type & {:keys [ids force-shape-id fonts-loaded]}]
 
   (assert (or (nil? ids) (every? uuid? ids)))
 
@@ -99,7 +119,15 @@
                  (into [] xform)
                  (not-empty))]
 
-        (when shapes
+        (cond
+          (nil? shapes)
+          nil
+
+          (and (not fonts-loaded)
+               (features/active-feature? state "render-wasm/v1"))
+          (await-text-fonts-then-create state type ids (or force-shape-id (uuid/next)) shapes)
+
+          :else
           (let [[shape index]
                 (create-bool-shape force-shape-id type name (reverse shapes) objects)
 

@@ -108,6 +108,10 @@ const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
 /// includes that margin in auto-width measurements; Skia `longest_line()` does not.
 const PARAGRAPH_SET_MARGIN_RIGHT: f32 = 1.0;
 
+/// Width below which the auto-width measure is not rounded up to the next
+/// pixel.
+const AUTO_WIDTH_ROUNDING_TOLERANCE: f32 = 0.01;
+
 impl TextContentSize {
     pub fn default() -> Self {
         Self {
@@ -828,8 +832,13 @@ impl TextContent {
                 .copied()
                 .collect();
             let ruby = &plan.ruby_spacing.adjustments[span_index];
-            let (text, combined, ruby) = if window == FULL_WINDOW {
-                (text.as_str(), combined, ruby.clone())
+            let (text, combined, ruby, pieces) = if window == FULL_WINDOW {
+                (
+                    text.as_str(),
+                    combined,
+                    ruby.clone(),
+                    plan.warichu_pieces(span_index).to_vec(),
+                )
             } else {
                 let Some(range) = plan.offsets.ranges.iter().find(|r| r.span == span_index) else {
                     continue;
@@ -842,6 +851,7 @@ impl TextContent {
                     slice,
                     window_entries(&combined, from, len),
                     window_entries(ruby, from, len),
+                    window_pieces(range, &window),
                 )
             };
             let text_style = span.to_style_with_paint(
@@ -852,10 +862,11 @@ impl TextContent {
                 None,
             );
             builder.push_style(&text_style);
-            add_horizontal_span(
+            add_horizontal_span_pieces(
                 &mut builder,
                 span,
                 text,
+                &pieces,
                 &combined,
                 &ruby,
                 &text_style,
@@ -884,6 +895,18 @@ impl TextContent {
                 .iter()
                 .map(|paragraph| {
                     let mut plan = HorizontalParagraphPlan::new(paragraph);
+                    plan.wrap_warichu(paragraph, width, |plan| {
+                        let sheds = vec![Vec::new(); plan.texts.len()];
+                        let mut measured =
+                            LayoutParagraph::build(&mut self.horizontal_measure_builder(
+                                paragraph,
+                                plan,
+                                &sheds,
+                                FULL_WINDOW,
+                            ));
+                        measured.layout(width);
+                        measured
+                    });
                     plan.relax_overlong_words(paragraph, width, |plan| {
                         let sheds = vec![Vec::new(); plan.texts.len()];
                         let mut measured =
@@ -1037,18 +1060,60 @@ impl TextContent {
         (!bounds.is_empty()).then_some(bounds)
     }
 
-    /// Bounds of the marks and readings painted outside the glyph metrics.
+    /// Underlines and line-throughs can paint outside the glyph metrics too
+    /// (the Chinese underline sits below the lowest ink).
+    fn horizontal_decoration_bounds(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
+        if !self
+            .paragraphs
+            .iter()
+            .flat_map(Paragraph::children)
+            .any(|span| span.text_decoration.is_some())
+        {
+            return None;
+        }
+        let total_height: f32 = self
+            .layout
+            .paragraphs
+            .iter()
+            .filter_map(|group| group.first())
+            .map(|paragraph| paragraph.height())
+            .sum();
+        let mut y = selrect.y() + vertical_align_offset(selrect.height(), total_height, valign);
+        let plans = self.horizontal_plans();
+        let mut bounds = Rect::new_empty();
+        for ((group, model), plan) in self
+            .layout
+            .paragraphs
+            .iter()
+            .zip(&self.paragraphs)
+            .zip(plans.iter())
+        {
+            let Some(paragraph) = group.first() else {
+                continue;
+            };
+            let x = selrect.x() + plan.x_offset(model, selrect.width());
+            for segment in decoration_segments(paragraph, model, &plan.offsets, x, y) {
+                bounds.join(segment.rect());
+            }
+            y += paragraph.height();
+        }
+        (!bounds.is_empty()).then_some(bounds)
+    }
+
+    /// Bounds of the marks, readings and decorations painted outside the
+    /// glyph metrics.
     fn horizontal_annotation_bounds(&self, selrect: &Rect, valign: VerticalAlign) -> Option<Rect> {
-        match (
+        [
             self.horizontal_emphasis_bounds(selrect, valign),
             self.horizontal_ruby_bounds(selrect, valign),
-        ) {
-            (Some(mut emphasis), Some(ruby)) => {
-                emphasis.join(ruby);
-                Some(emphasis)
-            }
-            (emphasis, ruby) => emphasis.or(ruby),
-        }
+            self.horizontal_decoration_bounds(selrect, valign),
+        ]
+        .into_iter()
+        .flatten()
+        .reduce(|mut bounds, other| {
+            bounds.join(other);
+            bounds
+        })
     }
 
     /// Compute a tight text rect from laid-out Skia paragraphs using glyph
@@ -1329,10 +1394,17 @@ impl TextContent {
                     .zip(self.paragraphs().get(paragraph_index))
                     .map_or(0.0, |(plan, model)| plan.x_offset(model, selrect.width()));
                 let para_pt = Point::new(point.x - x_offset, point.y - start_y);
-                if let Some(paragraph) = self.paragraphs().get(paragraph_index) {
-                    if let Some((original_position, upstream)) =
-                        horizontal_warichu_hit_test(paragraph, layout_paragraph, para_pt)
-                    {
+                if let Some((paragraph, plan)) = self
+                    .paragraphs()
+                    .get(paragraph_index)
+                    .zip(plans.get(paragraph_index))
+                {
+                    if let Some((original_position, upstream)) = horizontal_warichu_hit_test(
+                        paragraph,
+                        &plan.offsets,
+                        layout_paragraph,
+                        para_pt,
+                    ) {
                         return Some(if upstream {
                             TextPositionWithAffinity::new_upstream_affinity(
                                 paragraph_index,
@@ -1599,7 +1671,16 @@ impl TextContent {
                     has_text = true;
                 }
                 builder.push_style(&text_style);
-                add_horizontal_span(&mut builder, span, text, sheds, extra, &text_style, fonts);
+                add_horizontal_span_pieces(
+                    &mut builder,
+                    span,
+                    text,
+                    plan.warichu_pieces(span_index),
+                    sheds,
+                    extra,
+                    &text_style,
+                    fonts,
+                );
             }
             if !has_text {
                 builder.add_text(" ");
@@ -1634,13 +1715,13 @@ impl TextContent {
             &self.horizontal_plans(),
         );
 
-        let content_width = measure_paragraphs
+        let measured_width = measure_paragraphs
             .iter()
             .flatten()
             .fold(0.0_f32, |auto_width, paragraph| {
                 f32::max(paragraph.longest_line(), auto_width)
-            })
-            .ceil();
+            });
+        let content_width = measured_width.ceil();
 
         // Re-layout at the intrinsic width (without the HTML margin slack).
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
@@ -1656,7 +1737,12 @@ impl TextContent {
                 auto_height + paragraph.height()
             });
 
-        let reported_width = content_width + PARAGRAPH_SET_MARGIN_RIGHT;
+        // Hundredths of a pixel (such as the near-zero warichu style
+        // anchors) must not round the width up a whole pixel.
+        let reported_width = (measured_width - AUTO_WIDTH_ROUNDING_TOLERANCE)
+            .ceil()
+            .max(0.0)
+            + PARAGRAPH_SET_MARGIN_RIGHT;
         let size = TextContentSize::new_with_normalized_line_height(
             reported_width,
             height.ceil(),
@@ -1992,7 +2078,7 @@ impl TextContent {
                 let fonts = get_font_collection();
                 let fallback_fonts = get_fallback_fonts();
                 let paragraph_style = paragraph.paragraph_to_style();
-                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+                let mut builder = HorizontalBuilder::new(&paragraph_style, fonts);
 
                 let text_style = span.to_style(
                     &self.bounds(),
@@ -2732,13 +2818,18 @@ impl TextSpan {
     }
 
     /// True when the span annotates its own text with a reading or is a
-    /// warichu note, drawn or not. Both belong to the span's characters.
+    /// warichu note, drawn or not, or sets its text in one tate-chu-yoko cell.
+    /// All belong to the span's characters, so typed text stays out of them
+    /// at their edges.
     pub fn is_annotated(&self) -> bool {
-        self.warichu || self.hidden_annotation || !self.ruby_text().is_empty()
+        self.warichu
+            || self.hidden_annotation
+            || !self.ruby_text().is_empty()
+            || self.text_combine_upright == TextCombineUpright::All
     }
 
-    /// Removes the reading and warichu note, keeping the style, and flags the
-    /// span so the host removes them too.
+    /// Removes the reading, warichu note and whole-span tate-chu-yoko,
+    /// keeping the style, and flags the span so the host removes them too.
     pub fn drop_annotations(&mut self) {
         if !self.is_annotated() {
             return;
@@ -2747,6 +2838,9 @@ impl TextSpan {
         self.hidden_annotation = false;
         self.ruby_joins_previous = false;
         self.warichu = false;
+        if self.text_combine_upright == TextCombineUpright::All {
+            self.text_combine_upright = TextCombineUpright::None;
+        }
         self.annotations_dropped = true;
     }
 
@@ -2832,8 +2926,9 @@ impl TextSpan {
 
     /// Only readings on the same side stack with emphasis marks.
     pub fn stacks_emphasis_outside_ruby(&self, vertical: bool) -> bool {
-        self.annotation_clearance.is_auto()
-            && self.has_ruby()
+        // Clearance only decides the room the line keeps; marks always go
+        // outside a reading on their side instead of over its glyphs.
+        self.has_ruby()
             && (!self.is_zhuyin() || vertical)
             && self.effective_ruby_side() == self.emphasis_side(vertical)
     }
@@ -2958,6 +3053,10 @@ impl TextSpan {
 
         font_families.extend(fallback_fonts.for_text(&self.language, &self.text));
         style.set_font_families(&font_families);
+        // The family alias already names the weight; the style also tells
+        // Skia to fake bold or italic when a face (such as a CJK fallback,
+        // regular only) lacks it.
+        style.set_font_style(self.skia_font_style());
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
         match self.font_features {
@@ -3001,6 +3100,19 @@ impl TextSpan {
             None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
         style
+    }
+
+    /// Weight and slant of the span, as Skia matches faces.
+    pub fn skia_font_style(&self) -> skia::FontStyle {
+        let slant = match self.font_family.style() {
+            FontStyle::Italic => skia::font_style::Slant::Italic,
+            FontStyle::Normal => skia::font_style::Slant::Upright,
+        };
+        skia::FontStyle::new(
+            skia::font_style::Weight::from(self.font_weight),
+            skia::font_style::Width::NORMAL,
+            slant,
+        )
     }
 
     fn serialized_font_family(&self) -> String {
@@ -3203,19 +3315,20 @@ struct HorizontalPositionEntries<'a> {
 impl HorizontalPositionEntries<'_> {
     fn collect(&self) -> Vec<PositionData> {
         let mut entries = Vec::new();
-        // Tabs are placeholders too; this keys warichu boxes by span.
+        // Tabs are placeholders too; this keys warichu boxes by span and
+        // piece.
         let warichu_rects = super::text_horizontal::horizontal_warichu_placeholders(
             self.paragraph,
+            self.offsets,
             &self.layout.paragraph,
         );
         for range in &self.offsets.ranges {
             if range.warichu {
-                let rect = warichu_rects
+                for (_, piece, rect) in warichu_rects
                     .iter()
-                    .find(|(span, _)| *span == range.span)
-                    .map(|(_, rect)| *rect);
-                if let Some(rect) = rect {
-                    entries.extend(self.warichu_entries(range, rect));
+                    .filter(|(span, ..)| *span == range.span)
+                {
+                    entries.extend(self.warichu_entries(range, *piece, *rect));
                 }
             } else {
                 entries.extend(self.span_entries(range));
@@ -3266,21 +3379,36 @@ impl HorizontalPositionEntries<'_> {
         }
     }
 
-    /// One strip per warichu sub-line: the top half of the placeholder holds
-    /// the first line, the bottom half the second.
-    fn warichu_entries(&self, range: &HorizontalSpanRange, rect: Rect) -> Vec<PositionData> {
+    /// One strip per sub-line of warichu piece `piece`: the top half of the
+    /// placeholder holds the first line, the bottom half the second.
+    fn warichu_entries(
+        &self,
+        range: &HorizontalSpanRange,
+        piece: usize,
+        rect: Rect,
+    ) -> Vec<PositionData> {
         let Some(span) = self.paragraph.children().get(range.span) else {
             return Vec::new();
         };
         let text = span.apply_text_transform();
-        let split = warichu_text_lines(&text).0.encode_utf16().count();
-        let end = range.source_end - range.source_start;
+        let (start, end, piece_text) = match range.pieces.get(piece) {
+            Some(piece) => (
+                piece.utf16.start,
+                piece.utf16.end,
+                text.chars()
+                    .skip(piece.chars.start)
+                    .take(piece.chars.len())
+                    .collect(),
+            ),
+            None => (0, range.source_end - range.source_start, text),
+        };
+        let split = start + warichu_text_lines(&piece_text).0.encode_utf16().count();
         let half = rect.height() / 2.0;
         let ltr = direction_to_int(TextDirection::LTR);
         let top = Rect::from_xywh(rect.x(), rect.y(), rect.width(), half);
         let bottom = Rect::from_xywh(rect.x(), rect.y() + half, rect.width(), half);
         vec![
-            self.entry(range.span, 0..split, top, ltr),
+            self.entry(range.span, start..split, top, ltr),
             self.entry(range.span, split..end, bottom, ltr),
         ]
     }

@@ -37,11 +37,11 @@ pub(crate) fn horizontal_emphasis_placements(
             let next_utf16 = local_utf16 + character.len_utf16();
             if emphasis_char_allowed(character) {
                 let shifted_start = offset_map.to_shifted(range.source_start + local_utf16);
-                let shifted_end = offset_map.to_shifted(range.source_start + next_utf16);
                 let builder_start =
                     range.builder_start + shifted_start.saturating_sub(range.shifted_start);
-                let builder_end =
-                    range.builder_start + shifted_end.saturating_sub(range.shifted_start);
+                // The character alone: not the spacing inserted after it (the
+                // em space after ？), so the mark centres on its glyph.
+                let builder_end = builder_start + character.len_utf16();
                 let scalar_rect = laid_out
                     .get_rects_for_range(
                         builder_start..builder_end,
@@ -165,7 +165,7 @@ fn for_each_horizontal_emphasis_mark(
     paragraph: &Paragraph,
     offsets: &HorizontalOffsets,
     laid_out: &LayoutParagraph,
-    mut f: impl FnMut(&TextSpan, HorizontalEmphasisPlacement, &HorizontalEmphasisMark, skia::Rect),
+    mut f: impl FnMut(&TextSpan, HorizontalEmphasisPlacement, &mut HorizontalEmphasisMark, skia::Rect),
 ) {
     let mut placements = horizontal_emphasis_placements(paragraph, offsets, laid_out);
     for range in offsets.ranges.iter().filter(|range| !range.warichu) {
@@ -175,7 +175,7 @@ fn for_each_horizontal_emphasis_mark(
         let Some(mark) = span.text_emphasis.mark_char() else {
             continue;
         };
-        let Some(shaped) = HorizontalEmphasisMark::measure(laid_out, range, span, mark) else {
+        let Some(mut shaped) = HorizontalEmphasisMark::measure(laid_out, range, span, mark) else {
             continue;
         };
         let (own, rest) = placements
@@ -184,7 +184,7 @@ fn for_each_horizontal_emphasis_mark(
         placements = rest;
         for placement in own {
             let ink_box = horizontal_emphasis_mark_box(span, &placement, &shaped.ink);
-            f(span, placement, &shaped, ink_box);
+            f(span, placement, &mut shaped, ink_box);
         }
     }
 }
@@ -213,6 +213,21 @@ pub(crate) fn paint_horizontal_emphasis(
     x: f32,
     y: f32,
 ) {
+    visit_horizontal_emphasis(paragraph, plan, laid_out, x, y, |mark, origin| {
+        mark.paint(canvas, origin);
+    });
+}
+
+/// Visit each horizontal emphasis mark as a laid-out mini paragraph with the
+/// origin it paints at.
+pub(crate) fn visit_horizontal_emphasis(
+    paragraph: &Paragraph,
+    plan: &HorizontalParagraphPlan,
+    laid_out: &LayoutParagraph,
+    x: f32,
+    y: f32,
+    mut visit: impl FnMut(&mut LayoutParagraph, (f32, f32)),
+) {
     for_each_horizontal_emphasis_mark(
         paragraph,
         &plan.offsets,
@@ -222,7 +237,7 @@ pub(crate) fn paint_horizontal_emphasis(
                 x + ink_box.left - shaped.ink.left,
                 y + ink_box.top - shaped.ink.top,
             );
-            shaped.paragraph.paint(canvas, origin);
+            visit(&mut shaped.paragraph, origin);
         },
     );
 }

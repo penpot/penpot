@@ -365,9 +365,16 @@
         result  (text-editor/apply-paragraph-attrs-to-range
                  content (selection 1 0 1 0)
                  {:text-language "ko" :korean-wrap "spaces-only"})
+        wrapped (text-editor/apply-paragraph-attrs-to-range
+                 result (selection 1 0 1 0)
+                 {:korean-wrap "keep-words"})
         paragraphs (-> result :children first :children)]
     (t/is (= ["ko" "ko" "ko"] (mapv :text-language paragraphs)))
-    (t/is (= [nil "spaces-only" nil] (mapv :korean-wrap paragraphs)))
+    (t/is (= ["spaces-only" "spaces-only" "spaces-only"] (mapv :korean-wrap paragraphs))
+          "the wrapping chosen with a language goes to the whole text")
+    (t/is (= ["spaces-only" "keep-words" "spaces-only"]
+             (mapv :korean-wrap (-> wrapped :children first :children)))
+          "on its own, the wrapping changes the touched paragraphs")
     (t/is (= result
              (text-editor/merge-exported-texts-into-content
               result [[{:p 0 :s 0 :t "日本"}]

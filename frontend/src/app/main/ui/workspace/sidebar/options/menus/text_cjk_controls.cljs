@@ -20,6 +20,7 @@
    [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private mixed-span-values
@@ -71,7 +72,7 @@
 
 (mf/defc attr-radio-options*
   "Radio group bound to one text attribute."
-  [{:keys [values on-change on-blur attr default-value name options]}]
+  [{:keys [values on-change on-blur attr default-value name options disabled]}]
   (let [selected (radio-selected (get values attr) default-value)
         group-id (mf/use-id)
         options (mf/with-memo [options group-id]
@@ -85,13 +86,14 @@
            (when (some? on-blur) (on-blur))))]
     [:div {:class (stl/css :radio-options)}
      [:> radio-buttons* {:selected  selected
+                         :disabled  (boolean disabled)
                          :on-change handle-change
                          :name      name
                          :options   options}]]))
 
 (mf/defc span-select-option*
   "Select bound to one span attribute, with a disabled entry for mixed values."
-  [{:keys [values on-change on-blur attr default-value label options]}]
+  [{:keys [values on-change on-blur attr default-value label options disabled]}]
   (let [value    (get values attr)
         selected (span-select-value value default-value)
         options  (with-mixed-span-option options value)
@@ -105,6 +107,7 @@
      [:> select* {:default-selected selected
                   :aria-label       label
                   :options          options
+                  :disabled         (boolean disabled)
                   :on-change        handle-change}]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -167,20 +170,39 @@
 
 (mf/defc distribute-toggle*
   "Distributed alignment (均等割り付け, 分散对齐, 배분 정렬): spreads the
-  characters of every line over the box. Turning it off aligns the text to
-  the start."
+  characters of every line over the box. Turning it off restores the
+  alignment it replaced, or aligns the text to the start."
   {::mf/private true}
   [{:keys [values on-change on-blur]}]
-  (let [distributed? (= "distribute" (radio-selected (:text-align values)))
+  (let [align        (:text-align values)
+        distributed? (= "distribute" (radio-selected align))
         title        (tr "workspace.options.text-options.text-align-distribute")
         tooltip-id   (mf/use-id)
+        ;; The alignment the texts had before this toggle distributed them,
+        ;; and whether the last change to "distribute" came from it.
+        previous-ref (mf/use-ref nil)
+        toggled-ref  (mf/use-ref false)
 
         handle-click
         (mf/use-fn
          (mf/deps distributed? on-change on-blur)
          (fn [_event]
-           (on-change {:text-align (if distributed? "left" "distribute")})
+           (mf/set-ref-val! toggled-ref (not distributed?))
+           (on-change {:text-align (if distributed?
+                                     (or (mf/ref-val previous-ref) "left")
+                                     "distribute")})
            (when (some? on-blur) (on-blur))))]
+
+    ;; Another selection, or another alignment picked, replaces what is
+    ;; remembered; texts distributed already have nothing to go back to.
+    (mf/with-effect [align]
+      (cond
+        (and (string? align) (not= "distribute" align))
+        (mf/set-ref-val! previous-ref align)
+
+        (not (mf/ref-val toggled-ref))
+        (mf/set-ref-val! previous-ref nil))
+      (mf/set-ref-val! toggled-ref false))
 
     [:> tooltip* {:id tooltip-id
                   :placement "top-left"
@@ -282,27 +304,36 @@
         ^boolean vertical    (or inline "auto")
         :else                (or block "auto")))))
 
+(defn- auto-emphasis-block
+  "Block side automatic emphasis marks take in horizontal text with the
+  language `tag`: below for Chinese (CLREQ), above otherwise."
+  [tag]
+  (if (= :chinese (cjk/language-family tag)) "under" "over"))
+
 (defn position-value
   "Stored position for picking `choice` over the stored `value`: the side of
-  the other writing mode stays as it was."
-  [attr vertical value choice]
-  (cond
-    (= :ruby-side attr)
-    choice
+  the other writing mode stays as it was, or as the language `tag` draws
+  it when automatic."
+  ([attr vertical value choice]
+   (position-value attr vertical value choice nil))
+  ([attr vertical value choice tag]
+   (cond
+     (= :ruby-side attr)
+     choice
 
-    ;; Emphasis is auto as a whole, or sets both sides.
-    (= :text-emphasis-position attr)
-    (if (= "auto" choice)
-      "auto"
-      (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))]
-        (position-of-sides attr (if ^boolean vertical
-                                  [(or block "over") choice]
-                                  [choice (or inline "right")]))))
+     ;; Emphasis is auto as a whole, or sets both sides.
+     (= :text-emphasis-position attr)
+     (if (= "auto" choice)
+       "auto"
+       (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))]
+         (position-of-sides attr (if ^boolean vertical
+                                   [(or block (auto-emphasis-block tag)) choice]
+                                   [choice (or inline "right")]))))
 
-    :else
-    (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))
-          choice         (when (not= "auto" choice) choice)]
-      (position-of-sides attr (if ^boolean vertical [block choice] [choice inline])))))
+     :else
+     (let [[block inline] (when-not (mixed-span-value? value) (position-sides attr value))
+           choice         (when (not= "auto" choice) choice)]
+       (position-of-sides attr (if ^boolean vertical [block choice] [choice inline]))))))
 
 (mf/defc position-select-option*
   "Select of the position `attr` with the sides of the writing mode only."
@@ -313,9 +344,10 @@
                    (with-mixed-span-option (position-options attr vertical) value))
         handle-change
         (mf/use-fn
-         (mf/deps attr vertical value on-change on-blur)
+         (mf/deps attr vertical value values on-change on-blur)
          (fn [choice]
-           (on-change {attr (position-value attr vertical value choice)})
+           (on-change {attr (position-value attr vertical value choice
+                                            (:text-language values))})
            (when (some? on-blur) (on-blur))))]
     [:> option-row* {:label label}
      [:> select* {:default-selected selected
@@ -365,7 +397,9 @@
                              :attr          :text-emphasis
                              :default-value (cjk/enum-default :text-emphasis)
                              :label         (tr "workspace.options.text-options.text-emphasis")
-                             :options       options}]))
+                             :options       options
+                             ;; A warichu note draws no emphasis marks.
+                             :disabled      (= "warichu" (:warichu values))}]))
 
 (mf/defc annotation-clearance-option*
   "Whether readings and emphasis marks add to the line height."
@@ -411,7 +445,7 @@
 (mf/defc ruby-visibility-button*
   "Eye button hiding or showing the readings of `values`. Mixed values show
   as shown, and the click hides them all."
-  [{:keys [values labels on-change on-blur]}]
+  [{:keys [values labels on-change on-blur disabled]}]
   (let [hidden? (true? (:ruby-hidden values))
         handle-click
         (mf/use-fn
@@ -423,6 +457,7 @@
                       :aria-label   (if hidden? (:shown labels) (:hidden labels))
                       :aria-pressed hidden?
                       :data-testid  "ruby-visibility-toggle"
+                      :disabled     (boolean disabled)
                       :on-click     handle-click
                       :icon         (if hidden? i/hide i/shown)}]))
 
@@ -430,20 +465,27 @@
   "Input of the reading of the selected span, with the eye button and,
   given `on-toggle-advanced`, the button opening the reading options."
   [{:keys [values on-change on-blur advanced-open on-toggle-advanced labels]}]
-  (let [ruby       (span-input-value (:ruby values))
+  (let [mixed?     (mixed-span-value? (:ruby values))
+        has-reading? (or mixed? (not (str/blank? (:ruby values))))
+        ;; Mixed readings show as a placeholder, not as editable text.
+        ruby       (if mixed? "" (span-input-value (:ruby values)))
         ruby*      (mf/use-state ruby)
         dirty*     (mf/use-state false)
         value      (deref ruby*)
         dirty?     (deref dirty*)
 
-        valid? (or (empty? value) (nil? (:validate labels)) ((:validate labels) value))
+        valid? (or (str/blank? value) (nil? (:validate labels)) ((:validate labels) (str/trim value)))
 
         commit!
         (mf/use-fn
-         (mf/deps dirty? valid? value on-change on-blur)
+         (mf/deps dirty? valid? value ruby on-change on-blur)
          (fn []
            (when (and dirty? valid?)
-             (on-change {:ruby value})
+             ;; Stored trimmed, as the canvas menu does: a blank reading is
+             ;; no reading, and emptying an input without one writes nothing.
+             (let [reading (str/trim value)]
+               (when-not (and (str/blank? reading) (str/blank? ruby))
+                 (on-change {:ruby reading})))
              (reset! dirty* false))
            (when (some? on-blur) (on-blur))))
 
@@ -453,12 +495,32 @@
            (reset! dirty* true)
            (reset! ruby* (dom/get-target-val event))))
 
+        ;; An Enter or Escape that ends an IME composition belongs to it.
+        composing?
+        (fn [^js event]
+          (let [native (or (.-nativeEvent event) event)]
+            (or (.-isComposing native) (= 229 (.-keyCode native)))))
+
         handle-key-down
         (mf/use-fn
-         (mf/deps commit!)
+         (mf/deps commit! ruby)
          (fn [event]
-           (when (= "Enter" (.-key event))
-             (dom/blur! (dom/get-target event)))))]
+           (when-not (composing? event)
+             (case (.-key event)
+               "Enter"  (dom/blur! (dom/get-target event))
+               ;; Escape drops the typed reading and keeps the text in edit
+               ;; mode, as the canvas menu input does.
+               "Escape" (do (reset! ruby* ruby)
+                            (reset! dirty* false))
+               nil))))
+
+        ;; The editor leaves edit mode on an Escape key-up reaching the
+        ;; document.
+        handle-key-up
+        (mf/use-fn
+         (fn [event]
+           (when (= "Escape" (.-key event))
+             (dom/stop-propagation event))))]
 
     (mf/with-effect [ruby]
       (reset! ruby* ruby)
@@ -467,16 +529,20 @@
     [:div {:class (stl/css :ruby-options)}
      [:> input* {:class       (stl/css :ruby-input)
                  :aria-label  (:placeholder labels)
-                 :placeholder (:placeholder labels)
+                 :placeholder (if mixed? (tr "settings.multiple") (:placeholder labels))
                  :value       value
                  :on-change   handle-change
                  :on-blur     commit!
-                 :on-key-down handle-key-down}]
+                 :on-key-down handle-key-down
+                 :on-key-up   handle-key-up}]
+     ;; A range without a reading has nothing to hide or present.
      [:> ruby-visibility-button* {:values values :labels labels
+                                  :disabled (not has-reading?)
                                   :on-change on-change :on-blur on-blur}]
      (when on-toggle-advanced
        [:> icon-button* {:variant     "ghost"
                          :selected    advanced-open
+                         :disabled    (not has-reading?)
                          :aria-label  (:advanced labels)
                          :aria-expanded advanced-open
                          :data-testid "ruby-advanced-options-toggle"

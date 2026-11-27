@@ -10,6 +10,7 @@
    [app.common.types.text.cjk-layout :as cjk]
    [app.main.data.workspace.texts :as dwt]
    [app.main.refs :as refs]
+   [app.main.store :as st]
    [app.main.ui.ds.controls.select :as select]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.shapes.text.html-text :as html-text]
@@ -103,6 +104,8 @@
               "korean" "ko"]
              (mapv :id options)))
     (t/is (= ["japanese" "chinese" "korean"] (mapv :id (filter :header options))))
+    ;; Only the group of several languages names itself.
+    (t/is (= ["chinese"] (mapv :id (filter (every-pred :header :label) options))))
     (t/is (= ["zh-Hant-TW"] (mapv :id (filter :selected options))))
     (t/is (not-any? :detail options) "the list shows no language tags")
     (t/is (not-any? :selected (tl/language-options :multiple)))))
@@ -141,19 +144,23 @@
     (t/is (not (str/includes? markup "data-testid=\"text-language-add\"")))))
 
 (t/deftest new-texts-take-the-last-language-else-the-file-one
-  (let [language (fn [remembered file]
-                   (with-redefs [refs/default-font (l/atom nil)
+  (let [language (fn [remembered file & {:keys [features] :or {features #{"cjk-support"}}}]
+                   (with-redefs [st/state (l/atom {:features features})
+                                 refs/default-font (l/atom nil)
                                  refs/default-text-language (l/atom remembered)
                                  refs/file-text-language (l/atom file)]
                      (get-in (tc/v2-default-text-content)
                              [:children 0 :children 0 :text-language])))]
     (t/is (= "ja" (language nil "ja")) "the file language seeds a new text")
     (t/is (= "ko" (language "ko" "ja")) "the language used last wins")
-    (t/is (nil? (language nil nil)))))
+    (t/is (nil? (language nil nil)))
+    (t/is (nil? (language "ko" "ja" :features #{}))
+          "without CJK support no hidden language is applied")))
 
 (t/deftest new-korean-texts-break-between-words
   (let [wrap (fn [remembered]
-               (with-redefs [refs/default-font (l/atom nil)
+               (with-redefs [st/state (l/atom {:features #{"cjk-support"}})
+                             refs/default-font (l/atom nil)
                              refs/default-text-language (l/atom remembered)
                              refs/file-text-language (l/atom nil)]
                  (get-in (tc/v2-default-text-content)
@@ -166,7 +173,11 @@
   (t/is (= {:text-language "ko"} (cjk/chosen-language-attrs "ko" {:korean-wrap "syllable"}))
         "a text keeps the wrapping it has")
   (t/is (= {:text-language "ja"} (cjk/chosen-language-attrs "ja" {})))
-  (t/is (= {:text-language nil} (cjk/chosen-language-attrs nil {}))))
+  (t/is (= {:text-language nil} (cjk/chosen-language-attrs nil {})))
+  ;; Without a CJK language a distributed text is drawn aligned left.
+  (t/is (= {:text-language nil :text-align "left"}
+           (cjk/chosen-language-attrs nil {:text-align "distribute"})))
+  (t/is (= {:text-language "ja"} (cjk/chosen-language-attrs "ja" {:text-align "distribute"}))))
 
 (t/deftest korean-word-wrapping-is-distinct-from-the-saved-experiment
   (t/is (= ["syllable" "keep-words"]
@@ -395,6 +406,21 @@
     (t/is (true? (:ruby-hidden (first spans))))
     (t/is (= "quarter" (:ruby-size (second spans))))
     (t/is (false? (:ruby-hidden (second spans))))))
+
+(t/deftest whole-text-tate-chu-yoko-leaves-out-combined-spans
+  (let [text (fn [& spans]
+               {:type :text
+                :content {:type "root"
+                          :children [{:type "paragraph-set"
+                                      :children [{:type "paragraph"
+                                                  :children (vec spans)}]}]}})]
+    (t/is (= "none" (dwt/whole-text-combine-value
+                     [(text {:text "第12回"} {:text "AB" :text-combine-upright "all"})])))
+    (t/is (= "digits" (dwt/whole-text-combine-value
+                       [(text {:text "第12回" :text-combine-upright "digits"}
+                              {:text "AB" :text-combine-upright "all"})])))
+    (t/is (= :multiple (dwt/whole-text-combine-value
+                        [(text {:text "第12" :text-combine-upright "digits"} {:text "回"})])))))
 
 (t/deftest mixed-span-values-select-a-disabled-mixed-option
   (let [options (tcc/with-mixed-span-option (tcc/text-emphasis-options identity) :multiple)]
@@ -759,6 +785,9 @@
   (t/is (= "under-right" (tcc/position-value :text-emphasis-position true "under-left" "right")))
   (t/is (= "over-right" (tcc/position-value :text-emphasis-position false "auto" "over")))
   (t/is (= "auto" (tcc/position-value :text-emphasis-position false "under-left" "auto")))
+  ;; A vertical side keeps the horizontal side the language draws.
+  (t/is (= "over-left" (tcc/position-value :text-emphasis-position true "auto" "left" "ja")))
+  (t/is (= "under-left" (tcc/position-value :text-emphasis-position true "auto" "left" "zh-Hans-CN")))
   (t/is (= "under" (tcc/position-choice :text-underline-position false "under-right")))
   (t/is (= "auto" (tcc/position-choice :text-underline-position false "left")))
   (t/is (= "right" (tcc/position-choice :text-underline-position true "under-right")))

@@ -9,8 +9,8 @@ use skia_safe::{textlayout::TypefaceFontProvider, FontMgr, Typeface};
 
 use crate::render::FallbackFonts;
 use crate::shapes::cjk_chars::COMMAS_AND_FULL_STOPS;
+use crate::shapes::jlreq::break_allowed_between;
 use crate::shapes::jlreq::{classify, JlreqClass};
-use crate::shapes::jlreq::{forbidden_at_line_end, forbidden_at_line_start};
 use crate::shapes::text_policy::{ChineseRegion, TextLayoutPolicy};
 use crate::shapes::text_warichu::{warichu_split_chars, WARICHU_FONT_SCALE};
 use crate::shapes::{FontFeatures, TextCombineUpright, TextSpan};
@@ -123,12 +123,14 @@ fn stop_shifts(
     }
 }
 
+/// As CSS `text-combine-upright: digits`, only ASCII digits combine;
+/// full-width digits already stand upright one per cell.
 fn is_tcy_digit(c: char) -> bool {
-    c.is_ascii_digit() || ('０'..='９').contains(&c)
+    c.is_ascii_digit()
 }
 
-/// Split a TCY `digits` span into pieces. Maximal ASCII or full-width digit
-/// runs of 1..=max chars are marked tcy, as in CSS `digits`, so a lone digit
+/// Split a TCY `digits` span into pieces. Maximal ASCII digit runs of
+/// 1..=max chars are marked tcy, as in CSS `digits`, so a lone digit
 /// stands upright too; the rest keep normal vertical layout. Returns (piece text, span-relative UTF-16 start, tcy).
 fn split_digit_runs(text: &str, max: usize) -> Vec<(String, usize, bool)> {
     let mut pieces: Vec<(String, usize, bool)> = Vec::new();
@@ -246,7 +248,7 @@ impl<'a> SpanCells<'a> {
     }
 
     fn shape(&self, text: &str, font_size: f32, upright: bool) -> Vec<ShapedRun> {
-        shape_with_typefaces(
+        let mut runs = shape_with_typefaces(
             text,
             font_size,
             &self.typefaces,
@@ -254,7 +256,17 @@ impl<'a> SpanCells<'a> {
             self.span.font_features,
             self.fonts.fallback_mgr,
             &self.span.language,
-        )
+        );
+        // As SkParagraph does for horizontal text: a face lighter than the
+        // span weight (a CJK fallback is regular only) is drawn bold.
+        let wanted = self.span.font_weight;
+        for run in &mut runs {
+            let weight = run.font.typeface().font_style().weight();
+            if wanted >= *skia_safe::font_style::Weight::SEMI_BOLD && wanted - *weight >= 200 {
+                run.font.set_embolden(true);
+            }
+        }
+        runs
     }
 
     /// A cell of this span covering `start..end` (paragraph UTF-16), whose
@@ -285,6 +297,16 @@ impl<'a> SpanCells<'a> {
     /// Push the cells of the span's layout `text`. Runs are appended to
     /// `runs`, which the cells index.
     pub(super) fn push(&self, text: &str, runs: &mut Vec<ShapedRun>, cells: &mut Vec<FlowCell>) {
+        // A tab is a blank em down the column, as horizontal text gives it a
+        // one-em placeholder. The ideographic space is one UTF-16 unit too,
+        // so cell offsets do not move.
+        let tabbed;
+        let text = if text.contains('\t') {
+            tabbed = text.replace('\t', "\u{3000}");
+            tabbed.as_str()
+        } else {
+            text
+        };
         let combine = self.span.text_combine_upright;
         if combine == TextCombineUpright::All
             && self.push_tate_chu_yoko(text, 0, all_min_scale(text), runs, cells)
@@ -652,7 +674,8 @@ impl<'a> WarichuNote<'a> {
     /// Paragraph UTF-16 offset where the piece starting at `piece_start`
     /// should break so its first part fits in `room`, or None when no part
     /// of at least one character per sub-line fits. The break keeps two
-    /// characters on each side and moves back to keep kinsoku.
+    /// characters on each side and moves back to keep kinsoku and whole
+    /// numeral and Western runs.
     pub(super) fn split_for_room(
         &self,
         piece_start: usize,
@@ -675,8 +698,7 @@ impl<'a> WarichuNote<'a> {
             let mut shift = 0;
             while at > piece.start + 2
                 && shift < MAX_WARICHU_KINSOKU_SHIFT
-                && (forbidden_at_line_start(self.chars[at].ch)
-                    || forbidden_at_line_end(self.chars[at - 1].ch))
+                && !break_allowed_between(self.chars[at - 1].ch, self.chars[at].ch)
             {
                 at -= 1;
                 shift += 1;
@@ -1166,13 +1188,14 @@ mod tests {
     }
 
     #[test]
-    fn split_digit_runs_recognizes_full_width_digits() {
+    fn split_digit_runs_leaves_full_width_digits_alone() {
+        // CSS `digits` combines ASCII digits only.
         let pieces = split_digit_runs("２０２６夏号", 4);
         let flags: Vec<(&str, bool)> = pieces
             .iter()
             .map(|(text, _, tcy)| (text.as_str(), *tcy))
             .collect();
-        assert_eq!(flags, vec![("２０２６", true), ("夏号", false)]);
+        assert_eq!(flags, vec![("２０２６夏号", false)]);
     }
 
     #[test]
@@ -1228,18 +1251,19 @@ mod tests {
     }
 
     #[test]
-    fn tate_chu_yoko_digits_combines_full_width_unicode_digits() {
+    fn tate_chu_yoko_digits_keeps_full_width_digits_one_per_cell() {
         let mut content = make_content_with_spans(&["２０２６年"], 400.0);
         content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
             TextCombineUpright::Digits;
         let layout = layout_with(&provider(VMTX_TEST_FONT), &content);
-        let tcy = layout
-            .cells
-            .iter()
-            .find(|cell| matches!(cell.kind, CellKind::TateChuYoko { .. }))
-            .expect("full-width digit run combines");
-        assert_eq!(tcy.start, 0);
-        assert_eq!(tcy.end, 4);
+        assert!(
+            layout
+                .cells
+                .iter()
+                .all(|cell| !matches!(cell.kind, CellKind::TateChuYoko { .. })),
+            "full-width digits stay upright, one per cell"
+        );
+        assert_eq!(layout.cells.len(), 5);
     }
 
     #[test]

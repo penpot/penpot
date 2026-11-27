@@ -415,7 +415,7 @@
         (if-let [name (valid-name (obj/get options "name"))]
           (request plugin-id "content:write"
                    #(let [{:keys [id team-id]} @data
-                          features (set/difference (:features @st/state #{}) cfeat/frontend-only-features)]
+                          features (set/difference (:features @st/state #{}) (disj cfeat/frontend-only-features "cjk-support"))]
                       (->> (rp/cmd! :create-file (with-origin plugin-id {:project-id id :name name :features features}))
                            (rx/map (fn [file] (-> (dissoc file :data) (assoc :team-id team-id))))
                            (rx/tap (fn [file]

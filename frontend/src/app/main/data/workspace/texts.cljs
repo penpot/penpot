@@ -444,7 +444,9 @@
                                     :else
                                     (:fills default-text-attrs))]
 
-                              (-> (merge default-text-attrs node)
+                              ;; A span without a CJK attr has its default:
+                              ;; set on one span and not on another is mixed.
+                              (-> (merge default-text-attrs cjk/span-attr-defaults node)
                                   (assoc :fills fills)))
                             node))))]
     (attrs/get-attrs-multi nodes attrs)))
@@ -598,7 +600,7 @@
           (and (txt/is-text-node? node)
                (and (>= (-> node meta :start) start)
                     (<= (-> node meta :end) end))))
-        #(d/patch-object % attrs))))
+        #(d/patch-object % (cjk/applicable-span-attrs % attrs)))))
 
 (defn- overlapping-text-nodes
   "Text nodes of a range-decorated content with characters in [start, end)."
@@ -633,7 +635,7 @@
 (def ^:private range-paragraph-attrs
   (d/concat-vec txt/text-align-attrs
                 txt/text-direction-attrs
-                [:text-language]))
+                cjk/language-paragraph-attrs))
 
 (defn- paragraph-in-range?
   "True when `node` of a range-decorated content is a paragraph with
@@ -693,20 +695,22 @@
 
             shape-ids (cond (cfh/text-shape? shape)  [id]
                             (cfh/group-shape? shape) (cfh/get-children-ids objects id))
-            text-ids  (resolve-text-ids objects id)]
+            text-ids  (resolve-text-ids objects id)
+            undo-id   (js/Symbol)]
 
-        (rx/concat
-         (rx/of (dwsh/update-shapes shape-ids update-fn))
-         (cond
-           (features/active-feature? state "render-wasm/v1")
+        (if (features/active-feature? state "render-wasm/v1")
+          ;; The change and the resize it causes are one undo step.
+          (rx/concat
+           (rx/of (dwu/start-undo-transaction undo-id)
+                  (dwsh/update-shapes shape-ids update-fn))
            (->> (rx/from text-ids)
-                (rx/map dwwt/resize-wasm-text-debounce))
-
-           (contains? attrs :font-id)
-           (await-html-font stream (:font-id attrs) (:font-variant-id attrs) text-ids)
-
-           :else
-           (rx/empty)))))))
+                (rx/map dwwt/resize-wasm-text))
+           (rx/of (dwu/commit-undo-transaction undo-id)))
+          (rx/concat
+           (rx/of (dwsh/update-shapes shape-ids update-fn))
+           (if (contains? attrs :font-id)
+             (await-html-font stream (:font-id attrs) (:font-variant-id attrs) text-ids)
+             (rx/empty))))))))
 
 (defn update-root-attrs
   [{:keys [id attrs]}]
@@ -762,7 +766,14 @@
                           (cfh/text-shape? shape)  [id]
                           (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
-          (rx/of (dwsh/update-shapes shape-ids update-fn)))))))
+          (rx/concat
+           (rx/of (dwsh/update-shapes shape-ids update-fn))
+           ;; Paragraph attrs such as the Korean wrap change the layout, and
+           ;; wasm only re-measures auto-sized texts when asked.
+           (if (features/active-feature? state "render-wasm/v1")
+             (->> (rx/from (resolve-text-ids objects id))
+                  (rx/map dwwt/resize-wasm-text-debounce))
+             (rx/empty))))))))
 
 (defn update-text-attrs
   [{:keys [id attrs]}]
@@ -780,6 +791,13 @@
               update-node? (fn [node]
                              (or (txt/is-text-node? node)
                                  (txt/is-paragraph-node? node)))
+              ;; Paragraphs keep a style for the text typed into them, but
+              ;; CJK span attrs, such as a reading, belong to spans only: a
+              ;; copy on the paragraph would outlive the spans' own.
+              merge-node   (fn [node attrs]
+                             (d/txt-merge node (if (txt/is-paragraph-node? node)
+                                                 (d/without-keys attrs cjk/span-attrs)
+                                                 (cjk/applicable-span-attrs node attrs))))
               shape-ids (cond
                           (cfh/text-shape? shape)  [id]
                           (cfh/group-shape? shape) (cfh/get-children-ids objects id))
@@ -788,7 +806,7 @@
               ;; `shape-text-contents` and overwrite per-run fills (e.g. line-height).
               merge-shape
               (fn [sh]
-                (let [updated-shape (txt/update-text-content sh update-node? d/txt-merge attrs)]
+                (let [updated-shape (txt/update-text-content sh update-node? merge-node attrs)]
                   (when wasm?
                     (wasm.text-editor/cache-shape-text-content! (:id updated-shape) (:content updated-shape)))
                   updated-shape))]
@@ -802,11 +820,108 @@
    d/txt-merge
    attrs))
 
+(defn- swap-proportional-features
+  "Turns the proportional metrics of the texts in `ids` to the axis of
+  `writing-mode`, as the renderer applies `palt` horizontally and `vpal`
+  vertically only."
+  [ids writing-mode]
+  (ptk/reify ::swap-proportional-features
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [wasm?     (features/active-feature? state "render-wasm/v1")
+            update-fn (fn [shape]
+                        (let [content (txt/proportional-features-for (:content shape) writing-mode)]
+                          (if (= content (:content shape))
+                            shape
+                            (let [shape (assoc shape :content content)]
+                              (when wasm?
+                                (if (= (:id shape) (wasm.text-editor/text-editor-get-active-shape-id))
+                                  (wasm.text-editor/update-cached-content! (:id shape) content)
+                                  (wasm.text-editor/cache-shape-text-content! (:id shape) content)))
+                              shape))))]
+        (rx/of (dwsh/update-shapes ids update-fn))))))
+
+(defn- laid-out-vertical?
+  [content]
+  (= "vertical-rl" (cjk/active-writing-mode content)))
+
+(defn- axis-turning-ids
+  "Ids of the auto-height texts among `ids` whose layout axis the
+  paragraph attrs in `attrs` turn, from horizontal to vertical or back.
+  The first paragraph decides the writing mode and language of a text."
+  [objects ids attrs]
+  (let [pattrs (select-keys attrs txt/paragraph-attrs)]
+    (when (seq pattrs)
+      (filterv (fn [id]
+                 (let [{:keys [grow-type content]} (get objects id)]
+                   (and (= :auto-height grow-type)
+                        (some? content)
+                        (not= (laid-out-vertical? content)
+                              (laid-out-vertical?
+                               (d/update-in-when content [:children 0 :children 0] merge pattrs))))))
+               ids))))
+
+(defn- swap-text-axes
+  "Swaps the width and height of the texts in `ids`, so the line length of
+  an auto-height text becomes its column length when it turns vertical,
+  and back. The axis the text grows on is measured again afterwards."
+  [ids]
+  (dwsh/update-shapes
+   ids
+   (fn [{:keys [selrect] :as shape}]
+     (let [{:keys [width height]} selrect
+           resize (fn [shape attr value]
+                    (gsh/transform-shape
+                     shape
+                     (ctm/change-dimensions-modifiers shape attr value {:ignore-lock? true})))]
+       (-> shape
+           (resize :width height)
+           (resize :height width))))
+   {:ignore-touched true}))
+
+(declare update-matching-spans)
+
 (defn update-all-ruby-presentation
   "Apply ruby presentation `attrs` to the ruby spans of the text shapes in
    `ids`, and of the texts inside the groups among them, in one update."
   [ids attrs]
-  (ptk/reify ::update-all-ruby-presentation
+  (update-matching-spans ids #(and (txt/is-text-node? %) (cjk/ruby-span? %)) attrs))
+
+(defn update-text-combine-digits
+  "Set the whole-text tate-chu-yoko `value` (none or a digits value) on the
+   spans of the texts in `ids` that do not combine as a whole (`all`): that
+   is a choice of the text selection."
+  [ids value]
+  (update-matching-spans ids
+                         #(and (txt/is-text-node? %) (not= "all" (:text-combine-upright %)))
+                         {:text-combine-upright value}))
+
+(defn update-all-spans
+  "Merge span `attrs` into every span of the text shapes in `ids`, and of
+   the texts inside the groups among them, whatever the editor selection."
+  [ids attrs]
+  (update-matching-spans ids txt/is-text-node? attrs))
+
+(defn whole-text-combine-value
+  "Whole-text tate-chu-yoko of the text `shapes`: the value of their spans
+   that do not combine as a whole, or `:multiple` when those differ."
+  [shapes]
+  (let [values (into #{}
+                     (comp (filter cfh/text-shape?)
+                           (mapcat #(txt/node-seq txt/is-text-node? (:content %)))
+                           (map #(or (:text-combine-upright %) "none"))
+                           (remove #{"all"}))
+                     shapes)]
+    (case (count values)
+      0 "none"
+      1 (first values)
+      :multiple)))
+
+(defn- update-matching-spans
+  "Merge `attrs` into the spans matching `pred` of the text shapes in `ids`,
+   and of the texts inside the groups among them, in one undo step."
+  [ids pred attrs]
+  (ptk/reify ::update-matching-spans
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects   (dsh/lookup-page-objects state)
@@ -819,12 +934,21 @@
                                                 (cfh/group-shape? shape) (cfh/get-children-ids objects id)))))
                                   (distinct))
                             ids)
+            merge-fn  (fn [span attrs]
+                        (d/txt-merge span (cjk/applicable-span-attrs span attrs)))
             update-fn (fn [shape]
-                        (let [updated-shape (update-ruby-presentation-attrs shape attrs)]
+                        (let [updated-shape (txt/update-text-content shape pred merge-fn attrs)]
                           (when (and wasm? (cfh/text-shape? updated-shape))
-                            (wasm.text-editor/cache-shape-text-content!
-                             (:id updated-shape)
-                             (:content updated-shape)))
+                            ;; The text being edited keeps its editor history,
+                            ;; with this change as one more step to undo.
+                            (if (= (:id updated-shape)
+                                   (wasm.text-editor/text-editor-get-active-shape-id))
+                              (wasm.text-editor/update-cached-content!
+                               (:id updated-shape)
+                               (:content updated-shape))
+                              (wasm.text-editor/cache-shape-text-content!
+                               (:id updated-shape)
+                               (:content updated-shape))))
                           updated-shape))
             undo-id   (js/Symbol)]
         (rx/concat
@@ -1059,8 +1183,10 @@
   (ptk/reify ::save-default-font
     ptk/UpdateEvent
     (update [_ state]
-      (let [multiple? (->> data vals (d/seek #(= % :multiple)))
-            font      (dissoc data :typography-ref-id :typography-ref-file)]
+      ;; New texts take the typography only: CJK annotations, such as
+      ;; emphasis marks, belong to the text they were set on.
+      (let [font      (apply dissoc data :typography-ref-id :typography-ref-file cjk/span-attrs)
+            multiple? (->> font vals (d/seek #(= % :multiple)))]
         (cond-> state
           (not multiple?)
           (update :workspace-global assoc :default-font font))))))
@@ -1276,7 +1402,8 @@
   (ptk/reify ::update-attrs
     ptk/WatchEvent
     (watch [_ state stream]
-      (let [text-editor-instance (:workspace-editor state)
+      (let [undo-id              (js/Symbol)
+            text-editor-instance (:workspace-editor state)
             objects              (dsh/lookup-page-objects state)
             text-ids             (resolve-text-ids objects id)
 
@@ -1290,6 +1417,13 @@
                  (some? text-editor-instance))
           (rx/empty)
           (rx/concat
+           ;; The change and the resize of an auto-sized text it causes are
+           ;; one undo step.
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (let [ids (axis-turning-ids objects text-ids attrs)]
+             (if (seq ids)
+               (rx/of (swap-text-axes ids))
+               (rx/empty)))
            (let [attrs (select-keys attrs txt/root-attrs)]
              (if-not (empty? attrs)
                (rx/of (update-root-attrs {:id id :attrs attrs}))
@@ -1330,6 +1464,11 @@
                :else
                (rx/of (update-text-attrs {:id id :attrs attrs}))))
 
+           ;; A writing mode change keeps proportional metrics on.
+           (when (and (contains? attrs :writing-mode)
+                      (not (contains? attrs :font-features)))
+             (rx/of (swap-proportional-features text-ids (:writing-mode attrs))))
+
            (when (and (features/active-feature? state "text-editor/v2")
                       (not (features/active-feature? state "text-editor-wasm/v1")))
              (rx/of (v2-update-text-editor-styles id attrs)))
@@ -1364,7 +1503,8 @@
                 (:font-id attrs)
                 (:font-variant-id attrs)
                 text-ids)
-               (rx/empty)))))))
+               (rx/empty)))
+           (rx/of (dwu/commit-undo-transaction undo-id))))))
 
     ptk/EffectEvent
     (effect [_ state _]

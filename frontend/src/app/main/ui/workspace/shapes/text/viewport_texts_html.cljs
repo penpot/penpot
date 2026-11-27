@@ -125,9 +125,12 @@
   (->> (tsp/calc-position-data id)
        (p/fmap (fn [position-data]
                  (let [;; A page-open check never writes a size laid out
-                       ;; with a fallback font
-                       size (when-not (and (= :check phase)
-                                           (tsp/font-failed? position-data))
+                       ;; with a fallback font. Nor does a vertical text
+                       ;; this renderer lays out horizontally: its size
+                       ;; belongs to its columns.
+                       size (when-not (or (and (= :check phase)
+                                               (tsp/font-failed? position-data))
+                                          (wm/stale-vertical-layout? (:content shape)))
                               (measured-auto-size shape node))
                        heal (text-heal phase shape size)
                        opts (:opts heal)]

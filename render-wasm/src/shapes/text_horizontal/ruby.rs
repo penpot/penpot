@@ -311,8 +311,20 @@ pub(super) fn horizontal_ruby_spacing_with(
             };
             spacing.adjustments[member].push((char_index, amount));
         }
-        match previous {
-            Some((owner, char_index, _)) => {
+        // The half gap before the base sits on the character before it: at
+        // the paragraph start, the spacer joiner before the base.
+        let spacer = texts[index]
+            .chars()
+            .next()
+            .filter(|ch| {
+                *ch == line_breaks::WORD_JOINER && offset_map.is_inserted(span_starts[index])
+            })
+            .map(|_| (index, 0usize));
+        match previous
+            .map(|(owner, char_index, _)| (owner, char_index))
+            .or(spacer)
+        {
+            Some((owner, char_index)) => {
                 spacing.adjustments[owner].push((char_index, gap / 2.0));
                 spacing.leading_gaps[index] = gap / 2.0;
             }
@@ -564,7 +576,7 @@ pub(crate) fn horizontal_ruby_ink_bounds(
 /// Each reading glyph of a horizontal paragraph laid out at (`x`, `y`): its
 /// font, glyph id, baseline origin and paint. Painting and bounds share it,
 /// so exports keep exactly the ink the canvas draws.
-fn visit_horizontal_ruby_glyphs(
+pub(crate) fn visit_horizontal_ruby_glyphs(
     text_content: &TextContent,
     paragraph_index: usize,
     laid_out: &LayoutParagraph,
@@ -589,7 +601,8 @@ fn visit_horizontal_ruby_glyphs(
     let offsets = &plan.offsets;
     let lines = laid_out.get_line_metrics();
 
-    for (span_index, span_range) in horizontal_ruby_targets(paragraph, offsets) {
+    let targets = horizontal_ruby_targets(paragraph, offsets);
+    for (target, (span_index, span_range)) in targets.iter().cloned().enumerate() {
         let span = &paragraph.children()[span_index];
         let base_start = span_range.start;
         let paint = horizontal_ruby_paint(
@@ -597,11 +610,28 @@ fn visit_horizontal_ruby_glyphs(
             &offsets.ranges[span_index],
             merge_fills(&span.fills, bounds),
         );
-        let rects = base_line_rects(laid_out.get_rects_for_range(
-            span_range,
+        let mut rects = base_line_rects(laid_out.get_rects_for_range(
+            span_range.clone(),
             skia::textlayout::RectHeightStyle::Tight,
             skia::textlayout::RectWidthStyle::Tight,
         ));
+        // Justification widens the base's last character by the gap after
+        // it, and so does the leading gap of the next base when it follows
+        // right away: the reading stays over the base itself.
+        if let Some(last) = rects.last_mut() {
+            let next_leading = targets
+                .get(target + 1)
+                .filter(|(_, next)| next.start <= span_range.end + 2)
+                .map_or(0.0, |(next_span, _)| {
+                    plan.ruby_spacing.leading_gaps[*next_span]
+                });
+            let trailing =
+                trailing_justify_spacing(text_content, paragraph_index, plan, span_range.end)
+                    + next_leading;
+            if trailing > 0.0 {
+                last.rect.right = (last.rect.right - trailing).max(last.rect.left);
+            }
+        }
         if let Some(syllable) = super::super::text_zhuyin::syllable(span) {
             if let Some(rect) = rects.first() {
                 let (origin, glyphs) = horizontal_zhuyin_glyphs(
@@ -672,6 +702,51 @@ fn visit_horizontal_ruby_glyphs(
             });
         }
     }
+}
+
+/// Justification spacing added after the character that ends at builder
+/// UTF-16 offset `end` of paragraph `paragraph_index`.
+fn trailing_justify_spacing(
+    text_content: &TextContent,
+    paragraph_index: usize,
+    plan: &HorizontalParagraphPlan,
+    end: usize,
+) -> f32 {
+    let Some(adjustments) = text_content.horizontal_line_adjustments() else {
+        return 0.0;
+    };
+    let Some(Some(adjustment)) = adjustments.get(paragraph_index) else {
+        return 0.0;
+    };
+    let Some(range) = plan
+        .offsets
+        .ranges
+        .iter()
+        .find(|range| range.builder_start < end && end <= range.builder_end)
+    else {
+        return 0.0;
+    };
+    let Some(text) = plan.texts.get(range.span) else {
+        return 0.0;
+    };
+    let mut utf16 = range.builder_start;
+    let Some(index) = text.chars().position(|ch| {
+        utf16 += ch.len_utf16();
+        utf16 >= end
+    }) else {
+        return 0.0;
+    };
+    adjustment
+        .spacing
+        .get(range.span)
+        .map(|spacing| {
+            spacing
+                .iter()
+                .filter(|(at, _)| *at == index)
+                .map(|(_, amount)| *amount)
+                .sum()
+        })
+        .unwrap_or(0.0)
 }
 
 /// The ruby glyphs over one line's rect of a base.

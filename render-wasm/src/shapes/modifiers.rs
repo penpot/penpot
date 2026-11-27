@@ -313,7 +313,18 @@ fn propagate_transform(
                         new_width,
                         new_height,
                     );
-                    if text_content.is_vertical() {
+                    // A flex or grid parent that sized the width (fill)
+                    // placed the text from its start: going back to the
+                    // content width keeps that start, as horizontal text
+                    // keeps its top when a layout sizes its height.
+                    let laid_out_width = width_changed
+                        && !height_changed
+                        && !shape.is_absolute()
+                        && shape
+                            .parent_id
+                            .and_then(|parent_id| shapes.get(&parent_id))
+                            .is_some_and(|parent| parent.has_layout());
+                    if text_content.is_vertical() && !laid_out_width {
                         // Reflow adds columns toward the block end. Keep the
                         // right/center/left anchor set by vertical alignment.
                         let anchor = match shape.vertical_align() {

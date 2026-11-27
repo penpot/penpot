@@ -158,3 +158,9 @@
            (attrs/get-attrs-multi [{:text-language "ko"} {}] [:text-language])))
   (t/is (= {:text-language nil :korean-wrap nil}
            (attrs/get-attrs-multi [{} {}] [:text-language :korean-wrap]))))
+
+(t/deftest unset-writing-mode-counts-as-horizontal
+  (t/is (= {:writing-mode :multiple}
+           (attrs/get-attrs-multi [{} {:writing-mode "vertical-rl"}] [:writing-mode])))
+  (t/is (= {:writing-mode "horizontal-tb"}
+           (attrs/get-attrs-multi [{} {:writing-mode "horizontal-tb"}] [:writing-mode]))))

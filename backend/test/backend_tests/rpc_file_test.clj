@@ -156,11 +156,13 @@
 (t/deftest new-files-take-the-profile-text-language
   (let [prof    (th/create-profile* 1 {:is-active true})
         proj-id (:default-project-id prof)
-        create  (fn []
-                  (let [out (th/command! {::th/type :create-file
-                                          ::rpc/profile-id (:id prof)
-                                          :project-id proj-id
-                                          :name "foobar"})]
+        create  (fn [& {:keys [cjk] :or {cjk true}}]
+                  (let [out (th/command! (cond-> {::th/type :create-file
+                                                  ::rpc/profile-id (:id prof)
+                                                  :project-id proj-id
+                                                  :name "foobar"
+                                                  :features (disj cfeat/supported-features "cjk-support")}
+                                           cjk (update :features conj "cjk-support")))]
                     (t/is (nil? (:error out)))
                     (let [out (th/command! {::th/type :get-file
                                             ::rpc/profile-id (:id prof)
@@ -179,6 +181,9 @@
     (t/testing "new files start with the profile language"
       (set-language "zh-Hant-TW")
       (t/is (= "zh-Hant-TW" (create))))
+
+    (t/testing "a client without CJK support gets no language"
+      (t/is (nil? (create :cjk false))))
 
     (t/testing "removing the profile language stops applying it"
       (set-language nil)

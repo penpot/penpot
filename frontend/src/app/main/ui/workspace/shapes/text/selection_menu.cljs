@@ -470,6 +470,31 @@
     (mf/with-effect [cancel-collapse]
       cancel-collapse)
 
+    ;; The focus stays in the editor while the emphasis list is open, so an
+    ;; Escape there only closes the list: it never reaches the editor, which
+    ;; would leave edit mode, or the workspace shortcuts.
+    (mf/with-effect [emphasis-open]
+      (when emphasis-open
+        (let [;; Native events: an Escape ending an IME composition is the
+              ;; composition's.
+              escape?     (fn [^js event]
+                            (and (kbd/esc? event)
+                                 (not (.-isComposing event))
+                                 (not= 229 (.-keyCode event))))
+              on-key-down (fn [event]
+                            (when (escape? event)
+                              (dom/prevent-default event)
+                              (dom/stop-propagation event)))
+              on-key-up   (fn [event]
+                            (when (escape? event)
+                              (dom/stop-propagation event)
+                              (reset! emphasis-open* false)))]
+          (.addEventListener js/document "keydown" on-key-down true)
+          (.addEventListener js/document "keyup" on-key-up true)
+          (fn []
+            (.removeEventListener js/document "keydown" on-key-down true)
+            (.removeEventListener js/document "keyup" on-key-up true)))))
+
     ;; Before paint, so the toolbar never shows cut at the edge.
     (mf/with-layout-effect [open? view more-open emphasis-open right viewport-width]
       (when-let [node (mf/ref-val menu-ref)]

@@ -19,7 +19,10 @@ pub(crate) fn is_emoji_char(c: char) -> bool {
 pub(crate) fn is_upright_char(c: char) -> bool {
     is_emoji_char(c)
         || matches!(u32::from(c),
-        0x2E80..=0x2FDF   // CJK radicals, Kangxi radicals
+        0x203B            // reference mark ※
+        | 0x2460..=0x24FF // enclosed alphanumerics ①
+        | 0x25A0..=0x25FF // geometric shapes △ ■ ○
+        | 0x2E80..=0x2FDF // CJK radicals, Kangxi radicals
         | 0x1100..=0x11FF // conjoining Hangul Jamo
         | 0x3100..=0x318F // Bopomofo and compatibility Jamo
         | 0x31A0..=0x31BF // Bopomofo extended
@@ -123,6 +126,10 @@ mod tests {
         assert!(is_upright_char('。'));
         assert!(is_upright_char('「'));
         assert!(is_upright_char('ー'));
+        // UAX #50 upright symbols.
+        assert!(is_upright_char('①'));
+        assert!(is_upright_char('△'));
+        assert!(is_upright_char('※'));
         assert!(is_upright_char('！'));
         assert!(!is_upright_char('A'));
         assert!(!is_upright_char('1'));

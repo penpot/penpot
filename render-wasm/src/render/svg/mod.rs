@@ -34,6 +34,29 @@ fn collect_font_aliases(tree: ShapesPoolRef, id: &Uuid, out: &mut HashSet<String
     }
 }
 
+/// Font families the `<text>` elements of an SVG `body` name. Skia writes the
+/// typeface it drew each run with, which is a fallback face (such as Noto Sans
+/// JP for Han in a Latin font) when the span's own font lacks the glyphs.
+fn written_font_families(body: &str) -> HashSet<String> {
+    const ATTR: &str = "font-family=\"";
+    let mut families = HashSet::new();
+    let mut rest = body;
+    while let Some(start) = rest.find(ATTR) {
+        rest = &rest[start + ATTR.len()..];
+        let Some(end) = rest.find('"') else {
+            break;
+        };
+        for family in rest[..end].split(',') {
+            let family = family.trim().trim_matches(|c| c == '\'' || c == '"');
+            if !family.is_empty() {
+                families.insert(family.to_string());
+            }
+        }
+        rest = &rest[end..];
+    }
+    families
+}
+
 /// Bounds for the root `<svg>` width, height, and viewBox.
 ///
 /// Text uses [`Shape::layer_bounds`]: glyph metrics, at least the `selrect`, and
@@ -143,6 +166,11 @@ pub(crate) fn render_tree_to_svg(
 
     let mut aliases = HashSet::new();
     collect_font_aliases(tree, id, &mut aliases);
+    aliases.extend(
+        shared
+            .fonts
+            .fallback_aliases_of_families(&written_font_families(&body)),
+    );
     let font_css = shared.fonts.font_face_css_for_aliases(&aliases);
 
     Ok(emit_svg_document(page_w, page_h, &font_css, &defs, &body))
@@ -215,6 +243,11 @@ pub(crate) fn render_trees_to_svg(
     for id in &roots {
         collect_font_aliases(tree, id, &mut aliases);
     }
+    aliases.extend(
+        shared
+            .fonts
+            .fallback_aliases_of_families(&written_font_families(&builder.out)),
+    );
     let font_css = shared.fonts.font_face_css_for_aliases(&aliases);
 
     Ok(emit_svg_document(

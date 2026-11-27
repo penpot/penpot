@@ -387,6 +387,14 @@
         ;; True between compositionstart and compositionend; the surface must not move then.
         composing-ref (mf/use-ref false)
 
+        ;; Pointer position of a click made during a composition. The IME still
+        ;; owns the preview, so the caret moves there once it commits.
+        composition-click-ref (mf/use-ref nil)
+
+        ;; Clipboard [html text] of a paste made during a composition, pasted
+        ;; once the IME commits.
+        composition-paste-ref (mf/use-ref nil)
+
         ;; Native IMEs can end composition before the cancelling key's key-up.
         ;; Remember its key-down so that Escape only cancels the preedit.
         ime-key-ref (mf/use-ref false)
@@ -537,6 +545,8 @@
         (mf/use-fn
          (fn [_event]
            (mf/set-ref-val! composing-ref true)
+           (mf/set-ref-val! composition-click-ref nil)
+           (mf/set-ref-val! composition-paste-ref nil)
            (mf/set-ref-val! composition-text-ref "")
            (mf/set-ref-val! synced-offset-ref nil)
            (mf/set-ref-val! composition-base-ref
@@ -599,6 +609,15 @@
                (sync-wasm-text-editor-content!))
              (wasm.api/request-render-preserving-target "text-composition"))
            (reset-input-node (mf/ref-val contenteditable-ref))
+           ;; A click made while composing places the caret now.
+           (when-let [point (mf/ref-val composition-click-ref)]
+             (mf/set-ref-val! composition-click-ref nil)
+             (wasm.api/text-editor-set-cursor-from-offset point)
+             (wasm.api/render-text-editor-overlay!))
+           ;; Then a paste made while composing lands after the commit.
+           (when-let [[html text] (mf/ref-val composition-paste-ref)]
+             (mf/set-ref-val! composition-paste-ref nil)
+             (st/emit! (dwt/v3-paste html text)))
            ;; Move the surface onto the caret, now past the committed text.
            (schedule-ime-caret!)))
 
@@ -607,10 +626,16 @@
          (fn [^js event]
            (dom/prevent-default event)
            (when-let [data (.-clipboardData event)]
-             (st/emit! (dwt/v3-paste (.getData data "text/html")
-                                     (.getData data "text/plain"))))
-           (reset-input-node (mf/ref-val contenteditable-ref))
-           (schedule-ime-caret!)))
+             (let [html (.getData data "text/html")
+                   text (.getData data "text/plain")]
+               (if (mf/ref-val composing-ref)
+                 ;; Pasting now would commit the raw preview with it: paste
+                 ;; once the IME commits.
+                 (mf/set-ref-val! composition-paste-ref [html text])
+                 (st/emit! (dwt/v3-paste html text)))))
+           (when-not (mf/ref-val composing-ref)
+             (reset-input-node (mf/ref-val contenteditable-ref))
+             (schedule-ime-caret!))))
 
         on-copy
         (mf/use-fn
@@ -769,11 +794,12 @@
         (mf/use-fn
          (fn [^js native]
            (mf/set-ref-val! pending-replace-ref 0)
-           (when (and (contains? #{"historyUndo" "historyRedo"} (.-inputType native))
-                      (not (mf/ref-val composing-ref))
-                      (not (.-isComposing native)))
+           ;; The surface's own undo would break an open composition and leave
+           ;; its preview in the text: undo is ignored while composing.
+           (when (contains? #{"historyUndo" "historyRedo"} (.-inputType native))
              (dom/prevent-default native)
-             (st/emit! (if (= (.-inputType native) "historyUndo") dwu/undo dwu/redo)))
+             (when-not (or (mf/ref-val composing-ref) (.-isComposing native))
+               (st/emit! (if (= (.-inputType native) "historyUndo") dwu/undo dwu/redo))))
            (when (and (= (.-inputType native) "insertText")
                       (not (.-isComposing native))
                       (not (text-editor/text-editor-has-selection?)))
@@ -818,13 +844,9 @@
                (keep-input-alive (mf/ref-val contenteditable-ref))
                (schedule-ime-caret!)))))
 
-        on-pointer-down
+        on-pointer-press
         (mf/use-fn
          (fn [^js event]
-           ;; The capture surface is pointer-events:none, so focus it here.
-           ;; preventDefault stops mousedown from moving focus to the body,
-           ;; which would blur the surface.
-           (dom/prevent-default event)
            (focus-editor!)
            (when-not (secondary-button? event)
              (let [native-event (dom/event->native-event event)
@@ -840,6 +862,22 @@
                    ;; render, which flashes at high zoom.
                    (wasm.api/render-text-editor-overlay!))
                  (mf/set-ref-val! deferred-press-ref off-pt))))))
+
+        on-pointer-down
+        (mf/use-fn
+         (fn [^js event]
+           ;; The capture surface is pointer-events:none, so focus it here.
+           ;; preventDefault stops mousedown from moving focus to the body,
+           ;; which would blur the surface.
+           (dom/prevent-default event)
+           (if (mf/ref-val composing-ref)
+             ;; Moving the caret now would send the commit to the click and
+             ;; leave the preview in the text: wait for the commit.
+             (when-not (secondary-button? event)
+               (mf/set-ref-val! composition-click-ref
+                                (shape-pointer-position (dom/event->native-event event)
+                                                        (mf/ref-val pointer-shift-ref))))
+             (on-pointer-press event))))
 
         on-pointer-move
         (mf/use-fn
@@ -871,12 +909,14 @@
                ;; caret is placed by `on-click`.
                (when dragging?
                  (wasm.api/render-text-editor-overlay!))
-               (schedule-ime-caret!)))))
+               (when-not (mf/ref-val composing-ref)
+                 (schedule-ime-caret!))))))
 
         on-click
         (mf/use-fn
          (fn [^js event]
-           (when-not (secondary-button? event)
+           ;; During a composition `on-pointer-down` keeps the click for later.
+           (when-not (or (secondary-button? event) (mf/ref-val composing-ref))
              (let [native-event (dom/event->native-event event)
                    off-pt       (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
                (cond
@@ -901,12 +941,13 @@
         on-double-click
         (mf/use-fn
          (fn [^js event]
-           (let [native-event (dom/event->native-event event)
-                 off-pt (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
-             (wasm.api/text-editor-select-word-boundary off-pt)
-             (ensure-input-caret (mf/ref-val contenteditable-ref))
-             (wasm.api/render-text-editor-overlay!)
-             (schedule-ime-caret!))))
+           (when-not (mf/ref-val composing-ref)
+             (let [native-event (dom/event->native-event event)
+                   off-pt (shape-pointer-position native-event (mf/ref-val pointer-shift-ref))]
+               (wasm.api/text-editor-select-word-boundary off-pt)
+               (ensure-input-caret (mf/ref-val contenteditable-ref))
+               (wasm.api/render-text-editor-overlay!)
+               (schedule-ime-caret!)))))
 
         on-context-menu
         (mf/use-fn

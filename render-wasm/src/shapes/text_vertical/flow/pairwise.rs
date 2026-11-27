@@ -192,10 +192,21 @@ pub(in crate::shapes::text_vertical) fn pairwise_aligned_tops(
         if (align == TextAlign::Distribute || (align == TextAlign::Justify && column < last_column))
             && is_bounded(budget)
         {
+            // Spaces ending the column take no room in it: the column is
+            // justified up to its last visible character.
+            let content_end = (start..end)
+                .rev()
+                .find(|&i| {
+                    let (first, last) = edges[i];
+                    !(first.is_some_and(char::is_whitespace)
+                        && last.is_some_and(char::is_whitespace))
+                })
+                .map_or(end, |i| i + 1);
+            let used = placements[content_end - 1].1 + cells[content_end - 1].cell.extent;
             let remaining = (budget - used).max(0.0);
             let mut extras = vec![0.0; end - start];
             let mut opportunities = Vec::new();
-            for i in start..end - 1 {
+            for i in start..content_end - 1 {
                 if cells[i + 1].keep_with_previous
                     || cells[i + 1].shares_previous_box
                     || graphemes.binary_search(&cells[i + 1].cell.start).is_err()

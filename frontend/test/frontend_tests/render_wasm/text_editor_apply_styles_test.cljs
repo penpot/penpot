@@ -37,6 +37,14 @@
                 (span " world" [red])]
                (:children result))))))
 
+(t/deftest apply-emphasis-skips-a-warichu-note
+  (let [para   {:children [{:text "本文"}
+                           {:text "割注" :warichu "warichu"}
+                           {:text "です"}]}
+        result (apply-attrs-to-paragraph para 0 6 {:text-emphasis "filled-sesame"})]
+    (t/is (= [["本文" "filled-sesame"] ["割注" nil] ["です" "filled-sesame"]]
+             (mapv (juxt :text :text-emphasis) (:children result))))))
+
 (t/deftest apply-fn-preserves-existing-fills
   (t/testing "the fn form prepends to the selected span's existing fills"
     (let [para   {:children [(span "hello world" [red])]}

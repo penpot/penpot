@@ -9,10 +9,19 @@ pub(crate) struct HorizontalSpanRange {
     pub source_start: usize,
     pub source_end: usize,
     pub warichu: bool,
+    /// Pieces of a warichu note, one box each; empty outside warichu.
+    pub pieces: Vec<WarichuPiece>,
     /// UTF-8 byte anchor for indexed Skia style metrics.
     pub style_anchor_start: usize,
     /// UTF-16 anchor for choosing the line containing those metrics.
     pub style_anchor_utf16: usize,
+}
+
+impl HorizontalSpanRange {
+    /// Builder-text UTF-16 offset where warichu piece `index` starts.
+    pub(crate) fn piece_builder_start(&self, index: usize) -> usize {
+        self.builder_start + index * HORIZONTAL_WARICHU_BUILDER_LEN
+    }
 }
 
 /// Offset maps of one horizontal paragraph between source characters, the
@@ -30,16 +39,18 @@ impl HorizontalOffsets {
     #[cfg(test)]
     pub(crate) fn new(paragraph: &Paragraph) -> Self {
         let (span_texts, offset_map) = paragraph.layout_span_texts();
-        Self::from_layout_texts(paragraph, &span_texts, offset_map)
+        Self::from_layout_texts(paragraph, &span_texts, offset_map, &[])
     }
 
-    /// Offsets for layout `span_texts` already built by `layout_span_texts`.
+    /// Offsets for layout `span_texts` already built by `layout_span_texts`,
+    /// with each warichu span cut into pieces at its `warichu_splits`.
     pub(super) fn from_layout_texts(
         paragraph: &Paragraph,
         span_texts: &[String],
         offset_map: line_breaks::OffsetMap,
+        warichu_splits: &[Vec<usize>],
     ) -> Self {
-        let ranges = span_ranges(paragraph, span_texts, &offset_map);
+        let ranges = span_ranges(paragraph, span_texts, &offset_map, warichu_splits);
         Self {
             offset_map,
             ranges,
@@ -73,11 +84,16 @@ impl HorizontalOffsets {
                 .unwrap_or(0);
         };
         if range.warichu {
-            return if source_utf16 >= range.source_end {
-                range.builder_end
-            } else {
-                range.builder_start
-            };
+            if source_utf16 >= range.source_end {
+                return range.builder_end;
+            }
+            let local = source_utf16 - range.source_start;
+            let piece = range
+                .pieces
+                .iter()
+                .rposition(|piece| piece.utf16.start <= local)
+                .unwrap_or(0);
+            return range.piece_builder_start(piece);
         }
         let shifted = self.offset_map.to_shifted(source_utf16);
         range.builder_start + shifted.saturating_sub(range.shifted_start)
@@ -100,10 +116,15 @@ impl HorizontalOffsets {
             })
             .map(|range| {
                 if range.warichu {
-                    if builder_offset > range.builder_start {
-                        range.source_end
-                    } else {
-                        range.source_start
+                    // A piece's start maps to its first character; any
+                    // later offset inside it to its end.
+                    let within = builder_offset - range.builder_start;
+                    match range.pieces.get(within / HORIZONTAL_WARICHU_BUILDER_LEN) {
+                        Some(piece) if within.is_multiple_of(HORIZONTAL_WARICHU_BUILDER_LEN) => {
+                            range.source_start + piece.utf16.start
+                        }
+                        Some(piece) => range.source_start + piece.utf16.end,
+                        None => range.source_end,
                     }
                 } else {
                     let within = builder_offset
@@ -158,11 +179,12 @@ pub(crate) fn horizontal_builder_to_source(paragraph: &Paragraph, builder_offset
 
 /// Ranges shared by layout, position data and editor mapping. `shifted_*`
 /// addresses the kinsoku-adjusted text; `builder_*` addresses the builder
-/// text, where each warichu span collapses to one placeholder.
+/// text, where each piece of a warichu span collapses to one placeholder.
 fn span_ranges(
     paragraph: &Paragraph,
     span_texts: &[String],
     offset_map: &line_breaks::OffsetMap,
+    warichu_splits: &[Vec<usize>],
 ) -> Vec<HorizontalSpanRange> {
     let mut builder_cursor = 0usize;
     let mut builder_byte_cursor = 0usize;
@@ -179,6 +201,14 @@ fn span_ranges(
             let source_start = offset_map.to_original(shifted_start);
             let source_end = offset_map.to_original(shifted_end);
             let warichu = span.is_warichu();
+            let pieces = if warichu {
+                let splits = warichu_splits
+                    .get(span_index)
+                    .map_or(&[][..], Vec::as_slice);
+                warichu_pieces(&span.apply_text_transform(), splits)
+            } else {
+                Vec::new()
+            };
             let leading_break =
                 usize::from(warichu && text.starts_with(line_breaks::FORCED_LINE_BREAK));
             builder_cursor += leading_break;
@@ -207,14 +237,15 @@ fn span_ranges(
                 (builder_byte_cursor + bytes, builder_start + utf16)
             };
             builder_cursor += if warichu {
-                HORIZONTAL_WARICHU_BUILDER_LEN
+                HORIZONTAL_WARICHU_BUILDER_LEN * pieces.len()
             } else {
                 shifted_end - shifted_start
             };
             builder_byte_cursor += if warichu {
-                '\u{FFFC}'.len_utf8()
-                    + HORIZONTAL_WARICHU_STYLE_ANCHOR.len_utf8()
-                    + HORIZONTAL_WARICHU_BREAK_ANCHOR.len_utf8()
+                pieces.len()
+                    * ('\u{FFFC}'.len_utf8()
+                        + HORIZONTAL_WARICHU_STYLE_ANCHOR.len_utf8()
+                        + HORIZONTAL_WARICHU_BREAK_ANCHOR.len_utf8())
             } else {
                 // `add_text_with_tabs` stores every tab as a U+FFFC placeholder.
                 text.len() + text.matches('\t').count() * ('\u{FFFC}'.len_utf8() - 1)
@@ -227,6 +258,7 @@ fn span_ranges(
                 source_start,
                 source_end,
                 warichu,
+                pieces,
                 style_anchor_start,
                 style_anchor_utf16,
             }

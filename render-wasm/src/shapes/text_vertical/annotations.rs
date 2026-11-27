@@ -1816,4 +1816,35 @@ mod tests {
             layout.ruby_runs.iter().map(|run| run.glyphs.len()).sum()
         );
     }
+
+    #[test]
+    fn readings_beside_the_outer_columns_stay_inside_the_block() {
+        let over = ruby_content_with_line_height(1.2);
+        let layout = layout_with(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &over,
+        );
+        let ruby = &layout.ruby_cells[0];
+        let column = &layout.columns[ruby.column];
+        let strip = ruby_strip_x(column, ruby.font_size, ruby.base_font_size, ruby.side);
+        assert!(strip >= 0.0);
+        assert!(strip + ruby.font_size <= layout.width + 0.01);
+
+        let under = spans_content(
+            vec![TextSpan {
+                ruby: "ab".to_string(),
+                ruby_side: AnnotationSide::Under,
+                ..make_span("AB")
+            }],
+            400.0,
+        );
+        let layout = layout_with(
+            &provider(include_bytes!("../../fonts/cjk-locl-test.ttf")),
+            &under,
+        );
+        let ruby = &layout.ruby_cells[0];
+        let column = &layout.columns[ruby.column];
+        let strip = ruby_strip_x(column, ruby.font_size, ruby.base_font_size, ruby.side);
+        assert!(strip >= -0.01);
+    }
 }

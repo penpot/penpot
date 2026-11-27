@@ -707,11 +707,15 @@
   (ptk/reify ::set-default-text-language
     ptk/WatchEvent
     (watch [it state _]
-      (let [changes (-> (pcb/empty-changes it)
-                        (pcb/with-file-data (dsh/lookup-file-data state))
-                        (pcb/set-default-text-language language))]
-        (rx/of (dch/commit-changes changes)
-               (dwtxt/remember-text-language nil))))))
+      (let [data (dsh/lookup-file-data state)]
+        ;; Picking the current language changes nothing: no undo step.
+        (when (not= (not-empty language)
+                    (not-empty (get-in data [:options :text-language])))
+          (let [changes (-> (pcb/empty-changes it)
+                            (pcb/with-file-data data)
+                            (pcb/set-default-text-language language))]
+            (rx/of (dch/commit-changes changes)
+                   (dwtxt/remember-text-language nil))))))))
 
 ;; --- Profile
 

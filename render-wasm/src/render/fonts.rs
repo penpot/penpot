@@ -45,6 +45,30 @@ impl CjkFace {
         }
     }
 
+    /// Face of a code the frontend sends for the UI locale (see
+    /// `set_cjk_locale`): 1 SC, 2 TC, 3 HK, 4 JP, 5 KR, anything else none.
+    pub fn from_code(code: u8) -> Option<Self> {
+        match code {
+            1 => Some(Self::SimplifiedChinese),
+            2 => Some(Self::TraditionalChinese),
+            3 => Some(Self::HongKongChinese),
+            4 => Some(Self::Japanese),
+            5 => Some(Self::Korean),
+            _ => None,
+        }
+    }
+
+    /// `self` alone, as a preference list.
+    fn alone(self) -> &'static [Self] {
+        match self {
+            Self::SimplifiedChinese => &[Self::SimplifiedChinese],
+            Self::TraditionalChinese => &[Self::TraditionalChinese],
+            Self::HongKongChinese => &[Self::HongKongChinese],
+            Self::Japanese => &[Self::Japanese],
+            Self::Korean => &[Self::Korean],
+        }
+    }
+
     /// Faces drawing Han and CJK punctuation in the forms `language` (a BCP 47
     /// tag) expects, best first. Without a CJK language, kana or hangul in
     /// `text` decide.
@@ -78,6 +102,9 @@ impl CjkFace {
 pub struct FallbackFonts {
     families: BTreeSet<String>,
     cjk_faces: HashMap<String, CjkFace>,
+    /// Face the UI locale prefers, for Han in text without a CJK language
+    /// and without kana or hangul.
+    locale_face: Option<CjkFace>,
 }
 
 impl FallbackFonts {
@@ -87,6 +114,7 @@ impl FallbackFonts {
         Self {
             families: families.into_iter().collect(),
             cjk_faces: HashMap::new(),
+            locale_face: None,
         }
     }
 
@@ -107,7 +135,10 @@ impl FallbackFonts {
     /// share Han characters with different glyph forms, so the first one
     /// decides how they look.
     pub fn for_text(&self, language: &str, text: &str) -> Vec<String> {
-        let preferred = CjkFace::preferred(language, text);
+        let preferred = match CjkFace::preferred(language, text) {
+            [] => self.locale_face.map_or(&[][..], CjkFace::alone),
+            preferred => preferred,
+        };
         let mut families: Vec<&String> = self.families.iter().collect();
         families.sort_by_key(|alias| match self.cjk_faces.get(*alias) {
             Some(face) => match preferred.iter().position(|p| p == face) {
@@ -261,6 +292,12 @@ impl FontStore {
         &self.fallback_fonts
     }
 
+    /// Sets the CJK face the UI locale prefers (see `FallbackFonts::for_text`).
+    pub fn set_locale_face(&mut self, face: Option<CjkFace>) {
+        self.fallback_fonts.locale_face = face;
+        self.font_collection.clear_caches();
+    }
+
     pub fn set_source_url(&mut self, alias: &str, url: String) {
         if !url.is_empty() {
             self.source_urls.insert(alias.to_string(), url);
@@ -269,6 +306,21 @@ impl FontStore {
 
     pub fn source_url(&self, alias: &str) -> Option<&str> {
         self.source_urls.get(alias).map(String::as_str)
+    }
+
+    /// Registered fallback aliases whose typeface is one of `families`: the
+    /// fallback faces a document drew text with, by the family name it wrote.
+    pub fn fallback_aliases_of_families(&self, families: &HashSet<String>) -> Vec<String> {
+        self.fallback_fonts
+            .families
+            .iter()
+            .filter(|alias| {
+                self.font_provider
+                    .match_family_style(alias.as_str(), skia::FontStyle::default())
+                    .is_some_and(|typeface| families.contains(&typeface.family_name()))
+            })
+            .cloned()
+            .collect()
     }
 
     /// Builds `@font-face` CSS rules for the given registered aliases.
@@ -470,6 +522,17 @@ mod tests {
         assert_eq!(fallbacks.for_text("zh-Hant-TW", "東京")[..2], ["tc", "hk"]);
         assert_eq!(fallbacks.for_text("zh-Hant-HK", "東京")[..2], ["hk", "tc"]);
         assert_eq!(fallbacks.for_text("zh_hant", "東京")[0], "tc");
+    }
+
+    #[test]
+    fn untagged_han_prefers_the_face_of_the_ui_locale() {
+        let mut fallbacks = cjk_fallbacks();
+        assert_eq!(fallbacks.for_text("", "骨直")[0], "arabic");
+        fallbacks.locale_face = CjkFace::from_code(4);
+        assert_eq!(fallbacks.for_text("", "骨直")[0], "jp");
+        // A language or kana in the text still wins.
+        assert_eq!(fallbacks.for_text("zh-Hans", "骨直")[0], "sc");
+        assert_eq!(fallbacks.for_text("", "서울")[0], "kr");
     }
 
     #[test]

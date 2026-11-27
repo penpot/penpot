@@ -92,10 +92,32 @@ fn layout_span_texts_with_breaks(
             forced,
         );
         if let Some((shifted, map)) = shifted {
-            return (shifted, map);
+            return with_leading_ruby_spacer(paragraph, shifted, map);
         }
     }
-    (texts, line_breaks::OffsetMap::default())
+    with_leading_ruby_spacer(paragraph, texts, line_breaks::OffsetMap::default())
+}
+
+/// A paragraph that starts with a reading base gets a word joiner before it:
+/// a reading longer than its base spreads the base over its slot, and the
+/// space before the base must sit on a character before it
+/// (`horizontal_ruby_spacing_with`).
+fn with_leading_ruby_spacer(
+    paragraph: &Paragraph,
+    mut texts: Vec<String>,
+    map: line_breaks::OffsetMap,
+) -> (Vec<String>, line_breaks::OffsetMap) {
+    let starts_with_ruby = paragraph
+        .children()
+        .first()
+        .is_some_and(|span| span.has_ruby() && !span.is_zhuyin());
+    match texts.first_mut() {
+        Some(first) if starts_with_ruby && !first.is_empty() => {
+            first.insert(0, line_breaks::WORD_JOINER);
+            (texts, map.with_leading_insertion())
+        }
+        _ => (texts, map),
+    }
 }
 
 /// Advance changes between adjacent characters of the layout `texts`, as
@@ -247,15 +269,42 @@ fn horizontal_pairwise_spacing_with(
     result
 }
 
-/// Add a span to a horizontal paragraph builder. A warichu span becomes one
-/// inline placeholder so its two lines wrap as a unit; its glyphs are painted
-/// after layout. The characters at `sheds` (from `horizontal_pair_spacing`)
-/// set narrower by their amounts; `extra` (from `horizontal_ruby_spacing`)
-/// adds letter-spacing to characters.
+/// Add a span to a horizontal paragraph builder, a warichu span as one
+/// piece (see `add_horizontal_span_pieces`).
+#[cfg(test)]
 pub(crate) fn add_horizontal_span(
     builder: &mut impl SpacedParagraphBuilder,
     span: &TextSpan,
     builder_text: &str,
+    sheds: &[(usize, f32)],
+    extra: &[(usize, f32)],
+    text_style: &skia::textlayout::TextStyle,
+    fonts: &skia::textlayout::FontCollection,
+) {
+    add_horizontal_span_pieces(
+        builder,
+        span,
+        builder_text,
+        &[],
+        sheds,
+        extra,
+        text_style,
+        fonts,
+    );
+}
+
+/// Add a span to a horizontal paragraph builder. Each warichu piece of the
+/// span (`pieces`, all of it when empty) becomes one inline placeholder so
+/// its two lines wrap as a unit; its glyphs are painted after layout. The
+/// characters at `sheds` (from `horizontal_pair_spacing`) set narrower by
+/// their amounts; `extra` (from `horizontal_ruby_spacing`) adds
+/// letter-spacing to characters.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn add_horizontal_span_pieces(
+    builder: &mut impl SpacedParagraphBuilder,
+    span: &TextSpan,
+    builder_text: &str,
+    pieces: &[WarichuPiece],
     sheds: &[(usize, f32)],
     extra: &[(usize, f32)],
     text_style: &skia::textlayout::TextStyle,
@@ -267,22 +316,21 @@ pub(crate) fn add_horizontal_span(
             builder.add_text(line_breaks::FORCED_LINE_BREAK.to_string());
         }
         let text = span.apply_text_transform();
-        let (first, second) = warichu_text_lines(&text);
+        let whole = [WarichuPiece {
+            chars: 0..text.chars().count(),
+            utf16: 0..text.encode_utf16().count(),
+        }];
+        let pieces = if pieces.is_empty() {
+            &whole[..]
+        } else {
+            pieces
+        };
         let mut mini_style = text_style.clone();
         mini_style.set_font_size(span.font_size * WARICHU_FONT_SCALE);
         mini_style.set_height(1.0);
         mini_style.set_height_override(true);
         mini_style.set_letter_spacing(span.letter_spacing * WARICHU_FONT_SCALE);
         let measure = |line: &str| mini_paragraph(line, &mini_style, fonts).longest_line();
-        let width = measure(first).max(measure(second)).max(0.01);
-        let height = span.font_size.max(0.01);
-        builder.add_placeholder(&PlaceholderStyle::new(
-            width,
-            height,
-            PlaceholderAlignment::Middle,
-            TextBaseline::Alphabetic,
-            height,
-        ));
         // SkParagraph does not expose a placeholder's TextStyle through line
         // metrics. A near-zero, inkless NBSP carries the span style for the
         // paint pass; the zero-width space after it allows a line break after
@@ -292,12 +340,118 @@ pub(crate) fn add_horizontal_span(
         anchor_style.set_height(0.01);
         anchor_style.set_height_override(true);
         anchor_style.set_letter_spacing(0.0);
+        let height = span.font_size.max(0.01);
+        for piece in pieces {
+            let piece_text: String = text
+                .chars()
+                .skip(piece.chars.start)
+                .take(piece.chars.len())
+                .collect();
+            let (first, second) = warichu_text_lines(&piece_text);
+            let width = measure(first).max(measure(second)).max(0.01);
+            builder.add_placeholder(&PlaceholderStyle::new(
+                width,
+                height,
+                PlaceholderAlignment::Middle,
+                TextBaseline::Alphabetic,
+                height,
+            ));
+            builder.push_style(&anchor_style);
+            builder.add_text(HORIZONTAL_WARICHU_STYLE_ANCHOR.to_string());
+            builder.add_text(HORIZONTAL_WARICHU_BREAK_ANCHOR.to_string());
+            builder.pop();
+        }
         builder.push_style(&anchor_style);
-        builder.add_text(HORIZONTAL_WARICHU_STYLE_ANCHOR.to_string());
-        builder.add_text(HORIZONTAL_WARICHU_BREAK_ANCHOR.to_string());
     } else {
-        add_text_with_sheds(builder, span, builder_text, sheds, extra, text_style);
+        let heights = fallback_run_heights(builder_text, text_style, fonts);
+        add_text_with_sheds(
+            builder,
+            span,
+            builder_text,
+            sheds,
+            extra,
+            heights.as_ref(),
+            text_style,
+        );
     }
+}
+
+/// Line height multipliers of the characters of a span `text` set in
+/// `style`, with the box of a line of the span in its own font, or None when
+/// every character draws from the span's own font.
+/// As in CSS, a line takes its height from the span's own font: glyphs drawn
+/// from a fallback font, spaces and the zero-width characters the line
+/// breaker inserts must not make it taller. With half-leading a run sits
+/// centred on its own font's ascent and descent, so a fallback font whose
+/// ascent/descent ratio differs pushes the line past the line height. Such a
+/// run gets a height that keeps it inside the box of the span's font, and
+/// blank characters a height that fits any box. `LayoutParagraph` gives the
+/// lines of the span the box, as the span's own font would.
+fn fallback_run_heights(
+    text: &str,
+    style: &skia::textlayout::TextStyle,
+    fonts: &skia::textlayout::FontCollection,
+) -> Option<SpanRunHeights> {
+    let size = style.font_size();
+    let height = style.height();
+    if !style.height_override() || size <= 0.0 || height <= 0.0 {
+        return None;
+    }
+    let families: Vec<String> = style.font_families().iter().map(str::to_string).collect();
+    let typefaces = fonts.clone().find_typefaces(&families, style.font_style());
+    let (primary, others) = typefaces.split_first()?;
+    let has_glyph = |typeface: &skia::Typeface, ch: char| typeface.unichar_to_glyph(ch as i32) != 0;
+    let blank = |ch: char| {
+        ch.is_whitespace()
+            || line_breaks::is_inserted_zero_width(ch)
+            || matches!(ch, '\u{200B}'..='\u{200F}' | '\u{2060}'..='\u{2064}' | '\u{FEFF}')
+    };
+    if !text
+        .chars()
+        .any(|ch| !blank(ch) && !has_glyph(primary, ch) && others.iter().any(|t| has_glyph(t, ch)))
+    {
+        return None;
+    }
+    // Ascent minus descent: half-leading puts the baseline half of it below
+    // the centre of the line.
+    let balance = |typeface: &skia::Typeface| {
+        let (_, metrics) = Font::from_typeface(typeface, size).metrics();
+        -metrics.ascent - metrics.descent
+    };
+    let own = balance(primary);
+    let mut balances: Vec<Option<f32>> = vec![None; others.len()];
+    let blank_height = 0.01;
+    let line = height * size;
+    let heights = text
+        .chars()
+        .map(|ch| {
+            if blank(ch) {
+                return blank_height;
+            }
+            if has_glyph(primary, ch) {
+                return height;
+            }
+            let Some(index) = others.iter().position(|t| has_glyph(t, ch)) else {
+                return height;
+            };
+            let other = *balances[index].get_or_insert_with(|| balance(&others[index]));
+            (height - (own - other).abs() / size).max(blank_height)
+        })
+        .collect();
+    Some(SpanRunHeights {
+        heights,
+        ascent: (line + own) / 2.0,
+        descent: (line - own) / 2.0,
+    })
+}
+
+/// `fallback_run_heights` of a span.
+struct SpanRunHeights {
+    /// Line height multiplier of each character.
+    heights: Vec<f32>,
+    /// Box of a line of the span in its own font.
+    ascent: f32,
+    descent: f32,
 }
 
 /// Builder UTF-16 window that covers a whole paragraph.
@@ -316,7 +470,14 @@ pub(crate) fn window_slice<'a>(
         return None;
     }
     if range.warichu {
-        return (range.builder_start >= window.start).then_some((text, 0));
+        // The window keeps the pieces whose box starts inside it, and the
+        // text with any leading break only with the first piece.
+        let inside = window_pieces(range, window);
+        if inside.is_empty() {
+            return None;
+        }
+        let first = range.builder_start >= window.start;
+        return Some((if first { text } else { "" }, 0));
     }
     let mut utf16 = range.builder_start;
     let mut from = None;
@@ -333,6 +494,21 @@ pub(crate) fn window_slice<'a>(
     }
     let (from_byte, from_char) = from?;
     Some((&text[from_byte..to.max(from_byte)], from_char))
+}
+
+/// Warichu pieces of `range` whose box starts inside the builder UTF-16
+/// `window`.
+pub(crate) fn window_pieces(
+    range: &HorizontalSpanRange,
+    window: &std::ops::Range<usize>,
+) -> Vec<WarichuPiece> {
+    range
+        .pieces
+        .iter()
+        .enumerate()
+        .filter(|(index, _)| window.contains(&range.piece_builder_start(*index)))
+        .map(|(_, piece)| piece.clone())
+        .collect()
 }
 
 /// Per-char `entries` of a span shifted to a slice starting at char `from`
@@ -354,16 +530,19 @@ pub(crate) fn window_entries(
 /// those in `extra` take its added spacing. Skia tracks every cluster,
 /// including the zero-width word joiners the kinsoku pass inserts, so those
 /// take no letter-spacing. The builder records how far each adjusted
-/// character departs from the span tracking.
+/// character departs from the span tracking. `heights` set the line height
+/// of the runs and the box of the lines of the span.
 fn add_text_with_sheds(
     builder: &mut impl SpacedParagraphBuilder,
     span: &TextSpan,
     text: &str,
     sheds: &[(usize, f32)],
     extra: &[(usize, f32)],
+    heights: Option<&SpanRunHeights>,
     text_style: &skia::textlayout::TextStyle,
 ) {
     let tracking = text_style.letter_spacing();
+    let base_height = text_style.height();
     let count = text.chars().count();
     let mut amounts = vec![(0.0, 0.0); count];
     for &(index, amount) in extra {
@@ -376,51 +555,91 @@ fn add_text_with_sheds(
             *shed += amount;
         }
     }
-    let mut piece_start = 0;
-    // UTF-16 offset of the span text in the builder, read at the first piece.
-    let mut builder_start = None;
+    let letter_spacings: Vec<f32> = text
+        .chars()
+        .zip(&amounts)
+        .map(|(ch, (added, shed))| {
+            // Inserted joiners take no tracking, only the spacing set on
+            // them (the leading ruby spacer).
+            if line_breaks::is_inserted_zero_width(ch) {
+                added - shed
+            } else {
+                tracking + added - shed
+            }
+        })
+        .collect();
+    let height_at = |index: usize| {
+        heights
+            .and_then(|h| h.heights.get(index).copied())
+            .unwrap_or(base_height)
+    };
+    let restyled =
+        (0..count).any(|i| letter_spacings[i] != tracking || height_at(i) != base_height);
+    if !restyled {
+        add_text_with_tabs(builder.paragraph_builder(), text, span.font_size);
+        return;
+    }
+    // UTF-16 offset of the span text in the builder. `get_text` finalizes the
+    // builder, which drops the style block the caller pushed for this span
+    // while it holds no text yet: the span text would join the block before
+    // it, such as a warichu anchor's near-zero size. Open it again; popped at
+    // the end.
+    let start = {
+        let paragraph_builder = builder.paragraph_builder();
+        let start = paragraph_builder.get_text().encode_utf16().count();
+        paragraph_builder.push_style(text_style);
+        start
+    };
+    if let Some(heights) = heights {
+        let end = start + text.encode_utf16().count();
+        builder.add_line_box(start..end, heights.ascent, heights.descent);
+    }
+    // Pieces of characters that share a style: (letter-spacing, height), or
+    // None for the span style. A character with its own letter-spacing is a
+    // piece of its own.
+    type PieceStyle = Option<(f32, f32)>;
+    let mut pieces: Vec<(std::ops::Range<usize>, PieceStyle)> = Vec::new();
     let mut utf16 = 0;
     for (index, (byte, ch)) in text.char_indices().enumerate() {
         let at = utf16;
         utf16 += ch.len_utf16();
-        let (added, shed) = amounts[index];
-        let letter_spacing = if line_breaks::is_inserted_zero_width(ch) {
-            0.0
-        } else {
-            tracking + added - shed
-        };
-        if letter_spacing == tracking {
+        let letter_spacing = letter_spacings[index];
+        let height = height_at(index);
+        let own_spacing = letter_spacing != tracking;
+        if own_spacing {
+            builder.add_extra_spacing(start + at, letter_spacing - tracking);
+        }
+        let key = (own_spacing || height != base_height).then_some((letter_spacing, height));
+        let end = byte + ch.len_utf8();
+        match pieces.last_mut() {
+            Some((range, last)) if *last == key && !own_spacing && range.end == byte => {
+                range.end = end;
+            }
+            _ => pieces.push((byte..end, key)),
+        }
+        if own_spacing {
+            // Keep the next character out of this piece.
+            pieces.push((end..end, None));
+        }
+    }
+    let paragraph_builder = builder.paragraph_builder();
+    for (range, key) in pieces {
+        if range.is_empty() {
             continue;
         }
-        let start = *builder_start.get_or_insert_with(|| {
-            let paragraph_builder = builder.paragraph_builder();
-            let start = paragraph_builder.get_text().encode_utf16().count();
-            // `get_text` finalizes the builder, which drops the style block
-            // the caller pushed for this span while it holds no text yet: the
-            // span text would join the block before it, such as a warichu
-            // anchor's near-zero size. Open it again; popped at the end.
-            paragraph_builder.push_style(text_style);
-            start
-        });
-        builder.add_extra_spacing(start + at, letter_spacing - tracking);
-        let mut style = text_style.clone();
-        style.set_letter_spacing(letter_spacing);
-        let end = byte + ch.len_utf8();
-        let paragraph_builder = builder.paragraph_builder();
-        add_text_with_tabs(paragraph_builder, &text[piece_start..byte], span.font_size);
-        paragraph_builder.push_style(&style);
-        paragraph_builder.add_text(&text[byte..end]);
-        paragraph_builder.pop();
-        piece_start = end;
+        match key {
+            None => add_text_with_tabs(paragraph_builder, &text[range], span.font_size),
+            Some((letter_spacing, height)) => {
+                let mut style = text_style.clone();
+                style.set_letter_spacing(letter_spacing);
+                style.set_height(height);
+                paragraph_builder.push_style(&style);
+                add_text_with_tabs(paragraph_builder, &text[range], span.font_size);
+                paragraph_builder.pop();
+            }
+        }
     }
-    add_text_with_tabs(
-        builder.paragraph_builder(),
-        &text[piece_start..],
-        span.font_size,
-    );
-    if builder_start.is_some() {
-        builder.paragraph_builder().pop();
-    }
+    builder.paragraph_builder().pop();
 }
 
 /// The horizontal passes of one paragraph that layout, painting, position
@@ -432,6 +651,9 @@ pub(crate) struct HorizontalParagraphPlan {
     pub(crate) pair_spacing: Vec<Vec<(usize, f32)>>,
     pub(crate) ruby_spacing: HorizontalRubySpacing,
     emergency_breaks: Vec<usize>,
+    /// Char offsets where each span's warichu note continues on a later
+    /// line, in its transformed text; empty outside warichu.
+    warichu_splits: Vec<Vec<usize>>,
     overflow_width: Option<f32>,
 }
 
@@ -449,18 +671,37 @@ impl HorizontalParagraphPlan {
         emergency: &[usize],
         forced: &[usize],
     ) -> Self {
+        Self::with_warichu_splits(paragraph, emergency, forced, &[])
+    }
+
+    pub(super) fn with_warichu_splits(
+        paragraph: &Paragraph,
+        emergency: &[usize],
+        forced: &[usize],
+        warichu_splits: &[Vec<usize>],
+    ) -> Self {
         let (texts, offset_map) = layout_span_texts_with_breaks(paragraph, emergency, forced);
         let pair_spacing = horizontal_pair_spacing(paragraph, &texts);
         let ruby_spacing = horizontal_ruby_spacing(paragraph, &texts, &offset_map);
-        let offsets = HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map);
+        let offsets =
+            HorizontalOffsets::from_layout_texts(paragraph, &texts, offset_map, warichu_splits);
         Self {
             texts,
             offsets,
             pair_spacing,
             ruby_spacing,
             emergency_breaks: emergency.to_vec(),
+            warichu_splits: warichu_splits.to_vec(),
             overflow_width: None,
         }
+    }
+
+    /// Warichu pieces of span `span`, one box each; empty outside warichu.
+    pub(crate) fn warichu_pieces(&self, span: usize) -> &[WarichuPiece] {
+        self.offsets
+            .ranges
+            .get(span)
+            .map_or(&[], |range| range.pieces.as_slice())
     }
 }
 
@@ -516,7 +757,18 @@ pub(crate) fn horizontal_base_em_top(
     }) else {
         return rect.top.max(rect.bottom - font_size);
     };
-    let font = laid_out.font_at_utf16(base_start.max(line.start_index));
+    // Marks of one line share a baseline: in a line holding CJK text, the
+    // em box is that of its first CJK character, whatever font draws a
+    // Latin base.
+    let cjk_start = {
+        let mut utf16 = 0usize;
+        laid_out.text().chars().find_map(|ch| {
+            let at = utf16;
+            utf16 += ch.len_utf16();
+            (at >= line.start_index && at < line.end_index && is_cjk_text_char(ch)).then_some(at)
+        })
+    };
+    let font = laid_out.font_at_utf16(cjk_start.unwrap_or(base_start.max(line.start_index)));
     let (ascent, descent) = super::text_shaping::upright_centre_metrics(&font);
     line.baseline as f32 + (ascent + descent - font_size) / 2.0
 }

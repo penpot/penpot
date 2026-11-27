@@ -541,6 +541,19 @@ pub fn caret_rect(layout: &VerticalLayout, paragraph: usize, offset: usize) -> O
     caret_rect_with_affinity(layout, paragraph, offset, false)
 }
 
+/// Whether a caret at `offset` falls between two characters of one
+/// tate-chu-yoko cell. They run left to right there, so the caret is a
+/// vertical bar at the left edge of `caret_rect`, not a bar across the column.
+pub fn caret_inside_combined(layout: &VerticalLayout, paragraph: usize, offset: usize) -> bool {
+    layout
+        .cells
+        .iter()
+        .filter(|cell| cell.paragraph == paragraph)
+        .filter(|cell| matches!(cell.kind, CellKind::TateChuYoko { .. }))
+        .filter_map(|cell| cell_scalar_range(layout, cell))
+        .any(|(start, end)| start < offset && offset < end)
+}
+
 /// `caret_rect`, but an `upstream` offset that starts a column is drawn at
 /// the end of the column before it.
 pub fn caret_rect_with_affinity(
@@ -817,6 +830,18 @@ mod tests {
             at_right >= 3,
             "right edge maps near the end, got {at_right}"
         );
+    }
+
+    #[test]
+    fn only_carets_between_combined_digits_are_inside_the_composite() {
+        let mut content = make_content_with_spans(&["1234", "あ"], 400.0);
+        content.paragraphs_mut()[0].children_mut()[0].text_combine_upright =
+            TextCombineUpright::All;
+        let layout = layout_content(&content, 400.0);
+        let inside: Vec<bool> = (0..=5)
+            .map(|offset| caret_inside_combined(&layout, 0, offset))
+            .collect();
+        assert_eq!(inside, [false, true, true, true, false, false]);
     }
 
     #[test]

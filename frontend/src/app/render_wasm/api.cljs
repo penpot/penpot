@@ -1407,6 +1407,17 @@
       (cond-> ^boolean emoji? (cfnt/add-emoji-font))
       (cfnt/add-noto-fonts langs)))
 
+(def ^:private cjk-locale-codes
+  {:chinese 1 :chinese-traditional 2 :chinese-hongkong 3 :japanese 4 :korean 5})
+
+(defn- set-cjk-locale
+  "Tells WASM which CJK face the app `locale` prefers: Han text without a
+   language takes its glyph forms, as the faces loaded for it do (see
+   `text-font-languages`)."
+  [locale]
+  (h/call wasm/internal-module "_set_cjk_locale"
+          (get cjk-locale-codes (cfnt/language->cjk-font locale) 0)))
+
 (defn- text-font-languages
   "Scripts `text` needs, with Han resolved by the paragraph `language`
    (nil when unset) and then the app locale."
@@ -1929,7 +1940,9 @@
   "Relayout text shapes once their pending fonts have resolved. Font fetches
    are deduped per URL, so only shapes that use a not-yet-ready face at upload
    time need a forced relayout; then re-sync selrects that drifted for those
-   shapes only, leaving out the texts whose face failed to load."
+   shapes only, leaving out the texts whose face failed to load. The check
+   reads the shapes as they are now: an edit made while the face loaded was
+   measured with the fallback face, and its size has to be checked too."
   [shapes text-font-state]
   (let [text-ids (into [] (comp (filter cfh/text-shape?) (map :id)) shapes)
         affected-ids (or (shape-ids-for-pending-fonts text-font-state) #{})
@@ -1937,8 +1950,13 @@
     (when (seq text-ids)
       (if (seq affected-ids)
         (let [failed-ids      (shape-ids-for-failed-fonts text-font-state)
+              objects         (dsh/lookup-page-objects @st/state)
               affected-shapes (into []
-                                    (comp (remove failed-ids) (keep shapes-by-id))
+                                    (comp (remove failed-ids)
+                                          (filter shapes-by-id)
+                                          ;; The shape as uploaded when the
+                                          ;; store does not hold it.
+                                          (map #(or (get objects %) (get shapes-by-id %))))
                                     affected-ids)]
           (force-update-text-layouts affected-ids)
           (sync-stale-text-selrects! affected-shapes))
@@ -2793,6 +2811,7 @@
           (start-canvas-snapshot-listener!)
           (reset! wasm/context-lost? false)
           (set! wasm/context-initialized? true)
+          (set-cjk-locale @i18n/locale)
 
           ;; DOM canvas: keep drawing buffer synced to CSS size.
           ;; OffscreenCanvas: no CSS size, so only sync WASM viewbox.
@@ -3218,8 +3237,9 @@
    `start-pos` can be greater than `end-pos`."
   [paragraph element {:keys [start-pos end-pos direction x y width height]}]
   (when-let [element-text (:text element)]
-    (let [vertical? (= direction POSITION-DATA-VERTICAL)
-          ruby      (cjk/visible-ruby element)]
+    (let [vertical?  (= direction POSITION-DATA-VERTICAL)
+          ruby       (cjk/visible-ruby element)
+          strip-text (subs element-text start-pos end-pos)]
       (d/patch-object
        (txt/get-default-text-attrs)
        (d/without-nils
@@ -3246,8 +3266,11 @@
                               features))
          ;; Each warichu sub-line has its own entry, drawn at half size.
          :warichu         (when (= "warichu" (get element :warichu)) "warichu")
-         ;; Horizontal data has no ruby strip; the base entry carries ruby for SVG export.
-         :ruby            (when (and (not vertical?) (seq element-text)
+         ;; Horizontal data has no ruby strip; the base entry carries ruby for
+         ;; SVG export. A strip of no character, such as the zero-width spacer
+         ;; before a reading that starts a line, carries none: it would draw
+         ;; the reading a second time over its own width.
+         :ruby            (when (and (not vertical?) (seq strip-text)
                                      (not (and (true? (:ruby-zhuyin element))
                                                (cjk/zhuyin-base? element-text)
                                                (cjk/zhuyin-reading? ruby)))) ruby)
@@ -3258,7 +3281,7 @@
          :letter-spacing  (dm/str (get element :letter-spacing) "px")
          :font-style      (get element :font-style)
          :fills           (get element :fills)
-         :text            (subs element-text start-pos end-pos)})))))
+         :text            strip-text})))))
 
 (defn- ruby-base-starts
   "First span of the reading of each span of `paragraph` that has one
@@ -3368,6 +3391,14 @@
     (mem/free)
     result))
 
+(defn- lay-out-held-texts
+  "Lays out again the texts held off the canvas while their faces load (see
+  `hold-text-for-fonts`), with the faces WASM holds now, so an export draws
+  them as the canvas will once the hold ends instead of in missing glyphs."
+  []
+  (when (wasm/live?)
+    (run! f/force-update-text-layout (keys @font-holds*))))
+
 (defn render-shape-pixels
   "Renders a shape subtree to encoded image bytes on the GPU export surface.
   `format` is :png, :jpeg or :webp; jpeg is flattened onto white on the Rust
@@ -3375,6 +3406,7 @@
   fills when it hides them on export."
   [shape-id scale format export?]
   (when (initialized?)
+    (lay-out-held-texts)
     (let [buffer (uuid/get-u32 shape-id)
           offset (h/call wasm/internal-module "_render_shape_pixels"
                          (aget buffer 0)
@@ -3392,6 +3424,7 @@
   same path the headless exporter uses for wasm rasters."
   [shape-id scale format]
   (when (initialized?)
+    (lay-out-held-texts)
     (let [buffer (uuid/get-u32 shape-id)
           offset (h/call wasm/internal-module "_render_shape_raster"
                          (aget buffer 0)
@@ -3424,6 +3457,7 @@
 (defn export-target
   [shape-id scale format]
   (when (initialized?)
+    (lay-out-held-texts)
     (let [buffer (uuid/get-u32 shape-id)]
       (case (h/call wasm/internal-module "_export_target"
                     (aget buffer 0)
@@ -3439,6 +3473,7 @@
 (defn render-shape-pdf
   [shape-id]
   (when (initialized?)
+    (lay-out-held-texts)
     (let [buffer (uuid/get-u32 shape-id)
 
           offset
@@ -3460,6 +3495,7 @@
   transfer buffer (same layout as `set-focus-mode`) before the call."
   [shape-ids]
   (when (and (initialized?) (seq shape-ids))
+    (lay-out-held-texts)
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
           offset (mem/alloc->offset-32 size)
@@ -3484,6 +3520,7 @@
   "Opens a progressive multi-page PDF session."
   []
   (when (initialized?)
+    (lay-out-held-texts)
     (h/call wasm/internal-module "_pdf_export_begin")))
 
 (defn pdf-export-add-page!
@@ -3518,6 +3555,7 @@
 (defn render-shape-svg
   [shape-id scale]
   (when (initialized?)
+    (lay-out-held-texts)
     (let [buffer (uuid/get-u32 shape-id)
           offset
           (h/call wasm/internal-module "_render_shape_svg"
@@ -3539,6 +3577,7 @@
   IDs are written to the transfer buffer (same layout as `render-shapes-pdf`)."
   [shape-ids scale]
   (when (and (initialized?) (seq shape-ids))
+    (lay-out-held-texts)
     (let [ids    (vec shape-ids)
           size   (mem/get-alloc-size ids UUID-U8-SIZE)
           offset (mem/alloc->offset-32 size)

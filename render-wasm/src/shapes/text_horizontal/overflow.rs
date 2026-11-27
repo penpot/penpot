@@ -1,6 +1,7 @@
 //! Repair SkParagraph's emergency splits without changing the wrap budget.
 
 use super::*;
+use crate::shapes::jlreq::break_allowed_between;
 use crate::shapes::line_breaks::PolicyBoundaries;
 use crate::shapes::text_paragraph::LayoutParagraph;
 
@@ -14,8 +15,12 @@ fn transformed_text(paragraph: &Paragraph) -> String {
 }
 
 /// UTF-16 ranges, in the transformed text, of the ruby bases
-/// (`Paragraph::ruby_groups`) and warichu spans that must stay whole.
-fn annotation_ranges(paragraph: &Paragraph) -> Vec<std::ops::Range<usize>> {
+/// (`Paragraph::ruby_groups`) and warichu pieces (`offsets`) that must stay
+/// whole.
+fn annotation_ranges(
+    paragraph: &Paragraph,
+    offsets: &HorizontalOffsets,
+) -> Vec<std::ops::Range<usize>> {
     let group_of = paragraph.ruby_group_of_spans();
     let mut offset = 0;
     let mut ranges: Vec<(Option<usize>, std::ops::Range<usize>)> = Vec::new();
@@ -23,10 +28,19 @@ fn annotation_ranges(paragraph: &Paragraph) -> Vec<std::ops::Range<usize>> {
         let start = offset;
         offset += span.apply_text_transform().encode_utf16().count();
         let group = group_of[index];
+        let pieces = offsets
+            .ranges
+            .get(index)
+            .map_or(&[][..], |range| range.pieces.as_slice());
         match ranges.last_mut() {
             Some((last_group, range)) if group.is_some() && *last_group == group => {
                 range.end = offset
             }
+            _ if span.is_warichu() && !pieces.is_empty() => ranges.extend(
+                pieces
+                    .iter()
+                    .map(|piece| (None, start + piece.utf16.start..start + piece.utf16.end)),
+            ),
             _ if group.is_some() || span.is_warichu() => ranges.push((group, start..offset)),
             _ => {}
         }
@@ -47,7 +61,170 @@ fn is_wrap_width(width: f32) -> bool {
     width.is_finite() && width > 0.0 && width != f32::MAX
 }
 
+/// A warichu piece that runs past the line: the rooms it may take, best
+/// first, and the mean width of its columns.
+struct WarichuOverflow {
+    span: usize,
+    piece: usize,
+    rooms: Vec<f32>,
+    column: f32,
+}
+
+/// Most cuts the warichu wrap pass makes per paragraph.
+const MAX_WARICHU_SPLITS: usize = 64;
+
+/// Slack allowed when a warichu piece is checked against its room.
+const WARICHU_FIT_TOLERANCE: f32 = 0.01;
+
+/// Cuts at most `MAX_WARICHU_KINSOKU_SHIFT` characters back from the
+/// estimate to find a break JLREQ allows.
+const MAX_WARICHU_KINSOKU_SHIFT: usize = 4;
+
 impl HorizontalParagraphPlan {
+    /// Cut every warichu note that runs past `width` into pieces that fit the
+    /// lines it crosses, as vertical text cuts a note across columns. The
+    /// first piece takes the room left on the line before when the whole
+    /// note moved down a line, else on its own line; the rest continue a line
+    /// at a time. A cut keeps two characters on each side and falls where
+    /// JLREQ allows a line break. Runs before the other repairs, which keep
+    /// the cuts.
+    pub(crate) fn wrap_warichu(
+        &mut self,
+        paragraph: &Paragraph,
+        width: f32,
+        mut measure: impl FnMut(&Self) -> LayoutParagraph,
+    ) {
+        if !is_wrap_width(width) || !paragraph.children().iter().any(TextSpan::is_warichu) {
+            return;
+        }
+        let mut splits = self.warichu_splits.clone();
+        splits.resize(paragraph.children().len(), Vec::new());
+        let mut cuts = 0;
+        while cuts < MAX_WARICHU_SPLITS {
+            let laid_out = measure(self);
+            let Some(overflow) = self.overflowing_warichu(paragraph, &laid_out, width) else {
+                return;
+            };
+            let Some(cut) = self.fitting_warichu_cut(paragraph, &overflow, &splits, &mut measure)
+            else {
+                return;
+            };
+            let span = overflow.span;
+            splits[span].push(cut);
+            splits[span].sort_unstable();
+            *self = Self::with_warichu_splits(paragraph, &self.emergency_breaks, &[], &splits);
+            cuts += 1;
+        }
+    }
+
+    /// The first warichu piece that runs past `width` and can be cut.
+    fn overflowing_warichu(
+        &self,
+        paragraph: &Paragraph,
+        laid_out: &LayoutParagraph,
+        width: f32,
+    ) -> Option<WarichuOverflow> {
+        let lines = laid_out.get_line_metrics();
+        horizontal_warichu_placeholders(paragraph, &self.offsets, laid_out)
+            .into_iter()
+            .find_map(|(span, piece, rect)| {
+                if rect.right() <= width + WARICHU_FIT_TOLERANCE {
+                    return None;
+                }
+                let chars = self
+                    .offsets
+                    .ranges
+                    .get(span)?
+                    .pieces
+                    .get(piece)?
+                    .chars
+                    .len();
+                if chars < 4 {
+                    return None;
+                }
+                let line = lines.iter().position(|line| {
+                    let top = (line.baseline - line.ascent) as f32;
+                    let bottom = (line.baseline + line.descent) as f32;
+                    rect.center_y() >= top && rect.center_y() <= bottom
+                })?;
+                let mut rooms = Vec::new();
+                let starts_line = rect.left() <= lines[line].left as f32 + WARICHU_FIT_TOLERANCE;
+                if starts_line && line > 0 {
+                    let previous = &lines[line - 1];
+                    rooms.push(width - (previous.left + previous.width) as f32);
+                }
+                rooms.push(width - rect.left());
+                Some(WarichuOverflow {
+                    span,
+                    piece,
+                    rooms,
+                    column: rect.width() / chars.div_ceil(2) as f32,
+                })
+            })
+    }
+
+    /// Char offset, in the transformed text of its span, where the
+    /// `overflow` piece should be cut so the part before the cut fits the
+    /// first of its rooms it can. Checked by laying the paragraph out with
+    /// the cut.
+    fn fitting_warichu_cut(
+        &self,
+        paragraph: &Paragraph,
+        overflow: &WarichuOverflow,
+        splits: &[Vec<usize>],
+        measure: &mut impl FnMut(&Self) -> LayoutParagraph,
+    ) -> Option<usize> {
+        let (span, piece) = (overflow.span, overflow.piece);
+        let text_span = paragraph.children().get(span)?;
+        let chars: Vec<char> = text_span.apply_text_transform().chars().collect();
+        let range = self
+            .offsets
+            .ranges
+            .get(span)?
+            .pieces
+            .get(piece)?
+            .chars
+            .clone();
+        let column = overflow.column.max(0.01);
+        for &room in &overflow.rooms {
+            if room < column {
+                continue;
+            }
+            // Two characters a column, one above the other.
+            let estimate = 2 * (room / column).floor() as usize;
+            let mut cut = estimate.min(range.len() - 2);
+            while cut >= 2 {
+                let mut at = range.start + cut;
+                let mut shift = 0;
+                while at > range.start + 2
+                    && shift < MAX_WARICHU_KINSOKU_SHIFT
+                    && !break_allowed_between(chars[at - 1], chars[at])
+                {
+                    at -= 1;
+                    shift += 1;
+                }
+                if !break_allowed_between(chars[at - 1], chars[at]) {
+                    break;
+                }
+                let mut candidate = splits.to_vec();
+                candidate[span].push(at);
+                candidate[span].sort_unstable();
+                let plan =
+                    Self::with_warichu_splits(paragraph, &self.emergency_breaks, &[], &candidate);
+                let laid_out = measure(&plan);
+                let fits = horizontal_warichu_placeholders(paragraph, &plan.offsets, &laid_out)
+                    .into_iter()
+                    .find(|(index, index_piece, _)| *index == span && *index_piece == piece)
+                    .is_some_and(|(_, _, rect)| rect.width() <= room + WARICHU_FIT_TOLERANCE);
+                if fits {
+                    return Some(at);
+                }
+                cut = at - range.start - 1;
+            }
+        }
+        None
+    }
+
     /// SkParagraph's emergency fallback can ignore punctuation joins inside
     /// an overlong word. Measure whole units once, then reopen only safe
     /// grapheme boundaries of units that cannot fit an empty line. The
@@ -65,7 +242,7 @@ impl HorizontalParagraphPlan {
         }
         let boundaries = PolicyBoundaries::new(&transformed_text(paragraph), policy);
         let graphemes = &boundaries.graphemes;
-        let annotations = annotation_ranges(paragraph);
+        let annotations = annotation_ranges(paragraph, &self.offsets);
         let mut units = Vec::new();
         let mut start = 0;
         for (at, grapheme) in graphemes.iter().enumerate().skip(1) {
@@ -116,7 +293,7 @@ impl HorizontalParagraphPlan {
             }
         }
         if !emergency.is_empty() {
-            *self = Self::with_emergency_breaks(paragraph, &emergency);
+            *self = Self::with_warichu_splits(paragraph, &emergency, &[], &self.warichu_splits);
         }
     }
 
@@ -137,7 +314,7 @@ impl HorizontalParagraphPlan {
         let boundaries = PolicyBoundaries::new(&transformed_text(paragraph), policy);
         let graphemes = &boundaries.graphemes;
         let length = boundaries.length;
-        let annotations = annotation_ranges(paragraph);
+        let annotations = annotation_ranges(paragraph, &self.offsets);
         let hard_break = |c| matches!(c, '\n' | '\r' | '\u{2028}' | '\u{2029}');
         let mut units = Vec::new();
         let mut start = 0;
@@ -211,7 +388,12 @@ impl HorizontalParagraphPlan {
             .collect();
         forced.sort_unstable();
         forced.dedup();
-        let isolated = Self::with_breaks(paragraph, &self.emergency_breaks, &forced);
+        let isolated = Self::with_warichu_splits(
+            paragraph,
+            &self.emergency_breaks,
+            &forced,
+            &self.warichu_splits,
+        );
         let bounded = measure(&isolated, width);
         physical_width = physical_width.max(bounded.longest_line());
         forced.extend(
@@ -229,7 +411,12 @@ impl HorizontalParagraphPlan {
         );
         forced.sort_unstable();
         forced.dedup();
-        *self = Self::with_breaks(paragraph, &self.emergency_breaks, &forced);
+        *self = Self::with_warichu_splits(
+            paragraph,
+            &self.emergency_breaks,
+            &forced,
+            &self.warichu_splits,
+        );
         // Avoid a floating-point edge reintroducing the very fallback being
         // repaired. The epsilon changes physical width, not the wrap budget.
         self.overflow_width = Some(physical_width + 0.01);

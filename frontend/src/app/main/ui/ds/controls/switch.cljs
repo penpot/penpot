@@ -48,10 +48,16 @@
         (mf/use-fn
          (mf/deps handle-toggle)
          (fn [event]
-           (dom/prevent-default event)
-           (when-not disabled?
-             (when (or (kbd/space? event) (kbd/enter? event))
-               (handle-toggle event)))))
+           (cond
+             (or (kbd/space? event) (kbd/enter? event))
+             (do (dom/prevent-default event)
+                 (dom/stop-propagation event)
+                 (when-not disabled?
+                   (handle-toggle event)))
+
+             ;; Tab moves the focus on instead of running a shortcut.
+             (kbd/tab? event)
+             (dom/stop-propagation event))))
 
         props
         (mf/spread-props props {:ref ref

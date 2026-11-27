@@ -273,10 +273,13 @@ impl TextLayoutPolicy {
         else {
             return (0.0, 0.0);
         };
-        if FULLWIDTH_OPENING_BRACKETS.contains(ch) {
+        // Mainland fonts set curly quotes full width, like corner brackets
+        // (CLREQ); elsewhere they stay proportional.
+        let mainland = region == ChineseRegion::Mainland;
+        if FULLWIDTH_OPENING_BRACKETS.contains(ch) || (mainland && "“‘".contains(ch)) {
             return (0.5, 0.0);
         }
-        if FULLWIDTH_CLOSING_BRACKETS.contains(ch) {
+        if FULLWIDTH_CLOSING_BRACKETS.contains(ch) || (mainland && "”’".contains(ch)) {
             return (0.0, 0.5);
         }
         let adjustable = COMMAS_AND_FULL_STOPS.contains(ch)
@@ -374,10 +377,9 @@ impl TextLayoutPolicy {
 
     pub fn script_spacing_em(self, before: char, after: char) -> f32 {
         let regional = matches!(self, Self::Chinese(region) if region != ChineseRegion::Basic);
-        if regional
-            && ((is_han(before) && after.is_ascii_alphanumeric())
-                || (before.is_ascii_alphanumeric() && is_han(after)))
-        {
+        // Western letters and digits, accented ones too (`é`), not CJK.
+        let western = |c: char| c.is_alphanumeric() && u32::from(c) < 0x2E80;
+        if regional && ((is_han(before) && western(after)) || (western(before) && is_han(after))) {
             0.25
         } else {
             0.0

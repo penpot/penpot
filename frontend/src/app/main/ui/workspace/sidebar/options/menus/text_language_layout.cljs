@@ -19,11 +19,11 @@
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
-   [app.main.ui.workspace.sidebar.options.common :refer [radio-selected]]
    [app.main.ui.workspace.sidebar.options.menus.text-cjk-controls :as tcc]
    [app.util.i18n :refer [tr]]
    [app.util.text.layout :as tl]
    [app.util.text.writing-mode :as wm]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -69,10 +69,6 @@
     {:id "push-out-only"
      :label (translate "workspace.options.text-options.line-adjustment-push-out-only")}]))
 
-(defn- text-combine-upright-value
-  [values]
-  (radio-selected (:text-combine-upright values) (cjk/enum-default :text-combine-upright)))
-
 ;; Tate-chu-yoko (縦中横) for a whole text: none, or the digit runs up to a
 ;; length. `all` combines a text selection (see `combine-options`).
 (defn tate-chu-yoko-options
@@ -100,9 +96,8 @@
 (mf/defc tate-chu-yoko-buttons*
   "Tate-chu-yoko of vertical text, none or the digit runs, as a radio group
   of the writing mode row."
-  [{:keys [values on-change on-blur]}]
-  (let [value   (text-combine-upright-value values)
-        options (mf/with-memo [] (tate-chu-yoko-options tr))]
+  [{:keys [value on-change on-blur]}]
+  (let [options (mf/with-memo [] (tate-chu-yoko-options tr))]
     [:> tcc/attr-radio-options* {:values        {:text-combine-upright
                                                  (if (cjk/digit-combine? value) "digits" value)}
                                  :on-change     on-change
@@ -115,9 +110,8 @@
 (mf/defc combine-digits-option*
   "Longest digit run tate-chu-yoko sets upright, shown while it combines
   digits."
-  [{:keys [values on-change on-blur]}]
-  (let [value   (text-combine-upright-value values)
-        label   (tr "workspace.options.text-options.text-combine-upright-digits-count")
+  [{:keys [value on-change on-blur]}]
+  (let [label   (tr "workspace.options.text-options.text-combine-upright-digits-count")
         options (mf/with-memo [] (text-combine-upright-count-options tr))
         handle-change
         (mf/use-fn
@@ -179,7 +173,7 @@
   "Japanese options of a text selection: its reading, emphasis marks,
   warichu and, in vertical text, combine. `selection-key` names the
   selected range."
-  [{:keys [values on-change on-blur selection-key]}]
+  [{:keys [values on-change on-blur selection-key reading-selection-active warichu-selection-active]}]
   (let [vertical? (tcc/vertical-writing? values)
         props     (mf/props {:values values :on-change on-change :on-blur on-blur
                              :vertical vertical?})
@@ -188,17 +182,22 @@
                     {:warichu (warichu-options tr)
                      :combine (combine-options tr)})]
     [:*
-     [:> tcc/ruby-advanced-options* {:values        values
-                                     :on-change     on-change
-                                     :on-blur       on-blur
-                                     :labels        labels
-                                     :selection-key selection-key}]
+     ;; A reading covers characters of one paragraph, and an existing
+     ;; reading whole (`reading-selection?`), as in the canvas menu.
+     (when ^boolean reading-selection-active
+       [:> tcc/ruby-advanced-options* {:values        values
+                                       :on-change     on-change
+                                       :on-blur       on-blur
+                                       :labels        labels
+                                       :selection-key selection-key}])
      ;; Emphasis marks (圏点 / bouten) apply to the selected characters.
      [:> tcc/text-emphasis-option* props]
      [:> tcc/option-row* {:label (tr "workspace.options.text-options.warichu") :switch true}
+      ;; As in the canvas menu: one span, or the whole of a note.
       [:> tcc/attr-radio-options* {:values        values
                                    :on-change     on-change
                                    :on-blur       on-blur
+                                   :disabled      (not warichu-selection-active)
                                    :attr          :warichu
                                    :default-value (cjk/enum-default :warichu)
                                    :name          "warichu-options"
@@ -206,7 +205,11 @@
      (when ^boolean vertical?
        [:> tcc/option-row* {:label (tr "workspace.options.text-options.combine-characters") :switch true}
         [:> tcc/attr-radio-options* {:values        {:text-combine-upright
-                                                     (if (= "all" (text-combine-upright-value values)) "all" "none")}
+                                                     (let [value (:text-combine-upright values)]
+                                                       (cond
+                                                         (tcc/mixed-span-value? value) :multiple
+                                                         (= "all" value)               "all"
+                                                         :else                         "none"))}
                                      :on-change     on-change
                                      :on-blur       on-blur
                                      :attr          :text-combine-upright
@@ -217,11 +220,11 @@
 (mf/defc japanese-layout-options*
   "Japanese options of the whole text. Tate-chu-yoko itself is in the
   writing mode row; the digit count follows it."
-  [{:keys [values on-change on-blur]}]
+  [{:keys [values on-change on-blur tcy-value on-tcy-change]}]
   (let [props (mf/props {:values values :on-change on-change :on-blur on-blur})]
     [:*
      (when (tcc/vertical-writing? values)
-       [:> combine-digits-option* props])
+       [:> combine-digits-option* {:value tcy-value :on-change on-tcy-change :on-blur on-blur}])
      [:> font-features-option* props]
      [:> line-adjustment-option* props]
      [:> tcc/annotation-clearance-option* props]]))
@@ -250,11 +253,12 @@
   (`zhuyin-selection-active`) and the language defaults to it."
   [values zhuyin-selection-active]
   (let [stored (:ruby-zhuyin values)
-        ruby   (:ruby values)]
+        ruby   (:ruby values)
+        ruby?  (not (or (nil? ruby) (= "" ruby)))]
     (cond
       (true? stored)                  true
       (tcc/mixed-span-value? stored)  false
-      (not (or (nil? ruby) (= "" ruby))) false
+      ruby?                           false
       :else (and (true? zhuyin-selection-active)
                  (cjk/zhuyin-default? (:text-language values))))))
 
@@ -273,21 +277,29 @@
         vertical?    (tcc/vertical-writing? values)
         format-label (tr "workspace.options.text-options.chinese-reading-format")
         labels       (mf/with-memo [zhuyin?] (chinese-reading-labels zhuyin?))
+        has-reading? (let [ruby (:ruby values)]
+                       (and (string? ruby) (not (str/blank? ruby))
+                            (not (tcc/mixed-span-value? ruby))))
+        ;; The format of an existing reading changes at once; for a range
+        ;; without one it waits for the reading typed next.
         handle-format-change
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change has-reading?)
          (fn [value]
            (reset! chosen* value)
-           (on-change {:ruby-zhuyin (= "zhuyin" value)})))
-        ;; A reading typed under the zhuyin default stores the format too:
-        ;; a reading without one is pinyin.
+           (when has-reading?
+             (on-change {:ruby-zhuyin (= "zhuyin" value)}))))
+        ;; A reading stores its format too: a reading without one is pinyin.
+        ;; No reading, no format.
         handle-reading-change
         (mf/use-fn
          (mf/deps zhuyin? stored? on-change)
          (fn [attrs]
-           (on-change (cond-> attrs
-                        (and zhuyin? (not stored?) (contains? attrs :ruby))
-                        (assoc :ruby-zhuyin true)))))
+           (let [reading (:ruby attrs)]
+             (on-change (cond-> attrs
+                          (and (contains? attrs :ruby) (not (str/blank? reading))
+                               (or zhuyin? stored?))
+                          (assoc :ruby-zhuyin zhuyin?))))))
         reading-props (mf/props {:values values :on-change handle-reading-change :on-blur on-blur
                                  :labels labels :selection-key selection-key})
         props        (mf/props {:values values :on-change on-change :on-blur on-blur
@@ -561,6 +573,33 @@
 
         select-language (use-select-language on-change nil values)
 
+        ;; Whole-text tate-chu-yoko leaves the spans combined as a whole to
+        ;; the text selection.
+        shapes-ref    (mf/with-memo [ids] (refs/objects-by-id ids))
+        shapes        (mf/deref shapes-ref)
+        tcy-value     (mf/with-memo [shapes values]
+                        (if (seq shapes)
+                          (dwt/whole-text-combine-value shapes)
+                          (:text-combine-upright values)))
+        on-tcy-change (mf/use-fn
+                       (mf/deps ids)
+                       (fn [{:keys [text-combine-upright]}]
+                         (st/emit! (dwt/update-text-combine-digits ids text-combine-upright))))
+
+        ;; The Layout group sets the whole text, also in edit mode, where
+        ;; span attrs would go to the caret or the selected range only.
+        on-layout-change
+        (mf/use-fn
+         (mf/deps ids on-change)
+         (fn [attrs]
+           (let [span-attrs (select-keys attrs cjk/span-attrs)
+                 attrs      (apply dissoc attrs cjk/span-attrs)]
+             (when (seq attrs)
+               (on-change attrs))
+             (when (seq span-attrs)
+               (st/emit! (dwt/update-all-spans ids span-attrs))))))
+        layout-props (mf/spread-props options-props {:on-change on-layout-change})
+
         ruby-labels (ruby-group-labels family (:ruby-zhuyin ruby-values))]
 
     (mf/with-effect [family]
@@ -593,10 +632,11 @@
         (when ^boolean (wm/vertical-layout-active?)
           [:> tcc/writing-mode-row* {:values values :on-change on-change :on-blur on-blur}
            (when (and (= :japanese family) (tcc/vertical-writing? values))
-             [:> tate-chu-yoko-buttons* {:values values :on-change on-change :on-blur on-blur}])])
+             [:> tate-chu-yoko-buttons* {:value tcy-value :on-change on-tcy-change :on-blur on-blur}])])
         (case family
-          :japanese [:> japanese-layout-options* options-props]
-          :chinese  [:> chinese-layout-options* options-props]
+          :japanese [:> japanese-layout-options*
+                     (mf/spread-props layout-props {:tcy-value tcy-value :on-tcy-change on-tcy-change})]
+          :chinese  [:> chinese-layout-options* layout-props]
           :korean   [:> korean-layout-options* options-props])])
 
      (when (and ^boolean has-ruby

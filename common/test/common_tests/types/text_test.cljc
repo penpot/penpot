@@ -678,3 +678,48 @@
 (t/deftest the-ruby-group-is-text-content-not-style
   (t/is (some #{:ruby-group} cjk/text-content-attrs))
   (t/is (= "" (:ruby-group cjk/span-attr-defaults))))
+
+(t/deftest a-warichu-note-takes-no-emphasis-marks
+  (let [note {:text "注記" :warichu "warichu"}]
+    (t/is (= {:font-size "20"}
+             (cjk/applicable-span-attrs note {:font-size "20" :text-emphasis "filled-dot"})))
+    (t/is (= {:text-emphasis "none"}
+             (cjk/applicable-span-attrs note {:text-emphasis "none"})))
+    (t/is (= {:text-emphasis "filled-dot"}
+             (cjk/applicable-span-attrs {:text "本文"} {:text-emphasis "filled-dot"})))))
+
+(t/deftest paragraph-and-root-attrs-are-attribute-differences
+  (let [paragraph [:children 0 :children 0]]
+    (t/is (= #{:text-content-attribute}
+             (cttx/get-diff-type content-base
+                                 (assoc-in content-base (conj paragraph :writing-mode) "vertical-rl"))))
+    (t/is (= #{:text-content-attribute}
+             (cttx/get-diff-type content-base
+                                 (assoc-in content-base (conj paragraph :text-language) "ja"))))
+    (t/is (= #{:text-content-attribute}
+             (cttx/get-diff-type content-base (assoc content-base :line-adjustment "push-out-only"))))
+    (t/is (= #{:text-content-attribute}
+             (cttx/get-diff-type content-base (assoc content-base :vertical-align "center"))))
+    ;; A stored default is no difference.
+    (t/is (= #{}
+             (cttx/get-diff-type content-base
+                                 (assoc-in content-base (conj paragraph :writing-mode) "horizontal-tb"))))
+    (t/is (= #{}
+             (cttx/get-diff-type content-base (assoc content-base :vertical-align "top"))))))
+
+(t/deftest proportional-features-follow-the-writing-mode
+  (let [content {:type "root"
+                 :children
+                 [{:type "paragraph-set"
+                   :children
+                   [{:type "paragraph"
+                     :children [{:text "日本" :font-features "palt"}
+                                {:text "語" :font-features "none"}
+                                {:text "の"}]}]}]}
+        features (fn [content]
+                   (->> (cttx/node-seq cttx/is-text-node? content)
+                        (mapv :font-features)))
+        vertical (cttx/proportional-features-for content "vertical-rl")]
+    (t/is (= ["vpal" "none" nil] (features vertical)))
+    (t/is (= ["palt" "none" nil] (features (cttx/proportional-features-for vertical "horizontal-tb"))))
+    (t/is (= ["palt" "none" nil] (features (cttx/proportional-features-for content "horizontal-tb"))))))

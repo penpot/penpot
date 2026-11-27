@@ -134,6 +134,15 @@ impl OffsetMap {
 
     /// Shifted offset for an original offset. A boundary that received an
     /// inserted character resolves after it, so carets skip synthetic spacing.
+    /// The map after one more character is inserted at the very start.
+    pub fn with_leading_insertion(&self) -> Self {
+        Self {
+            inserted: std::iter::once(0)
+                .chain(self.inserted.iter().map(|at| at + 1))
+                .collect(),
+        }
+    }
+
     pub fn to_shifted(&self, original: usize) -> usize {
         // The i-th insertion lands before `original` when it sits at or
         // before `original + i`; `inserted[i] - i` never decreases, so the

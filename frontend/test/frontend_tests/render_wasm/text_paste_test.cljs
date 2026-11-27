@@ -189,7 +189,20 @@
                (map :text-align (-> result :children first :children))))
       (t/is (= [[(span "A") (assoc brand :text "x")]
                 [(assoc brand :text "y") (span "B")]]
-               (spans-of result))))))
+               (spans-of result)))))
+
+  (t/testing "later paragraphs take the language and writing of the text they go into"
+    (let [target   {:text-language "zh-Hans" :writing-mode "vertical-rl"}
+          pasted   {:type "root"
+                    :children [{:type "paragraph-set"
+                                :children [(merge {:type "paragraph" :children [(span "Ax")]} target)
+                                           (merge {:type "paragraph" :children [(span "yB")]} target)]}]}
+          fragment [{:attrs {:text-language "ja"} :children [(run "x" brand)]}
+                    {:attrs {:text-language "ja" :korean-wrap "keep-words"} :children [(run "y" brand)]}]
+          result   (text-paste/apply-content-styles pasted fragment {:para 0 :offset 1})]
+      (t/is (= [target target]
+               (map #(select-keys % [:text-language :writing-mode :korean-wrap])
+                    (-> result :children first :children)))))))
 
 ;; --- Gradients
 

@@ -528,8 +528,10 @@
             base-name (tr "dashboard.new-file-prefix")
             name      (or name
                           (cfh/generate-unique-name base-name unames :immediate-suffix? true))
+            ;; CJK support stays: the backend gives new files the profile
+            ;; text language only to a client that has it.
             features  (-> (get state :features)
-                          (set/difference cfeat/frontend-only-features))
+                          (set/difference (disj cfeat/frontend-only-features "cjk-support")))
             params    (-> params
                           (assoc :name name)
                           (assoc :features features))]

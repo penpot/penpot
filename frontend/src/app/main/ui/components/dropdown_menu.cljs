@@ -25,6 +25,10 @@
         props     (mf/spread-props props {:role "menuitem" :tab-index tab-index})]
     [:> :li props]))
 
+(defonce ^:private open-menus
+  ;; Container nodes of the open menus, in the order they opened.
+  (atom []))
+
 (mf/defc internal-dropdown-menu*
   {::mf/private true}
   [{:keys [on-close children class id style on-pointer-enter on-pointer-leave]}]
@@ -54,7 +58,11 @@
 
         on-key-down
         (fn [event]
-          (when-let [container (mf/ref-val container)]
+          ;; Every open menu listens on the document, but only the last one
+          ;; opened moves the focus: with a sub-menu open, both would.
+          (when-let [container (let [node (mf/ref-val container)]
+                                 (when (and (some? node) (identical? node (peek @open-menus)))
+                                   node))]
             (let [entries (vec (dom/query-all container "[role=menuitem]"))]
 
               (cond
@@ -97,6 +105,12 @@
               subs   (rx/subs! nil nil on-close stream)]
           (fn []
             (rx/dispose! subs)))))
+
+    (mf/with-effect []
+      (let [node (mf/ref-val container)]
+        (swap! open-menus conj node)
+        (fn []
+          (swap! open-menus (fn [menus] (into [] (remove #(identical? % node)) menus))))))
 
     (mf/with-effect []
       (let [keys [(events/listen globals/document EventType.CLICK on-click)
