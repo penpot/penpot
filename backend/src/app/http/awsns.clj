@@ -17,6 +17,7 @@
    [app.db.sql :as sql]
    [app.http.client :as http]
    [app.main :as-alias main]
+   [app.redis :as rds]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.util.cache :as cache]
@@ -93,7 +94,7 @@
                            {:sync? true :response-type :input-stream})]
     (with-open [^java.io.InputStream body (:body response)]
       (when-not (= 200 (:status response))
-        (ex/raise :type :internal
+        (ex/raise :type (if (<= 400 (:status response) 499) :validation :internal)
                   :code :cert-fetch-failed
                   :hint "failed to fetch SNS signing certificate"
                   :status (:status response)
@@ -194,10 +195,13 @@
   [_ params]
   (assert (http/client? (::http/client params)) "expect a valid http client")
   (assert (sm/valid? ::setup/props (::setup/props params)) "expected valid setup props")
+  (assert (sm/valid? ::rds/pool (::rds/pool params)) "expect valid redis pool")
   (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
 (defmethod ig/init-key ::routes
   [_ cfg]
+  (when (empty? (cf/get :aws-sns-topic-arns))
+    (l/wrn :hint "no SNS topics configured; all SNS messages will be rejected"))
   (let [cfg (assoc cfg ::cert-cache (create-cert-cache))]
     (letfn [(handler [request]
               (let [data   (-> request yreq/body slurp)
@@ -205,6 +209,25 @@
                 {::yres/status (or (:status result) 200)}))]
       ["/sns" {:handler handler
                :allowed-methods #{:post}}])))
+
+(defn- get-marker-key
+  [topic id]
+  (str "sns:completed:" (count topic) ":" topic ":" id))
+
+(defn- completed?
+  [cfg key]
+  (try
+    (= "1" (rds/run! cfg #(rds/get (::rds/conn %) key)))
+    (catch Exception cause
+      (l/wrn :hint "unable to read SNS completion marker" :cause cause)
+      false)))
+
+(defn- mark-completed
+  [cfg key]
+  (try
+    (rds/run! cfg #(rds/set (::rds/conn %) key "1" {:nx true :ex 86400}))
+    (catch Exception cause
+      (l/wrn :hint "unable to write SNS completion marker" :cause cause))))
 
 (defn handle-request
   "Handles an SNS message. Returns a map with the HTTP :status: 400 for
@@ -227,15 +250,22 @@
           {:status 200})
 
         (= mtype "Notification")
-        (if-let [message (parse-json (get body "Message"))]
-          (do
-            (let [notification (parse-notification cfg message)]
-              (process-report cfg notification))
-            {:status 200})
-          (do
-            (l/wrn :hint "notification with missing or unparseable Message field"
-                   :action "sns-missing-message")
-            {:status 400}))
+        (let [id (get body "MessageId")]
+          (when-not (and (string? id) (not (str/blank? id)))
+            (ex/raise :type :validation :code :invalid-message-id))
+          (let [key (get-marker-key (get body "TopicArn") id)]
+            (if (completed? cfg key)
+              {:status 200}
+              (if-let [message (parse-json (get body "Message"))]
+                (let [notification (parse-notification cfg message)
+                      result       (process-report cfg notification)]
+                  (when-not (= ::incomplete result)
+                    (mark-completed cfg key))
+                  {:status 200})
+                (do
+                  (l/wrn :hint "notification with missing or unparseable Message field"
+                         :action "sns-missing-message")
+                  {:status 400})))))
 
         :else
         (do
@@ -309,7 +339,7 @@
     (when data
       (let [mail (get message "mail")]
         (when-not mail
-          (ex/raise :type :internal
+          (ex/raise :type :validation
                     :code :incomplete-notification
                     :hint "no email data received, please enable full headers report"))
         (let [headers (extract-headers mail)
@@ -333,77 +363,81 @@
 (defn- register-bounce-for-profile
   [{:keys [::db/pool]} {:keys [type kind profile-id] :as report}]
   (when (= kind "permanent")
-    (try
-      (db/insert! pool :profile-complaint-report
-                  {:profile-id profile-id
-                   :type (name type)
-                   :content (db/tjson report)})
+    (let [complete (try
+                     (db/insert! pool :profile-complaint-report
+                                 {:profile-id profile-id
+                                  :type (name type)
+                                  :content (db/tjson report)})
 
-      (catch Throwable cause
-        (l/warn :hint "unable to persist profile complaint"
-                :cause cause)))
+                     (catch Throwable cause
+                       (l/warn :hint "unable to persist profile complaint"
+                               :cause cause)
+                       false))]
 
-    (doseq [recipient (:recipients report)]
+      (doseq [recipient (:recipients report)]
+        (db/insert! pool :global-complaint-report
+                    {:email (:email recipient)
+                     :type (name type)
+                     :content (db/tjson report)}))
+
+      (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
+        (when (some #(= (:email profile) (:email %)) (:recipients report))
+          ;; If the report matches the profile email, this means that
+          ;; the report is for itself, can be caused when a user
+          ;; registers with an invalid email or the user email is
+          ;; permanently rejecting receiving the email. In this case we
+          ;; have no option to mark the user as muted (and in this case
+          ;; the profile will be also inactive.
+
+          (l/inf :hint "mark profile: muted"
+                 :profile-id (str (:id profile))
+                 :email (:email profile)
+                 :reason "bounce report"
+                 :report-id (:feedback-id report))
+
+          (db/update! pool :profile
+                      {:is-muted true}
+                      {:id profile-id}
+                      {::db/return-keys false})))
+      (when-not complete ::incomplete))))
+
+(defn- register-complaint-for-profile
+  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
+
+  (let [complete (try
+                   (db/insert! pool :profile-complaint-report
+                               {:profile-id profile-id
+                                :type (name type)
+                                :content (db/tjson report)})
+                   (catch Throwable cause
+                     (l/warn :hint "unable to persist profile complaint"
+                             :cause cause)
+                     false))]
+
+    ;; TODO: maybe also try to find profiles by email and if exists
+    ;; register profile reports for them?
+    (doseq [email (:recipients report)]
       (db/insert! pool :global-complaint-report
-                  {:email (:email recipient)
+                  {:email email
                    :type (name type)
                    :content (db/tjson report)}))
 
     (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
-      (when (some #(= (:email profile) (:email %)) (:recipients report))
+      (when (some #(= % (:email profile)) (:recipients report))
         ;; If the report matches the profile email, this means that
-        ;; the report is for itself, can be caused when a user
-        ;; registers with an invalid email or the user email is
-        ;; permanently rejecting receiving the email. In this case we
-        ;; have no option to mark the user as muted (and in this case
-        ;; the profile will be also inactive.
-
+        ;; the report is for itself, rare case but can happen; In this
+        ;; case just mark profile as muted (very rare case).
         (l/inf :hint "mark profile: muted"
                :profile-id (str (:id profile))
                :email (:email profile)
-               :reason "bounce report"
+               :reason "complaint report"
                :report-id (:feedback-id report))
 
         (db/update! pool :profile
                     {:is-muted true}
                     {:id profile-id}
-                    {::db/return-keys false})))))
-
-(defn- register-complaint-for-profile
-  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
-
-  (try
-    (db/insert! pool :profile-complaint-report
-                {:profile-id profile-id
-                 :type (name type)
-                 :content (db/tjson report)})
-    (catch Throwable cause
-      (l/warn :hint "unable to persist profile complaint"
-              :cause cause)))
-
-  ;; TODO: maybe also try to find profiles by email and if exists
-  ;; register profile reports for them?
-  (doseq [email (:recipients report)]
-    (db/insert! pool :global-complaint-report
-                {:email email
-                 :type (name type)
-                 :content (db/tjson report)}))
-
-  (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
-    (when (some #(= % (:email profile)) (:recipients report))
-      ;; If the report matches the profile email, this means that
-      ;; the report is for itself, rare case but can happen; In this
-      ;; case just mark profile as muted (very rare case).
-      (l/inf :hint "mark profile: muted"
-             :profile-id (str (:id profile))
-             :email (:email profile)
-             :reason "complaint report"
-             :report-id (:feedback-id report))
-
-      (db/update! pool :profile
-                  {:is-muted true}
-                  {:id profile-id}
-                  {::db/return-keys false}))))
+                    {::db/return-keys false})))
+    (when-not complete ::incomplete)))
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]

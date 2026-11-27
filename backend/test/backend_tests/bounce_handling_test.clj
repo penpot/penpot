@@ -13,6 +13,7 @@
    [app.email :as email]
    [app.http.awsns :as awsns]
    [app.http.client :as http]
+   [app.redis :as rds]
    [app.tokens :as tokens]
    [backend-tests.helpers :as th]
    [clojure.data.json :as j]
@@ -20,8 +21,11 @@
    [clojure.pprint :refer [pprint]]
    [clojure.string :as str]
    [clojure.test :as t]
+   [environ.core :as env]
+   [integrant.core :as ig]
    [mockery.core :refer [with-mocks]])
   (:import
+   io.lettuce.core.api.sync.RedisCommands
    java.io.ByteArrayInputStream
    java.nio.charset.StandardCharsets
    java.security.cert.Certificate
@@ -33,7 +37,19 @@
    java.util.Base64))
 
 (t/use-fixtures :once th/state-init)
-(t/use-fixtures :each th/database-reset)
+
+(def ^:dynamic *marker-keys* nil)
+
+(defn- cleanup-markers
+  [f]
+  (binding [*marker-keys* (atom #{})]
+    (try
+      (f)
+      (finally
+        (when (seq @*marker-keys*)
+          (rds/run! th/*system* #(rds/del (::rds/conn %) (vec @*marker-keys*))))))))
+
+(t/use-fixtures :each th/database-reset cleanup-markers)
 
 (defn- decode-row
   [{:keys [content] :as row}]
@@ -354,14 +370,17 @@
 
 (defn- notification
   [message & {:as attrs}]
-  (merge {"Type"             "Notification"
-          "MessageId"        "msg-123"
-          "TopicArn"         topic-arn
-          "Message"          message
-          "Timestamp"        "2021-02-04T14:41:37.020Z"
-          "SigningCertURL"   cert-url
-          "SignatureVersion" "1"}
-         attrs))
+  (let [msg (merge {"Type"             "Notification"
+                    "MessageId"        (str (random-uuid))
+                    "TopicArn"         topic-arn
+                    "Message"          message
+                    "Timestamp"        "2021-02-04T14:41:37.020Z"
+                    "SigningCertURL"   cert-url
+                    "SignatureVersion" "1"}
+                   attrs)]
+    (when (and *marker-keys* (string? (get msg "MessageId")))
+      (swap! *marker-keys* conj (#'awsns/get-marker-key (get msg "TopicArn") (get msg "MessageId"))))
+    msg))
 
 (defn- subscription-confirmation
   [& {:as attrs}]
@@ -621,3 +640,230 @@
                                                                 :code :cert-fetch-failed))))))
     (t/is (= 500 (:status (handle-sns msg :fetch-fn (fn [_ _]
                                                       (throw (java.net.http.HttpTimeoutException. "timeout")))))))))
+
+(t/deftest certificate-http-errors-are-classified-and-not-cached
+  (let [{:keys [private-key]} (load-test-cert-and-key)
+        msg (sign-message private-key (notification "{}"))]
+    (doseq [[status expected] [[403 400] [404 400] [503 500]]]
+      (let [closed (atom 0)
+            calls  (atom 0)
+            cfg    (system-with-cert-cache)]
+        (binding [cf/config (assoc cf/config :aws-sns-topic-arns #{topic-arn})]
+          (with-redefs [http/req (fn [& _]
+                                   (swap! calls inc)
+                                   {:status status
+                                    :body (proxy [ByteArrayInputStream] [(byte-array 0)]
+                                            (close [] (swap! closed inc)))})]
+            (t/is (= expected (:status (awsns/handle-request cfg (j/write-str msg)))))
+            (t/is (= expected (:status (awsns/handle-request cfg (j/write-str msg)))))
+            (t/is (= 2 @calls @closed))))))
+    (binding [cf/config (assoc cf/config :aws-sns-topic-arns #{topic-arn})]
+      (with-redefs [http/req (fn [& _] (throw (java.net.http.HttpTimeoutException. "timeout")))]
+        (t/is (= 500 (:status (awsns/handle-request (system-with-cert-cache) (j/write-str msg)))))))))
+
+(t/deftest missing-mail-is-invalid
+  (let [{:keys [private-key]} (load-test-cert-and-key)
+        msg (sign-message private-key (notification (j/write-str (dissoc (bounce-report {:token ""}) "mail"))))]
+    (t/is (= 400 (:status (handle-sns msg))))
+    (t/is (empty? (global-reports)))))
+
+(t/deftest verified-notification-deduplication
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))]
+    (t/is (= 200 (:status (handle-sns msg))))
+    (t/is (= 200 (:status (handle-sns msg))))
+    (t/is (= 1 (count (global-reports))))
+    (t/is (= 400 (:status (handle-sns (assoc msg "MessageId" "tampered")))))
+    (t/is (= 1 (count (global-reports))))))
+
+(t/deftest invalid-id-and-signature-never-access-redis
+  (let [{:keys [private-key]} (load-test-cert-and-key)
+        calls (atom 0)]
+    (with-redefs [rds/run! (fn [& _] (swap! calls inc))]
+      (doseq [id [nil 42 "" "  "]]
+        (let [msg (sign-message private-key (notification "{}" "MessageId" id))]
+          (t/is (= 400 (:status (handle-sns msg))))))
+      (t/is (= 400 (:status (handle-sns (assoc (sign-message private-key (notification "{}"))
+                                               "MessageId" "altered")))))
+      (t/is (zero? @calls)))))
+
+(t/deftest marker-key-is-unambiguous-and-topic-scoped
+  (t/is (not= (#'awsns/get-marker-key "ab" "c:d") (#'awsns/get-marker-key "ab:c" "d")))
+  (t/is (not= (#'awsns/get-marker-key "topic-a" "id") (#'awsns/get-marker-key "topic-b" "id")))
+  (t/is (not= (#'awsns/get-marker-key "topic-a" "id") (#'awsns/get-marker-key "topic-a" "other"))))
+
+(t/deftest profile-insert-failure-does-not-mark-complete
+  (doseq [[id report-fn] [[1 bounce-report] [2 complaint-report]]]
+    (let [profile (th/create-profile* id)
+          {:keys [private-key]} (load-test-cert-and-key)
+          token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+          msg (sign-message private-key (notification (j/write-str (report-fn {:token token :email (:email profile)}))))
+          insert db/insert!
+          before (count (global-reports))]
+      (with-redefs [db/insert! (fn [pool table & args]
+                                 (if (= :profile-complaint-report table)
+                                   (throw (ex-info "insert failed" {}))
+                                   (apply insert pool table args)))]
+        (t/is (= 200 (:status (handle-sns msg))))
+        (t/is (= 200 (:status (handle-sns msg)))))
+      (t/is (= (+ before 2) (count (global-reports))))
+      (t/is (true? (:is-muted (db/get-by-id (:app.db/pool th/*system*) :profile (:id profile))))))))
+
+(t/deftest redis-failures-are-best-effort
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})]
+    (doseq [operation [:acquire :read :write]]
+      (let [msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))
+            before (count (global-reports))]
+        (with-redefs [rds/run! (fn [cfg f]
+                                 (if (= operation :acquire)
+                                   (throw (ex-info "acquire failed" {}))
+                                   (f cfg)))
+                      rds/get (fn [& _] (if (= operation :read) (throw (ex-info "read failed" {})) nil))
+                      rds/set (fn [& _] (if (= operation :write) (throw (ex-info "write failed" {})) "OK"))]
+          (t/is (= 200 (:status (handle-sns msg)))))
+        (t/is (= (inc before) (count (global-reports))))))))
+
+(t/deftest ambiguous-redis-results-preserve-existing-marker
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))
+        marker (atom "1")
+        read-result (atom nil)
+        writes (atom [])
+        insert db/insert!]
+    (with-redefs [rds/run! (fn [cfg f] (f cfg))
+                  rds/get (fn [& _] @read-result)
+                  rds/set (fn [_ _ value opts]
+                            (swap! writes conj opts)
+                            (compare-and-set! marker nil value)
+                            nil)]
+      ;; A timed-out GET can hide an existing marker. A partial failure
+      ;; must not remove it; the next confirmed read suppresses the retry.
+      (with-redefs [db/insert! (fn [pool table & args]
+                                 (if (= :profile-complaint-report table)
+                                   (throw (ex-info "insert failed" {}))
+                                   (apply insert pool table args)))]
+        (t/is (= 200 (:status (handle-sns msg)))))
+      (t/is (empty? @writes))
+      (reset! read-result @marker)
+      (t/is (= 200 (:status (handle-sns msg))))
+      (t/is (= 1 (count (global-reports))))
+      ;; Even after an ambiguous read, NX prevents extending an existing marker.
+      (reset! read-result nil)
+      (t/is (= 200 (:status (handle-sns msg))))
+      (t/is (= [{:nx true :ex 86400}] @writes))
+      (t/is (= "1" @marker)))))
+
+(t/deftest ambiguous-set-and-processing-failure
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))
+        marker (atom nil)
+        insert db/insert!]
+    (with-redefs [rds/run! (fn [cfg f] (f cfg))
+                  rds/get (fn [& _] @marker)
+                  rds/set (fn [_ _ value _] (reset! marker value) nil)]
+      (with-redefs [db/insert! (fn [pool table & args]
+                                 (if (= :global-complaint-report table)
+                                   (throw (ex-info "global insert failed" {}))
+                                   (apply insert pool table args)))]
+        (t/is (= 500 (:status (handle-sns msg))))
+        (t/is (nil? @marker)))
+      ;; SET timed out but may have completed; a confirmed GET suppresses retry.
+      (t/is (= 200 (:status (handle-sns msg))))
+      (t/is (= "1" @marker))
+      (t/is (= 200 (:status (handle-sns msg))))
+      (t/is (= 1 (count (global-reports)))))))
+
+(t/deftest redis-marker-ttl-and-conditional-write
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))
+        key (#'awsns/get-marker-key topic-arn (get msg "MessageId"))
+        conn (rds/connect {:app.redis/client (:app.redis/client th/*system*)
+                           :app.metrics/metrics (:app.metrics/metrics th/*system*)})]
+    (try
+      (t/is (= 200 (:status (handle-sns msg))))
+      (let [cmd (.-cmd conn)
+            ttl (.ttl ^RedisCommands cmd key)]
+        (t/is (< 0 ttl 86401))
+        ;; Shorten the existing lifetime so a refresh is visible without a sleep.
+        (t/is (true? (rds/expire conn key 120)))
+        (with-redefs [rds/get (fn [& _] nil)]
+          (t/is (= 200 (:status (handle-sns msg)))))
+        (t/is (< 0 (.ttl ^RedisCommands cmd key) 121))
+        (t/is (= "1" (rds/get conn key)))
+        (t/is (= 2 (count (global-reports)))))
+      (finally
+        (rds/close conn)))))
+
+(t/deftest ambiguous-get-with-existing-marker-and-thrown-processing-failure
+  (let [profile (th/create-profile* 1)
+        {:keys [private-key]} (load-test-cert-and-key)
+        token (tokens/generate th/*system* {:iss :profile-identity :profile-id (:id profile)})
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token token}))))
+        key (#'awsns/get-marker-key topic-arn (get msg "MessageId"))
+        insert db/insert!]
+    (t/is (= 200 (:status (handle-sns msg))))
+    (with-redefs [rds/get (fn [& _] nil)
+                  db/insert! (fn [pool table & args]
+                               (if (= :global-complaint-report table)
+                                 (throw (ex-info "global insert failed" {}))
+                                 (apply insert pool table args)))]
+      (t/is (= 500 (:status (handle-sns msg)))))
+    (t/is (= "1" (rds/run! th/*system* #(rds/get (::rds/conn %) key))))
+    (t/is (= 200 (:status (handle-sns msg))))
+    (t/is (= 1 (count (global-reports))))
+    (t/is (= 2 (count (db/query (:app.db/pool th/*system*) :profile-complaint-report
+                                {:profile-id (:id profile)}))))))
+
+(t/deftest concurrent-deliveries-can-both-process
+  (let [{:keys [cert private-key]} (load-test-cert-and-key)
+        msg (sign-message private-key (notification (j/write-str (bounce-report {:token ""}))))
+        data (j/write-str msg)
+        cfg (system-with-cert-cache)
+        entered (atom 0)
+        both-entered (promise)
+        deliver-request (fn [] (awsns/handle-request cfg data))]
+    (binding [cf/config (assoc cf/config :aws-sns-topic-arns #{topic-arn})]
+      (with-redefs [awsns/fetch-certificate (fn [_ _] cert)
+                    awsns/process-report (fn [_ _]
+                                           (when (= 2 (swap! entered inc))
+                                             (deliver both-entered true))
+                                           (when (= ::timeout (deref both-entered 10000 ::timeout))
+                                             (throw (ex-info "delivery barrier timed out" {}))))]
+        (let [first-delivery (future (deliver-request))
+              second-delivery (future (deliver-request))]
+          (try
+            (t/is (= 200 (:status (deref first-delivery 15000 ::timeout))))
+            (t/is (= 200 (:status (deref second-delivery 15000 ::timeout))))
+            (t/is (= 2 @entered))
+            (finally
+              (deliver both-entered true)
+              (future-cancel first-delivery)
+              (future-cancel second-delivery))))))))
+
+(t/deftest routes-initialize-with-or-without-topics
+  (doseq [topics [nil #{} #{topic-arn}]]
+    (binding [cf/config (assoc cf/config :aws-sns-topic-arns topics)]
+      (ig/assert-key ::awsns/routes th/*system*)
+      (let [[path route] (ig/init-key ::awsns/routes th/*system*)]
+        (t/is (= "/sns" path))
+        (t/is (= #{:post} (:allowed-methods route)))
+        (t/is (ifn? (:handler route)))))))
+
+(t/deftest route-wiring-and-config-coercion
+  (t/is (= (ig/ref :app.redis/pool)
+           (get-in app.main/system-config [::awsns/routes ::rds/pool])))
+  (let [a "arn:aws:sns:us-east-1:123:a"
+        b "arn:aws:sns:us-east-1:123:b"
+        c "arn:aws:sns:us-east-1:123:c"]
+    (with-redefs [env/env {:penpot-aws-sns-topic-arns (str a "," b " " c)}]
+      (t/is (= #{a b c} (:aws-sns-topic-arns (cf/read-config)))))))

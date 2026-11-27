@@ -463,6 +463,7 @@
    ::http.awsns/routes
    {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
+    ::rds/pool           (ig/ref ::rds/pool)
     ::http.client/client (ig/ref ::http.client/client)}
 
    ::http/server
