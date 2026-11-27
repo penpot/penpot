@@ -540,6 +540,8 @@ fn jlreq_aligned_tops(
 /// A paragraph's flow after spacing and column planning.
 struct PlannedParagraph {
     policy: TextLayoutPolicy,
+    /// The paragraph's text, which the cells' offsets index: distribution
+    /// reads the gaps between characters from it, whatever the language.
     text: String,
     flow: Vec<FlowCell>,
     ruby_units: Vec<RubyBaseUnit>,
@@ -572,6 +574,12 @@ impl PlannedParagraph {
             &cells.text_map.span_starts,
             fonts,
         );
+        let text: String = cells
+            .text_map
+            .span_transforms
+            .iter()
+            .map(|t| t.text.as_str())
+            .collect();
         let run_mark = runs.len();
         let mut warichu_splits: Vec<usize> = Vec::new();
         loop {
@@ -587,12 +595,6 @@ impl PlannedParagraph {
                 // applies to every language (`ruby_overhang_room`).
                 set_ruby_overhang_rooms(&flow, &mut ruby_units);
                 grow_ruby_bases(&mut flow, &ruby_units);
-                let text: String = cells
-                    .text_map
-                    .span_transforms
-                    .iter()
-                    .map(|t| t.text.as_str())
-                    .collect();
                 apply_pairwise_spacing(&mut flow, &text, policy);
                 let placements = plan_pairwise_columns(&flow, &text, policy, max_height);
                 return Self {
@@ -639,7 +641,7 @@ impl PlannedParagraph {
                 None => {
                     return Self {
                         policy,
-                        text: String::new(),
+                        text,
                         flow,
                         ruby_units,
                         classes,
@@ -890,6 +892,60 @@ mod tests {
         assert!(steps
             .windows(2)
             .all(|pair| (pair[1] - pair[0]).abs() < 0.01));
+    }
+
+    #[test]
+    fn distributed_japanese_fills_the_final_column() {
+        use crate::shapes::text_policy::KoreanWrap;
+        let layout = cjk_layout(
+            &["次の段落です。"],
+            "ja",
+            KoreanWrap::Syllable,
+            TextAlign::Distribute,
+            310.0,
+        );
+        assert_eq!(layout.cells.len(), 7);
+        assert!(layout.cells.iter().all(|cell| cell.column == 0));
+        assert_eq!(layout.cells[0].top, 0.0);
+        let last = layout.cells.last().unwrap();
+        assert!((last.top + last.extent - 310.0).abs() < 0.01);
+        assert!(layout
+            .cells
+            .windows(2)
+            .all(|pair| pair[1].top > pair[0].top + pair[0].extent));
+    }
+
+    #[test]
+    fn distributed_japanese_keeps_a_warichu_note_in_one_box() {
+        let budget = 400.0;
+        let spans = || {
+            vec![
+                make_span("くく"),
+                warichu_span("あくあく"),
+                make_span("くく"),
+            ]
+        };
+        let layout_for = |align| {
+            let content = content_of(
+                vec![vertical_paragraph(spans(), align, 1.0)],
+                budget,
+                GrowType::Fixed,
+            );
+            layout_with_height(&provider(VMTX_TEST_FONT), &content, budget)
+        };
+        let left = layout_for(TextAlign::Left);
+        let spread = layout_for(TextAlign::Distribute);
+        assert_eq!(warichu_pieces(&spread).len(), warichu_pieces(&left).len());
+        assert_eq!(warichu_pieces(&spread).len(), 1);
+        let note = warichu_pieces(&spread)[0];
+        assert!(spread
+            .cells
+            .iter()
+            .filter(|cell| matches!(cell.kind, CellKind::Warichu { .. }))
+            .all(|cell| cell.top == note.top));
+        let last = spread.cells.last().unwrap();
+        assert!((last.top + last.extent - budget).abs() < 0.01);
+        assert!(note.top > warichu_pieces(&left)[0].top);
     }
 
     #[test]
