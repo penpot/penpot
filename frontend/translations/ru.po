@@ -716,6 +716,30 @@ msgstr[1] "%s файлов было успешно импортировано."
 msgid "dashboard.import.import-warning"
 msgstr "Некоторые файлы содержали неверные объекты, которые были удалены."
 
+#: src/app/main/data/imports.cljs:78
+msgid "dashboard.import.limit-admin"
+msgstr "Администратор вашего Penpot может увеличить это ограничение."
+
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.limit-binary-entry"
+msgstr "Изображение в этом файле превышает ограничение на импорт (%s). Замените его уменьшенной версией в исходном файле, затем снова экспортируйте и импортируйте файл."
+
+#: src/app/main/data/imports.cljs:62
+msgid "dashboard.import.limit-entries"
+msgstr "В этом файле больше слоёв и ресурсов, чем допускает ограничение на импорт (%s). Разделите его на несколько файлов в исходном Penpot, экспортируйте их и импортируйте по одному."
+
+#: src/app/main/data/imports.cljs:48, src/app/main/data/imports.cljs:53, src/app/main/data/imports.cljs:58, src/app/main/data/imports.cljs:63, src/app/main/data/imports.cljs:66
+msgid "dashboard.import.limit-size"
+msgstr "Этот файл превышает ограничение на импорт."
+
+#: src/app/main/data/imports.cljs:47
+msgid "dashboard.import.limit-text-entry"
+msgstr "Часть этого файла (слой, компонент или токены дизайна) превышает ограничение на импорт (%s). Упростите её в исходном файле, затем снова экспортируйте и импортируйте файл."
+
+#: src/app/main/data/imports.cljs:52
+msgid "dashboard.import.limit-text-total"
+msgstr "Этот файл вместе с экспортированными с ним библиотеками содержит больше данных дизайна, чем допускает ограничение на импорт (%s). Разделите его на несколько файлов в исходном Penpot, экспортируйте их и импортируйте по одному."
+
 #: src/app/main/ui/dashboard/import.cljs:815
 msgid "dashboard.import.next-file"
 msgstr "Следующий файл"
@@ -1235,7 +1259,7 @@ msgstr "Ваш проект перемещён"
 #: src/app/main/data/common.cljs:268
 #, backend
 msgid "dashboard.team-belong-organization"
-msgstr "Эта команда теперь входит в организацию %s"
+msgstr "%s теперь входит в организацию %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1682
 msgid "dashboard.team-info"
@@ -1248,7 +1272,7 @@ msgstr "Участники команды"
 #: src/app/main/data/common.cljs:269
 #, backend
 msgid "dashboard.team-no-longer-belong-organization"
-msgstr "Эта команда больше не входит в организацию %s"
+msgstr "%s больше не входит в организацию %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1689
 msgid "dashboard.team-organization"

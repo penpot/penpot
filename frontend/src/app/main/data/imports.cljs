@@ -18,6 +18,7 @@
    [app.common.logging :as log]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.jobs :as dj]
    [app.main.data.uploads :as uploads]
    [app.main.repo :as rp]
@@ -31,6 +32,50 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MESSAGES OF A FAILURE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(declare format-file-size)
+
+(defn- limit-text
+  "The sentence that names the import limit an error exceeded, with the
+  configured value the server reports in `:max`. Falls back to the generic
+  sentence when the value is missing (older servers, v1 packages)."
+  [{:keys [code] limit :max}]
+  (let [size (when (number? limit) (format-file-size limit))]
+    (case code
+      :binfile-text-entry-too-large
+      (if size
+        (tr "dashboard.import.limit-text-entry" size)
+        (tr "dashboard.import.limit-size"))
+
+      :binfile-text-total-too-large
+      (if size
+        (tr "dashboard.import.limit-text-total" size)
+        (tr "dashboard.import.limit-size"))
+
+      :binfile-binary-entry-too-large
+      (if size
+        (tr "dashboard.import.limit-binary-entry" size)
+        (tr "dashboard.import.limit-size"))
+
+      :too-many-zip-entries
+      (if (number? limit)
+        (tr "dashboard.import.limit-entries" (.toLocaleString ^js limit))
+        (tr "dashboard.import.limit-size"))
+
+      :max-file-size-reached
+      (tr "dashboard.import.limit-size")
+
+      nil)))
+
+(defn- limit-message
+  "The message of an error that exceeded an import limit, or nil. Outside
+  Penpot SaaS (no `:subscriptions` flag) an administrator can raise the
+  limit, so the message says so."
+  [error]
+  (when-let [text (limit-text (if (map? error) error (ex-data error)))]
+    (if (contains? cf/flags :subscriptions)
+      text
+      (str text " " (tr "dashboard.import.limit-admin")))))
 
 (defn- resolve-hint
   "The hint or the explanation of an error, trimmed, or nil."
@@ -55,6 +100,16 @@
   "The message of a job that failed."
   [error]
   (or (resolve-hint error) (tr "labels.error")))
+
+(defn- failure-message
+  "The message of the entries of a package whose import failed with
+  `error`. A limit error carries `:error-kind :limit`: its text is written
+  for the user, so the wizard shows it instead of its generic message. Any
+  other error gets `default`."
+  [error default]
+  (if-let [text (limit-message error)]
+    {:status :error :error text :error-kind :limit}
+    {:status :error :error default}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; READING A PACKAGE
@@ -392,8 +447,7 @@
                                               (rx/from (entry-messages entries {:status :finish})))
 
                                             (= "failed" status)
-                                            (rx/from (entry-messages entries {:status :error
-                                                                              :error  (job-message error)}))
+                                            (rx/from (entry-messages entries (failure-message error (job-message error))))
 
                                             (= "cancelled" status)
                                             (rx/from (entry-messages entries {:status :error
@@ -412,8 +466,7 @@
                                             (rx/empty))))))))
           (rx/catch (fn [cause]
                       (finish-upload!)
-                      (rx/from (entry-messages entries {:status :error
-                                                        :error  (cause-message cause (tr "labels.error"))}))))))))
+                      (rx/from (entry-messages entries (failure-message cause (cause-message cause (tr "labels.error")))))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WIZARD STEP, UPLOAD AND FILE SIZE

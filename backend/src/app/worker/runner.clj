@@ -61,19 +61,23 @@
 (defn- error-report
   "Build the error stored in `job.error` out of an exception, conforming to
   `app.jobs/schema:job-error`. The exception type and its own type/code are
-  kept as extra details for triage, on top of the three contract keys."
+  kept as extra details for triage, on top of the three contract keys. A
+  numeric `:max` (the limit a validation error exceeded) is kept too, so
+  the client can tell the user which limit applies."
   [error]
-  (let [data  (ex-data error)
+  (let [data       (ex-data error)
         as-keyword (fn [v]
                      (cond (keyword? v) v
                            (string? v) (keyword v)))]
     (jobs/check-job-error
-     {:type    (or (as-keyword (:type data)) :internal)
-      :code    (or (as-keyword (:code data)) :failed)
-      :hint    (or (:hint data)
-                   (when (ex/exception? error) (ex-message error))
-                   (str error))
-      :ex-type (get-exception-type error)})))
+     (cond-> {:type    (or (as-keyword (:type data)) :internal)
+              :code    (or (as-keyword (:code data)) :failed)
+              :hint    (or (:hint data)
+                           (when (ex/exception? error) (ex-message error))
+                           (str error))
+              :ex-type (get-exception-type error)}
+       (number? (:max data))
+       (assoc :max (:max data))))))
 
 ;; A handler result may be the reserved completion envelope, which carries
 ;; the storage object the job produced. The key is reserved: a handler that

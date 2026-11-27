@@ -766,6 +766,30 @@ msgid_plural "dashboard.import.importing.title"
 msgstr[0] "Importando 1 archivo"
 msgstr[1] "Importando %s archivos"
 
+#: src/app/main/data/imports.cljs:78
+msgid "dashboard.import.limit-admin"
+msgstr "La persona administradora de tu Penpot puede aumentar este límite."
+
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.limit-binary-entry"
+msgstr "Una imagen de este archivo supera el límite de importación de %s. Sustitúyela por una versión más pequeña en el archivo original y vuelve a exportar e importar el archivo."
+
+#: src/app/main/data/imports.cljs:62
+msgid "dashboard.import.limit-entries"
+msgstr "Este archivo tiene más capas y recursos que el límite de importación de %s. Divídelo en varios archivos en el Penpot de origen, expórtalos e impórtalos uno a uno."
+
+#: src/app/main/data/imports.cljs:48, src/app/main/data/imports.cljs:53, src/app/main/data/imports.cljs:58, src/app/main/data/imports.cljs:63, src/app/main/data/imports.cljs:66
+msgid "dashboard.import.limit-size"
+msgstr "Este archivo supera un límite de importación."
+
+#: src/app/main/data/imports.cljs:47
+msgid "dashboard.import.limit-text-entry"
+msgstr "Una parte de este archivo (una capa, un componente o los tokens de diseño) supera el límite de importación de %s. Simplifícala en el archivo original y vuelve a exportar e importar el archivo."
+
+#: src/app/main/data/imports.cljs:52
+msgid "dashboard.import.limit-text-total"
+msgstr "Este archivo y las bibliotecas exportadas con él contienen más datos de diseño que el límite de importación de %s. Divídelo en varios archivos en el Penpot de origen, expórtalos e impórtalos uno a uno."
+
 #: src/app/main/ui/dashboard/import.cljs:815
 msgid "dashboard.import.next-file"
 msgstr "Siguiente archivo"

@@ -121,7 +121,9 @@
                 (contains? message :progress) (assoc :progress (:progress message))
                 (not (contains? message :progress)) (dissoc :progress)
                 (contains? message :error) (assoc :error (:error message))
-                (not (contains? message :error)) (dissoc :error)))
+                (not (contains? message :error)) (dissoc :error)
+                (contains? message :error-kind) (assoc :error-kind (:error-kind message))
+                (not (contains? message :error-kind)) (dissoc :error-kind)))
             entry))
         entries))
 
@@ -677,7 +679,8 @@
            on-cancel on-cancel-import on-continue on-accept pending-analysis?]}]
   [:*
    [:> import-steps* {:step step}]
-   [:div {:class (stl/css :modal-content)}
+   ;; the header and the notices stay in place: only the files scroll
+   [:div {:class (stl/css :modal-body)}
     [:> import-phase-header* {:status status
                               :step step
                               :entries entries
@@ -704,49 +707,65 @@
         :class (stl/css :context-notification-error)}
        (tr "dashboard.import.import-error.disclaimer")])
 
-    (cond
-      (or (= :import-error status) (and (= :analyze status) errors?))
-      [:div {:class (stl/css :import-error-disclaimer)}
-       [:div (tr "dashboard.import.import-error.message1")]
-       [:ul {:class (stl/css :import-error-list)}
-        (for [entry entries]
-          (when (contains? #{:import-error :analyze-error} (:status entry))
-            [:li {:class (stl/css :import-error-list-enry)
-                  :key (dm/str (or (:file-id entry) (:uri entry) (:name entry)))}
-             [:div (:name entry)]
-             (when-let [err (:error entry)]
-               [:div {:class (stl/css :import-error-detail)}
-                (cond
-                  (and (string? err)
-                       (str/includes? (str/lower err) "check error"))
-                  (tr "dashboard.import.import-error.check-error")
+    [:div {:class (stl/css :modal-content)}
+     (cond
+       (or (= :import-error status) (and (= :analyze status) errors?))
+       [:div {:class (stl/css :import-error-disclaimer)}
+        ;; files that fail the check are left out of the upload; by the
+        ;; import step every file was uploaded, so the note only applies
+        ;; while checking
+        (when (= :analyze status)
+          [:> text* {:as "p" :typography t/body-medium}
+           (tr "dashboard.import.import-error.message2")])
+        [:> text* {:as "p" :typography t/body-medium}
+         (tr "dashboard.import.import-error.message1")]
+        [:ul {:class (stl/css :import-error-list)}
+         (for [entry entries]
+           (when (contains? #{:import-error :analyze-error} (:status entry))
+             [:li {:class (stl/css :import-error-item)
+                   :key (dm/str (or (:file-id entry) (:uri entry) (:name entry)))}
+              [:> text* {:as "span"
+                         :class (stl/css :import-error-name)
+                         :typography t/body-medium}
+               (:name entry)]
+              (when-let [err (:error entry)]
+                [:> text* {:as "p"
+                           :class (stl/css :import-error-detail)
+                           :typography t/body-small}
+                 (cond
+                   ;; a limit message is written for the user
+                   (= :limit (:error-kind entry))
+                   err
 
-                  (and (string? err)
-                       (str/includes? (str/lower err) "corrupt"))
-                  (tr "dashboard.import.import-error.corrupt-file")
+                   (and (string? err)
+                        (str/includes? (str/lower err) "check error"))
+                   (tr "dashboard.import.import-error.check-error")
 
-                  :else
-                  (tr "dashboard.import.import-error.unknown-error"))])]))]
-       [:div (tr "dashboard.import.import-error.message2")]]
+                   (and (string? err)
+                        (str/includes? (str/lower err) "corrupt"))
+                   (tr "dashboard.import.import-error.corrupt-file")
 
-      (imp/awaiting-analysis? status errors?)
-      ;; while checking, the phase header carries the message: no rows,
-      ;; no spinners
-      nil
+                   :else
+                   (tr "dashboard.import.import-error.unknown-error"))])]))]]
 
-      :else
-      (for [entry entries]
-        [:> import-entry* {:edition edition
-                           :key (dm/str (:uri entry) "/" (:file-id entry))
-                           :entry entry
-                           :entries entries
-                           :on-edit on-edit
-                           :on-change on-change
-                           :on-delete on-delete}]))
+       (imp/awaiting-analysis? status errors?)
+       ;; while checking, the phase header carries the message: no rows,
+       ;; no spinners
+       nil
 
-    (when (and (some? template)
-               (not (imp/awaiting-analysis? status errors?)))
-      [:> import-entry* {:entry (assoc template :status status)}])]
+       :else
+       (for [entry entries]
+         [:> import-entry* {:edition edition
+                            :key (dm/str (:uri entry) "/" (:file-id entry))
+                            :entry entry
+                            :entries entries
+                            :on-edit on-edit
+                            :on-change on-change
+                            :on-delete on-delete}]))
+
+     (when (and (some? template)
+                (not (imp/awaiting-analysis? status errors?)))
+       [:> import-entry* {:entry (assoc template :status status)}])]]
 
    [:div {:class (stl/css :modal-footer)}
     [:div {:class (stl/css :action-buttons)}
