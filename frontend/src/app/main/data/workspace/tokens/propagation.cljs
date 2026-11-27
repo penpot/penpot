@@ -12,11 +12,14 @@
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.common.types.token :as ctt]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tokenscript :as ts]
+   [app.main.data.workspace :as-alias dw]
+   [app.main.data.workspace.reflow :as wrf]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -150,8 +153,9 @@
 
 (defn- update-canvas-background
   "Set the background of `page-id` to the resolved value of its linked
-  color token, when that value differs from the current background."
-  [page-id resolved-tokens]
+  color token, when that value differs from the current background. The
+  commit has `undo-group` when not nil."
+  [page-id resolved-tokens undo-group]
   (ptk/reify ::update-canvas-background
     ptk/WatchEvent
     (watch [it state _]
@@ -164,7 +168,9 @@
           (rx/of (dch/commit-changes
                   (-> (pcb/empty-changes it)
                       (pcb/with-page page)
-                      (pcb/mod-page {:background color})))))))))
+                      (pcb/mod-page {:background color})
+                      (cond-> (some? undo-group)
+                        (pcb/set-undo-group undo-group))))))))))
 
 (defn- scoped-shapes
   "Entries of `objects` for the shapes in `root-ids` and all their descendants."
@@ -180,8 +186,10 @@
 (defn propagate-tokens
   "Propagate tokens values to all shapes and page backgrounds where they
   are applied. A non-nil `scope` of `:page-id` and `:root-ids` limits it
-  to those shapes and their descendants in that page."
-  [state resolved-tokens {scope-page-id :page-id root-ids :root-ids :as scope}]
+  to those shapes and their descendants in that page. The commits it
+  makes outside the update-shapes buffer have `undo-group` when given."
+  [state resolved-tokens {scope-page-id :page-id root-ids :root-ids :as scope}
+   & {:keys [undo-group]}]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
@@ -227,7 +235,7 @@
                (when (seq normal) (rx/concat-all (rx/of normal)))
 
                (when (and (not scoped?) (:background-token page))
-                 (rx/of (update-canvas-background page-id resolved-tokens)))
+                 (rx/of (update-canvas-background page-id resolved-tokens undo-group)))
 
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
@@ -244,6 +252,33 @@
             (let [elapsed (tpoint)]
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
+(defn- resolve-active-tokens
+  "Observable of the resolved values of the tokens in the active sets, or
+  nil when the file has no tokens."
+  [state]
+  (let [tokens-lib    (dsh/lookup-tokens-lib state)
+        tokens-status (dsh/lookup-tokens-status state)]
+    (when (and tokens-lib tokens-status)
+      (if (contains? cf/flags :tokenscript)
+        (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
+        (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib))))))
+
+(defn- buffered
+  "`ob` inside the update-shapes buffer, so its shape updates are
+  committed together, started with `buffer-opts`. The buffer is stopped
+  even when `ob` fails; the error goes on."
+  [buffer-opts ob]
+  ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
+  ;; into a single commit-changes. This is not really the best way, the token application
+  ;; should be done with a changes_builder and sending only one `commit-changes` instead
+  ;; of creating lots of `update-shapes`.
+  (rx/concat
+   (rx/of (dwsh/update-shapes-buffer-start buffer-opts))
+   (rx/catch #(rx/concat (rx/of (dwsh/update-shapes-buffer-stop))
+                         (rx/throw %))
+             ob)
+   (rx/of (dwsh/update-shapes-buffer-stop))))
+
 (defn propagate-workspace-tokens
   "Apply the resolved values of the active tokens to the shapes that use
   them. Without `scope` it covers every page of the file. A `scope` of
@@ -255,26 +290,83 @@
    (ptk/reify ::propagate-workspace-tokens
      ptk/WatchEvent
      (watch [_ state _]
-       (let [tokens-lib    (dsh/lookup-tokens-lib state)
-             tokens-status (dsh/lookup-tokens-status state)]
-         (when (and tokens-lib tokens-status)
-           (->> (if (contains? cf/flags :tokenscript)
-                  (rx/of (ts/resolve-sets (cfo/get-active-token-sets tokens-status tokens-lib)))
-                  (sd/resolve-tokens (cfo/get-tokens-in-active-sets tokens-status tokens-lib)))
+       (some->> (resolve-active-tokens state)
                 (rx/mapcat
                  (fn [sd-tokens]
-                   (let [undo-id (js/Symbol)]
+                   (let [undo-id (js/Symbol)
+                         commit  (rx/of (dwu/commit-undo-transaction undo-id))]
                      (rx/concat
                       (rx/of (dwu/start-undo-transaction undo-id :timeout false))
+                      ;; The transaction is closed even when the propagation fails
+                      (rx/catch #(rx/concat commit (rx/throw %))
+                                (buffered nil (propagate-tokens state sd-tokens scope)))
+                      commit)))))))))
 
-                      ;; FIXME: now the tokens propagations is done by accumulating the update-shapes
-                      ;; into a single commit-changes. This is not really the best way, the token application
-                      ;; should be done with a changes_builder and sending only one `commit-changes` instead
-                      ;; of creating lots of `update-shapes`.
-                      (rx/of (dwsh/update-shapes-buffer-start))
-                      (->> (propagate-tokens state sd-tokens scope)
-                           (rx/catch #(rx/concat
-                                       (rx/of (dwsh/update-shapes-buffer-stop))
-                                       (rx/throw %))))
-                      (rx/of (dwsh/update-shapes-buffer-stop))
-                      (rx/of (dwu/commit-undo-transaction undo-id)))))))))))))
+(defn- action-shape-ids
+  "Ids of the shapes of the current page changed by the history entry of
+  the undo action `undo-group`, and of their ancestors: the pipelines that
+  resize texts and lay out boards mark their work on them."
+  [state undo-group]
+  (let [objects (dsh/lookup-page-objects state)
+        item    (->> (get-in state [:workspace-undo :items])
+                     (filter #(contains? (:undo-groups %) undo-group))
+                     (last))]
+    (into #{}
+          (comp (keep #(when (= :mod-obj (:type %)) (:id %)))
+                (filter #(contains? objects %))
+                (mapcat #(cons % (cfh/get-parent-ids objects %))))
+          (:redo-changes item))))
+
+(defn- finish-action-when-settled
+  "Ends the undo action `undo-group` once the shapes it changed have no
+  layout or text work left (see `app.main.data.workspace.reflow`), so the
+  texts it resized are in its history entry."
+  [undo-group]
+  (ptk/reify ::finish-action-when-settled
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (->> (rx/merge (wrf/settled (action-shape-ids state undo-group))
+                     (rx/filter (ptk/type? ::dw/finalize-workspace) stream))
+           (rx/take 1)
+           ;; Work is often marked done from inside a state update, which
+           ;; would overwrite an update made meanwhile
+           (rx/observe-on :async)
+           (rx/map (fn [_] (dwu/finish-action undo-group)))))))
+
+(defn- propagate-action
+  "Propagates the active tokens as part of the undo action `undo-group`,
+  and ends it once done, failures included."
+  [undo-group scope]
+  (ptk/reify ::propagate-action
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [finish (rx/of (dwu/finish-action undo-group))]
+        (if-let [resolved (resolve-active-tokens state)]
+          (->> resolved
+               (rx/mapcat
+                (fn [sd-tokens]
+                  (rx/concat
+                   (buffered {:undo-group undo-group}
+                             (propagate-tokens state sd-tokens scope :undo-group undo-group))
+                   (rx/of (finish-action-when-settled undo-group)))))
+               (rx/catch #(rx/concat finish (rx/throw %))))
+          finish)))))
+
+(defn with-propagation
+  "Commits `changes`, which change what tokens resolve to (the active
+  themes or sets, the tokens source...), and propagates the tokens that
+  resolve differently because of it, as one undo action (see
+  `app.main.data.workspace.undo`): one undo brings back the change, the
+  propagated values and the sizes of the texts they resize, and nothing
+  else, even when other edits are made meanwhile. Only the shapes of
+  `scope` (see `propagate-workspace-tokens`) and their children can
+  resolve differently."
+  [changes scope]
+  (ptk/reify ::with-propagation
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-group (uuid/next)]
+        (rx/of (dwu/start-action undo-group)
+               (dch/commit-changes (assoc changes :undo-group undo-group))
+               ;; After the commit, to resolve what it changed
+               (propagate-action undo-group scope))))))

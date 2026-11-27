@@ -338,8 +338,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-set-theme-status tokens-status tokens-lib id active?))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil))))))
 
 (defn toggle-token-theme-active
   [id]
@@ -354,8 +353,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-toggle-theme tokens-status tokens-lib id))]
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/with-propagation changes nil))))))
 
 (defn delete-token-theme
   [id]
@@ -369,8 +367,7 @@
                         (pcb/with-library-data data)
                         (pcb/set-token-theme id nil))]
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/with-propagation changes nil))))))
 
 (defn create-token-set
   [token-set]
@@ -447,8 +444,7 @@
                               (pcb/with-library-data data)
                               (clo/generate-set-enabled-token-set tokens-status tokens-lib id enabled?))]
 
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil))))))
 
 (defn toggle-token-set
   [id]
@@ -464,8 +460,7 @@
                               (clo/generate-toggle-token-set tokens-status tokens-lib id))]
 
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/with-propagation changes nil))))))
 
 (defn toggle-token-set-group
   [group-path]
@@ -480,8 +475,7 @@
                               (clo/generate-toggle-token-set-group tokens-status tokens-lib group-path))]
 
         (rx/of
-         (dch/commit-changes changes)
-         (dwtp/propagate-workspace-tokens))))))
+         (dwtp/with-propagation changes nil))))))
 
 (defn import-tokens-lib
   [lib]
@@ -495,9 +489,8 @@
                         (pcb/with-library-data data)
                         (pcb/set-tokens-lib lib)
                         (pcb/set-tokens-status status))]
-        (rx/of (dch/commit-changes changes)
-               (unfold-token-types lib)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil)
+               (unfold-token-types lib))))))
 
 (defn set-tokens-source
   [library-id]
@@ -510,8 +503,7 @@
                         (pcb/with-library-data data)
                         (clo/generate-set-tokens-source library)
                         (pcb/set-tokens-source library-id))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil))))))
 
 (defn delete-token-set
   [id]
@@ -523,8 +515,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (pcb/set-token-set id nil))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil))))))
 
 (defn delete-token-set-group
   [path]
@@ -536,8 +527,7 @@
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
                         (clo/generate-delete-token-set-group (dsh/lookup-tokens-lib state) path))]
-        (rx/of (dch/commit-changes changes)
-               (dwtp/propagate-workspace-tokens))))))
+        (rx/of (dwtp/with-propagation changes nil))))))
 
 (defn drop-error
   [{:keys [error to-path]}]
@@ -566,8 +556,7 @@
       (try
         (when-let [changes (clo/generate-move-token-set-group (pcb/empty-changes it) (dsh/lookup-tokens-lib state) drop-opts)]
           (rx/of
-           (dch/commit-changes changes)
-           (dwtp/propagate-workspace-tokens)))
+           (dwtp/with-propagation changes nil)))
         (catch :default e
           (rx/of
            (drop-error (ex-data e))))))))
@@ -584,8 +573,7 @@
         (let [tokens-lib (dsh/lookup-tokens-lib state)
               changes    (-> (pcb/empty-changes it)
                              (clo/generate-move-token-set tokens-lib params))]
-          (rx/of (dch/commit-changes changes)
-                 (dwtp/propagate-workspace-tokens)))
+          (rx/of (dwtp/with-propagation changes nil)))
         (catch :default cause
           (rx/of (drop-error (ex-data cause))))))))
 

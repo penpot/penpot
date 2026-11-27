@@ -14,6 +14,7 @@
    [app.common.types.tokens-status :as ctos]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.data.workspace.undo :as dwu]
    [app.main.repo :as rp]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
@@ -22,6 +23,7 @@
    [frontend-tests.helpers.pages :as thp]
    [frontend-tests.helpers.state :as ths]
    [frontend-tests.helpers.wasm :as thw]
+   [frontend-tests.tokens.helpers.state :as tohs]
    [potok.v2.core :as ptk]))
 
 (t/use-fixtures :each
@@ -104,6 +106,24 @@
                                  "the fill uses the local value of `red` again"))
     (t/is (= "#7b2222" (fill-color store))
           "Going back to the local tokens resolves `red` from the file again")
+
+    (rx/dispose! store)))
+
+(t/deftest ^:async undoing-a-tokens-source-switch-restores-the-source-and-the-canvas
+  (let [library (setup-library)
+        file    (setup-file)
+        store   (ths/setup-store file {:libraries [library]})
+        source  (tokens-source store)]
+    (ptk/emit! store (tohs/watch-undo-stack))
+    (await (use-library-tokens store library))
+    (await (async/wait-for-store store #(empty? (get-in @store [:workspace-undo :actions]))
+                                 "the switch is done"))
+
+    (ptk/emit! store dwu/undo)
+    (await (async/wait-for-store store #(= "#7b2222" (fill-color store))
+                                 "the fill uses the local value of `red` again"))
+    (t/is (= source (tokens-source store))
+          "One undo brings back the tokens source with the value it gave")
 
     (rx/dispose! store)))
 

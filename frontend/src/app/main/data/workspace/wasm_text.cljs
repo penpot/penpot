@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.types.modifiers :as ctm]
+   [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
@@ -124,17 +125,37 @@
             {:keys [undo-group undo-id skip-component-sync? save-undo?]} (get state ::resize-wasm-text-debounce-opts)
             objects (dsh/lookup-page-objects state)
 
+            resize-modifiers
+            (fn [ids]
+              (reduce
+               (fn [modifiers id]
+                 (let [shape (get objects id)]
+                   (cond-> modifiers
+                     (and (some? shape)
+                          (cfh/text-shape? shape)
+                          (not= :fixed (:grow-type shape)))
+                     (merge (resize-wasm-text-modifiers shape)))))
+               {}
+               ids))
+
+            ;; Texts changed by a pending undo action (a token theme switch)
+            ;; are resized in its history entry, whatever was done since
+            action-ids
+            (-> (group-by #(dch/action-undo-group state #{%}) ids)
+                (dissoc nil))
+
+            action-resizes
+            (keep (fn [[action-group ids]]
+                    (let [modifiers (resize-modifiers ids)]
+                      (when (seq modifiers)
+                        (dwm/apply-wasm-modifiers modifiers
+                                                  {:ignore-touched true
+                                                   :undo-group action-group
+                                                   :undo-transation? false}))))
+                  action-ids)
+
             modifiers
-            (reduce
-             (fn [modifiers id]
-               (let [shape (get objects id)]
-                 (cond-> modifiers
-                   (and (some? shape)
-                        (cfh/text-shape? shape)
-                        (not= :fixed (:grow-type shape)))
-                   (merge (resize-wasm-text-modifiers shape)))))
-             {}
-             ids)
+            (resize-modifiers (remove (into #{} (mapcat val) action-ids) ids))
 
             ;; When undo-id is present, extend the current undo transaction instead of
             ;; creating a new one, and commit it after the resize (single undo action).
@@ -146,20 +167,22 @@
                          extend-tx? (assoc :undo-transation? false)
                          skip-component-sync? (assoc :skip-component-sync? true)
                          (false? save-undo?) (assoc :save-undo? false))]
-        (cond
-          (not (empty? modifiers))
-          (if extend-tx?
-            (rx/concat
-             (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts))
-             (rx/of (dwu/commit-undo-transaction undo-id)))
-            (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts)))
+        (rx/concat
+         (rx/from action-resizes)
+         (cond
+           (not (empty? modifiers))
+           (if extend-tx?
+             (rx/concat
+              (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts))
+              (rx/of (dwu/commit-undo-transaction undo-id)))
+             (rx/of (dwm/apply-wasm-modifiers modifiers apply-opts)))
 
-          extend-tx?
-          ;; No resize needed (e.g. :fixed grow-type) but we must commit the add
-          (rx/of (dwu/commit-undo-transaction undo-id))
+           extend-tx?
+           ;; No resize needed (e.g. :fixed grow-type) but we must commit the add
+           (rx/of (dwu/commit-undo-transaction undo-id))
 
-          :else
-          (rx/empty))))))
+           :else
+           (rx/empty)))))))
 
 ;; This event will debounce the resize events so, if there are many, they
 ;; are processed at the same time and not one-by-one. This will improve
