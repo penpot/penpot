@@ -359,6 +359,16 @@
           errors (cfv/validate-file file {})]
       (t/is (= 1 (count (main-not-found-errors errors))))))
 
+  (t/testing "a component with no main id or page is reported, not thrown"
+    (doseq [params [{:main-instance-id nil}
+                    {:main-instance-page nil}]]
+      (let [file   (-> (thf/sample-file :file1 :page-label :page1)
+                       (tho/add-simple-component :component1 :root1 :child1)
+                       (thc/update-component :component1 params))
+            errors (cfv/validate-file file {})]
+        (t/is (some #(= :component-main-not-found (:code %)) errors)
+              (pr-str params)))))
+
   (t/testing "a healthy file reports nothing"
     (let [file (-> (thf/sample-file :file1 :page-label :page1)
                    (tho/add-simple-component :component1 :root1 :child1))]

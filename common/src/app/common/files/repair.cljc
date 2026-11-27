@@ -640,6 +640,30 @@
             [page main]))
         (ctpl/pages-seq file-data)))
 
+(defn- detach-copies
+  "Return `changes` with every copy of `component`, and its subtree, detached
+  on every page of the file: they become plain shapes and survive the removal
+  of the component, with no dangling references."
+  [changes file-data component]
+  (reduce
+   (fn [changes page]
+     (let [objects   (:objects page)
+           shape-ids (->> (ctn/shapes-seq page)
+                          (filter #(and (= (:component-id %) (:id component))
+                                        (= (:component-file %) (:id file-data))))
+                          (mapcat #(cfh/get-children-ids-with-self objects (:id %)))
+                          vec)]
+       (if (empty? shape-ids)
+         changes
+         (let [detach (-> (pcb/empty-changes nil (:id page))
+                          (pcb/with-file-data file-data)
+                          (pcb/update-shapes shape-ids ctk/detach-shape))]
+           (-> changes
+               (update :redo-changes into (:redo-changes detach))
+               (update :undo-changes #(concat (:undo-changes detach) %)))))))
+   changes
+   (ctpl/pages-seq file-data)))
+
 (defmethod repair-error :component-main-not-found
   [_ {component :shape} file-data _]   ; in this error the :shape argument is the component
   ;; An earlier repair of the same pass may have fixed the component, so read
@@ -666,7 +690,7 @@
       :else
       (do
         (log/debug :hint "  -> remove component without main")
-        (-> (pcb/empty-changes nil)
+        (-> (detach-copies (pcb/empty-changes nil) file-data component)
             (update :redo-changes conj {:type :del-component
                                         :id (:id component)
                                         :skip-undelete? true}))))))

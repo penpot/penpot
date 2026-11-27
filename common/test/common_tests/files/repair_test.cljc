@@ -1915,6 +1915,18 @@
 
       (t/is (nil? (:errors result)))
       (t/is (= (thi/id :root1) (:main-instance-id component')))
+      (t/is (= (thi/id :page1) (:main-instance-page component')))))
+
+  (t/testing "a component with no main id is relinked to the main that claims it"
+    (let [file       (-> (thf/sample-file :file1 :page-label :page1)
+                         (tho/add-simple-component :component1 :root1 :child1)
+                         (thc/update-component :component1 :main-instance-id nil))
+          changes    [{:type :mod-component :id (thi/id :component1)}]
+          result     (repair-until-valid-affected file changes)
+          component' (thc/get-component (:file result) :component1)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (= (thi/id :root1) (:main-instance-id component')))
       (t/is (= (thi/id :page1) (:main-instance-page component'))))))
 
 (t/deftest repair-component-main-not-found-removes-component-without-main
@@ -1932,6 +1944,24 @@
       (t/is (nil? (cfv/validate-file file' {})))
       (t/is (nil? (thc/get-component file' :component1 :include-deleted? true)))
       (t/is (some? copy1'))
+      (t/is (nil? (:component-id copy1')))
+      (t/is (nil? (:shape-ref copy1'))))))
+
+(t/deftest repair-component-main-not-found-removes-component-without-main-scoped
+  (t/testing "an affected repair removes the component and detaches its copy on another page"
+    (let [file    (-> (thf/sample-file :file1 :page-label :page1)
+                      (tho/add-simple-component :component1 :root1 :child1)
+                      (thf/add-sample-page :page2)
+                      (thc/instantiate-component :component1 :copy1)
+                      (remove-main :page1 :root1 :child1))
+          changes [{:type :mod-component :id (thi/id :component1)}]
+          result  (repair-until-valid-affected file changes)
+          file'   (:file result)
+          copy1'  (ths/get-shape file' :copy1 :page-label :page2)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (nil? (thc/get-component file' :component1 :include-deleted? true)))
       (t/is (nil? (:component-id copy1')))
       (t/is (nil? (:shape-ref copy1'))))))
 
@@ -1962,3 +1992,22 @@
       (t/is (nil? (:errors result)))
       (t/is (= (thi/id :root1) (:main-instance-id (thc/get-component file' :component1))))
       (t/is (some? (ths/get-shape file' :root1 :page-label :page1))))))
+
+(t/deftest repair-component-main-not-found-relinks-when-main-id-is-nil
+  (t/testing "a component with no main id is relinked and its copies keep following it"
+    (let [file       (-> (thf/sample-file :file1 :page-label :page1)
+                         (tho/add-simple-component :component1 :root1 :child1)
+                         (thf/add-sample-page :page2)
+                         (thc/instantiate-component :component1 :copy1)
+                         (thc/update-component :component1 :main-instance-id nil))
+          result     (repair-until-valid file)
+          file'      (:file result)
+          component' (thc/get-component file' :component1)
+          copy1'     (ths/get-shape file' :copy1 :page-label :page2)]
+
+      (t/is (nil? (:errors result)))
+      (t/is (nil? (cfv/validate-file file' {})))
+      (t/is (= (thi/id :root1) (:main-instance-id component')))
+      (t/is (= (thi/id :page1) (:main-instance-page component')))
+      (t/is (= (thi/id :component1) (:component-id copy1')))
+      (t/is (some? (:shape-ref copy1'))))))
