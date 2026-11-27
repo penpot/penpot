@@ -9,6 +9,7 @@ packages:
 
 patchedDependencies:
   '@zip.js/zip.js@2.8.34': patches/@zip.js__zip.js@2.8.26.patch
+  opentype.js@2.0.0: patches/opentype.js@2.0.0.patch
 
 shamefullyHoist: true
 
