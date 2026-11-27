@@ -16,7 +16,8 @@
    [app.common.types.tokens-status :as ctos]
    [clojure.set :as set]
    [cuerdas.core :as str]
-   [malli.core :as m]))
+   [malli.core :as m]
+   [tokenscript.processor :as tsp]))
 
 ;; Change this to :info :debug or :trace to debug this module, or :warn to reset to default
 (log/set-level! :warn)
@@ -800,6 +801,73 @@
   (let [active-set-ids (ctos/get-active-set-ids tokens-status)]
     (-> (filter #(contains? active-set-ids (ctob/get-id %)) (ctob/get-sets tokens-lib))
         (token-set-entries))))
+
+(defn get-token-sets
+  "Every set of `tokens-lib` unmerged (see `token-set-entries`), active
+  or not, in the library's order."
+  [tokens-lib]
+  (token-set-entries (ctob/get-sets tokens-lib)))
+
+(defn rename-scope
+  "Which sets a rename of tokens of the set `set-id` reaches: every set for
+  `:all` (or no scope), the active ones for `:active`, only that one for
+  `:set`. The renamed set is always among them."
+  [file-data scope set-id]
+  (case scope
+    (nil :all) :all
+    :set #{set-id}
+    :active (cond-> (if-let [tokens-status (get-tokens-status file-data)]
+                      (into #{} (map ctob/get-id) (get-active-sets tokens-status (get-tokens-lib file-data)))
+                      #{})
+              (some? set-id) (conj set-id))
+    scope))
+
+(defn rename-scope-choice?
+  "Whether a rename leaves the user a choice of the sets it reaches: with a
+  single set, all, the active ones and the set itself are the same."
+  [tokens-lib]
+  (< 1 (count (some-> tokens-lib ctob/get-sets))))
+
+(defn token-rename-collisions
+  "Why tokens of the set `set-id` can not take the new names of `renames`
+  when the rename reaches the sets of `scope` (see `rename-scope`): a name
+  the set keeps, or one below a token or above other tokens of those sets."
+  [file-data set-id renames scope]
+  (tsp/rename-collisions (get-token-sets (get-tokens-lib file-data)) renames
+                         {:set set-id :scope (rename-scope file-data scope set-id)}))
+
+(defn with-token-rename-check
+  "`schema` of the token form, refusing also a new name for the token
+  `old-name` of the set `set-id` that collides with the tokens the rename
+  reaches (see `token-rename-collisions`)."
+  [schema file-data set-id old-name scope]
+  [:and schema
+   [:fn {:error/field :name
+         :error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (get-in % [:value :name]))}
+    (fn [{:keys [name]}]
+      (or (nil? name)
+          (= name old-name)
+          (empty? (token-rename-collisions file-data set-id {old-name name} scope))))]])
+
+(defn make-group-name-schema
+  "Checks a new name for a group of tokens of `type`: none of the tokens it
+  moves, or copies for `duplicate?`, may collide with the tokens the rename
+  reaches (see `token-rename-collisions`)."
+  [file-data set-id type node duplicate? scope]
+  (let [tokens (ctob/get-tokens (get-tokens-lib file-data) set-id)]
+    [:map
+     [:name
+      [:and
+       [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
+       (-> cto/schema:token-node-name
+           (sm/update-properties assoc :error/fn #(str (:value %) (tr "workspace.tokens.token-name-validation-error"))))
+       [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
+        (fn [name]
+          (let [renames (ctob/token-group-renames tokens type node name)]
+            (empty? (token-rename-collisions file-data set-id
+                                             (cond->> renames
+                                               duplicate? (map (fn [[_ new-name]] [nil new-name])))
+                                             scope))))]]]]))
 
 (defn get-active-token-sets-force
   "Same as `get-active-token-sets` but force-including a set by id. A set

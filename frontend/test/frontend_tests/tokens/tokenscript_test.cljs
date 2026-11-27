@@ -6,9 +6,11 @@
 
 (ns frontend-tests.tokens.tokenscript-test
   (:require
+   [app.common.files.changes :as ch]
+   [app.common.files.changes-builder :as pcb]
    [app.common.files.tokens :as cfo]
+   [app.common.logic.tokens :as clo]
    [app.common.test-helpers.ids-map :as cthi]
-   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
    [app.main.data.style-dictionary :as sd]
@@ -346,9 +348,9 @@
   (t/is (= {} (ts/resolve-tokens {}))))
 
 ;; Renaming a token, with or without updating the references to it (see
-;; `remap/build-remap-changes`), resolves as with StyleDictionary. The
-;; renamed library is resolved from the interpreter state of the library
-;; before the rename, as in the workspace.
+;; `clo/generate-rename-token-references`), resolves as with
+;; StyleDictionary. The renamed library is resolved from the interpreter
+;; state of the library before the rename, as in the workspace.
 
 (defn- rename-token
   [lib set-name old-name new-name]
@@ -358,15 +360,11 @@
 
 (defn- update-references
   [lib old-name new-name]
-  (reduce (fn [lib token-set]
-            (let [set-id (ctob/get-id token-set)]
-              (reduce (fn [lib token]
-                        (ctob/update-token lib set-id (:id token)
-                                           #(update % :value cto/update-token-value-references old-name new-name)))
-                      lib
-                      (vals (ctob/get-tokens lib set-id)))))
-          lib
-          (ctob/get-sets lib)))
+  (let [data    {:tokens-lib lib}
+        changes (-> (pcb/empty-changes)
+                    (pcb/with-library-data data)
+                    (clo/generate-rename-token-references {old-name new-name} {:scope :all}))]
+    (:tokens-lib (ch/process-changes data (:redo-changes changes)))))
 
 (defn- resolved-values
   [resolved]

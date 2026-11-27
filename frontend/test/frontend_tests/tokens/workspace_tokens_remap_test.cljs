@@ -14,6 +14,8 @@
    [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.config :as cf]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.remapping :as remap]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.state :as ths]
@@ -255,6 +257,49 @@
 (defn- define-remap-test [case-key test-fn]
   (t/async done
     (test-fn (fetch-token-case case-key) done)))
+
+(defn- with-tokenscript
+  "Runs `f` with the tokenscript flag on, until it calls its `done`."
+  [f done]
+  (let [flags cf/flags]
+    (set! cf/flags (conj flags :tokenscript))
+    (f (fn []
+         (set! cf/flags flags)
+         (done)))))
+
+(defn- run-cases!
+  [test-fn cases done]
+  (if-let [token-case (first cases)]
+    (test-fn token-case #(run-cases! test-fn (rest cases) done))
+    (done)))
+
+(t/deftest remap-tokens-with-tokenscript
+  (t/async done
+    (with-tokenscript #(run-cases! run-token-remap-test! token-remap-cases %) done)))
+
+(t/deftest remap-aliases-with-tokenscript
+  (t/async done
+    (with-tokenscript #(run-cases! run-alias-remap-test! token-remap-cases %) done)))
+
+(t/deftest rename-token-group-test
+  (t/async done
+    (let [file  (-> (make-base-file)
+                    (attach-token-set [{:name "primary.base" :type :color :value "#ff0000"}
+                                       {:name "primary.primary-dark" :type :color :value "#aa0000"}
+                                       {:name "accent" :type :color :value "{primary.primary-dark}"}])
+                    (toht/apply-token-to-shape :rect-shape "primary.base" #{:fill}))
+          store (ths/setup-store file)
+          group {:path "primary" :name "primary" :depth 0}]
+      (tohs/run-store-async
+       store done
+       [(dwtl/rename-token-group (cthi/id :token-set) :color group "main" :update-references true)]
+       (fn [new-state]
+         (let [file' (ths/get-file-from-state new-state)
+               lib   (tokens-lib file')]
+           (t/is (some? (ctob/get-token-by-name lib token-set-name "main.primary-dark"))
+                 "a token whose name repeats the group's keeps that part")
+           (t/is (= "{main.primary-dark}" (:value (ctob/get-token-by-name lib token-set-name "accent"))))
+           (t/is (= "main.base" (get-in (cths/get-shape file' :rect-shape) [:applied-tokens :fill])))))))))
 
 ;; Direct remap tests
 (t/deftest remap-boolean-token

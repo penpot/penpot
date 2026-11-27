@@ -91,6 +91,7 @@
    [common-tests.logic.text-sync-test]
    [common-tests.logic.text-touched-test]
    [common-tests.logic.token-apply-test]
+   [common-tests.logic.token-rename-test]
    [common-tests.logic.token-test]
    [common-tests.logic.variants-paste-test]
    [common-tests.logic.variants-reparent-test]
@@ -219,6 +220,7 @@
    'common-tests.logic.text-sync-test
    'common-tests.logic.text-touched-test
    'common-tests.logic.token-apply-test
+   'common-tests.logic.token-rename-test
    'common-tests.logic.token-test
    'common-tests.logic.variants-paste-test
    'common-tests.logic.variants-reparent-test

@@ -28,7 +28,8 @@
    [cuerdas.core :as str]
    [tokenscript.document.dtcg :as tsd]
    [tokenscript.document.read :as tsr]
-   [tokenscript.document.write :as tsw]))
+   [tokenscript.document.write :as tsw]
+   [tokenscript.processor :as tsp]))
 
 ;; === Common
 
@@ -1436,6 +1437,16 @@
       :else (-> (get path-target selector)
                 (seq)
                 (boolean)))))
+
+(defn token-group-renames
+  "The tokens of `type` in `tokens` (name to token) that renaming the
+  group `node` to `new-name` moves, old name to new name. The names are
+  worked out by path segment: renaming `primary` keeps the
+  `primary-dark` in `primary.primary-dark`."
+  [tokens type node new-name]
+  (tsp/group-renames (keep (fn [[name token]] (when (= type (:type token)) name)) tokens)
+                     (:path node)
+                     (rename-path node new-name)))
 
 (defn update-tokens-group
   "Updates the active tokens path when renaming a group node.
