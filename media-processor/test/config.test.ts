@@ -125,7 +125,12 @@ describe("loadConfig", () => {
 });
 
 describe("shared key file", () => {
-  const keyVars = ["PENPOT_MEDIA_PROCESSOR_SHARED_KEY", "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", "PENPOT_SECRET_KEY"];
+  const keyVars = [
+    "PENPOT_MEDIA_PROCESSOR_SHARED_KEY",
+    "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
+    "PENPOT_SECRET_KEY",
+    "PENPOT_SECRET_KEY_FILE",
+  ];
 
   beforeEach(() => {
     for (const variable of keyVars) vi.stubEnv(variable, undefined);
@@ -204,5 +209,69 @@ describe("shared key file", () => {
 
   it("keeps sharedKey null when no source is configured", () => {
     expect(loadConfig().sharedKey).toBeNull();
+  });
+
+  it("derives from a normalized master key file", () => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", writeKey(dir, " ma \ns\tter "));
+      // Verified with backend app.setup.keys/derive using secret "master" and salt "media-processor".
+      expect(loadConfig().sharedKey).toBe("xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM");
+    });
+  });
+
+  it.each(["master", "", "   "])("prefers direct master %j over a missing master file", (master) => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_SECRET_KEY", master);
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", join(dir, "missing"));
+      expect(loadConfig().sharedKey).toBe(master === "master" ? "xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM" : null);
+    });
+  });
+
+  it.each(["master", ""])("prefers direct master %j over a valid master file", (master) => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_SECRET_KEY", master);
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", writeKey(dir, "different"));
+      expect(loadConfig().sharedKey).toBe(master ? "xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM" : null);
+    });
+  });
+
+  it.each(["explicit", "", "   "])("prefers direct service key %j over a missing master file", (key) => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY", key);
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", join(dir, "missing-service"));
+      vi.stubEnv("PENPOT_SECRET_KEY", "master");
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", join(dir, "missing-master"));
+      expect(loadConfig().sharedKey).toBe(key.trim() || null);
+    });
+  });
+
+  it("prefers the service key file over a missing master file", () => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", writeKey(dir, "service"));
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", join(dir, "missing"));
+      expect(loadConfig().sharedKey).toBe("service");
+    });
+  });
+
+  it.each([
+    ["missing", (dir: string) => join(dir, "missing"), /PENPOT_SECRET_KEY_FILE key file is missing or empty/],
+    ["empty", (dir: string) => writeKey(dir, " \n\t"), /PENPOT_SECRET_KEY_FILE key file is missing or empty/],
+    ["directory", (dir: string) => dir, /PENPOT_SECRET_KEY_FILE key file is missing or empty/],
+    ["4097 bytes", (dir: string) => writeKey(dir, "a".repeat(4097)), /PENPOT_SECRET_KEY_FILE key file is too large/],
+  ])("rejects a master key file that is %s", (_label, path, error) => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", path(dir));
+      expect(() => loadConfig()).toThrow(error);
+    });
+  });
+
+  it("accepts a master key file of exactly 4096 bytes", () => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", writeKey(dir, "a".repeat(4096)));
+      const fromFile = loadConfig().sharedKey;
+      vi.stubEnv("PENPOT_SECRET_KEY", "a".repeat(4096));
+      expect(fromFile).not.toBeNull();
+      expect(fromFile).toBe(loadConfig().sharedKey);
+    });
   });
 });

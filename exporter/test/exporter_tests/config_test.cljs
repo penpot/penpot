@@ -109,3 +109,62 @@
   (let [err (error-of #(cf/get-management-key {}))]
     (t/is (some? err))
     (t/is (str/includes? (message err) "PENPOT_SECRET_KEY"))))
+
+(t/deftest blank-explicit-key-never-falls-back
+  (with-temp-dir
+    (fn [dir]
+      (let [file (write-key! dir "file-key")
+            missing (path/join dir "missing")]
+        (doseq [key ["" "  \t"]
+                env [{:secret-key "master"}
+                     {:exporter-shared-key-file file}
+                     {:secret-key "master" :exporter-shared-key-file file}
+                     {:secret-key "master" :exporter-shared-key-file missing}]]
+          (let [err (error-of #(cf/prepare-config (assoc env :exporter-shared-key key)))]
+            (t/is (some? err))
+            (when err
+              (t/is (str/includes? (message err) "PENPOT_EXPORTER_SHARED_KEY")))))
+        (t/is (some? (error-of #(cf/get-management-key {:exporter-shared-key ""
+                                                        :secret-key "master"}))))))))
+
+(t/deftest master-key-file-derives-exporter-key
+  (with-temp-dir
+    (fn [dir]
+      (let [cfg (cf/prepare-config {:secret-key-file (write-key! dir " mas\n ter \t")})]
+        (t/is (= "master" (:secret-key cfg)))
+        ;; app.setup.keys/derive with secret "master" and salt "exporter".
+        (t/is (= "GIFntVZnqcaOnDmD-Ii09n8wkajiOfVXI-RTJGyjKxg"
+                 (cf/get-management-key cfg)))))))
+
+(t/deftest master-key-file-precedence
+  (with-temp-dir
+    (fn [dir]
+      (let [missing (path/join dir "missing")
+            file (write-key! dir "service-key")]
+        (t/is (= "direct" (:exporter-shared-key
+                           (cf/prepare-config {:exporter-shared-key "direct"
+                                               :secret-key-file missing}))))
+        (t/is (= "service-key" (:exporter-shared-key
+                                (cf/prepare-config {:exporter-shared-key-file file
+                                                    :secret-key-file missing}))))
+        (t/is (= "master" (:secret-key
+                           (cf/prepare-config {:secret-key "master" :secret-key-file missing}))))
+        (t/is (some? (error-of #(cf/prepare-config {:secret-key "" :secret-key-file file}))))))))
+
+(t/deftest invalid-master-key-files
+  (with-temp-dir
+    (fn [dir]
+      (let [missing (path/join dir "missing")]
+        (doseq [file [missing dir (write-key! dir " \n\t")]]
+          (let [err (error-of #(cf/prepare-config {:secret-key-file file}))]
+            (t/is (some? err))
+            (when err
+              (t/is (str/includes? (message err) "PENPOT_SECRET_KEY_FILE")))))
+        (let [file (write-key! dir (apply str (repeat 4096 "a")))]
+          (t/is (= 4096 (count (:secret-key (cf/prepare-config {:secret-key-file file}))))))
+        (let [file (write-key! dir (apply str (repeat 4097 "a")))
+              err (error-of #(cf/prepare-config {:secret-key-file file}))]
+          (t/is (some? err))
+          (when err
+            (t/is (str/includes? (message err) "PENPOT_SECRET_KEY_FILE"))
+            (t/is (str/includes? (message err) "too large"))))))))

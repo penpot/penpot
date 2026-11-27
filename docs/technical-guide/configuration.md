@@ -676,28 +676,38 @@ run `(app.srepl.main/set-online)`. Drain one instance at a time.
 
 ## Backend
 
-This section enumerates the backend only configuration variables.
+This section covers backend configuration variables. Some secret key settings also apply to other services, as noted below.
 
 ### Secret key
 
-The <code class="language-bash">PENPOT_SECRET_KEY</code> envvar serves a master key from which other keys
-for subsystems (eg http sessions, or invitations) are derived.
+The backend requires a stable master key in `PENPOT_SECRET_KEY` or `PENPOT_SECRET_KEY_FILE`. It fails to start if the key is missing or blank; it does not generate or persist one. The backend derives keys for subsystems such as sessions and invitations from this master key. Keep the existing key across upgrades and restarts: changing it can invalidate existing sessions, invitations, and other tokens.
 
-If you don't use it, all created sessions and invitations will become invalid on container restart
-or service restart.
-
-To use it, we recommend using a truly randomly generated 512 bits base64 encoded string here.
-You can generate one with:
+For a new installation, generate a random 512-bit key with:
 
 ```bash
 python3 -c "import secrets; print(secrets.token_urlsafe(64))"
 ```
 
-And configure it:
-```bash
-# Backend
-PENPOT_SECRET_KEY: my-super-secure-key
-```
+Store the result securely and provide it to the backend through `PENPOT_SECRET_KEY`, or set `PENPOT_SECRET_KEY_FILE` to a path readable by the backend process. If the direct variable is present, it takes priority over the file even when it is empty; an empty master key makes the backend fail to start.
+
+**Security warning:** The included Docker Compose file sets `PENPOT_SECRET_KEY` to `change-this-insecure-key`. This is a public, insecure value. Replace it with a random secret in every service that must share the master key. For an existing installation, changing this value can invalidate existing tokens.
+
+#### Service shared keys
+
+The backend accepts independent shared keys for these services. Each direct variable also has the corresponding `_FILE` variant:
+
+| Service | Backend direct variable | Backend file variable |
+| --- | --- | --- |
+| Exporter | `PENPOT_EXPORTER_SHARED_KEY` | `PENPOT_EXPORTER_SHARED_KEY_FILE` |
+| Media processor | `PENPOT_MEDIA_PROCESSOR_SHARED_KEY` | `PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE` |
+| Admin Console | `PENPOT_ADMIN_CONSOLE_SHARED_KEY` | `PENPOT_ADMIN_CONSOLE_SHARED_KEY_FILE` |
+| Nexus | `PENPOT_NEXUS_SHARED_KEY` | `PENPOT_NEXUS_SHARED_KEY_FILE` |
+
+If a service key is not set, the backend derives it from the master key. An explicit service key must match between the backend and its consumer. Prefer an independent service key over giving a consumer the master key: access to the master exposes all keys derived from it. Check each other service's own configuration for its supported variables; the backend's support does not imply that every consumer supports the same file variables.
+
+Exporter and media processor accept their respective direct and `_FILE` service variables shown above. When neither is present, they can derive their service key from `PENPOT_SECRET_KEY` or `PENPOT_SECRET_KEY_FILE`. They need access to the master key only when derivation is required. A present direct service variable takes priority over its file and the master, even if empty or whitespace-only. A blank explicit service key disables it on the backend; exporter fails to start with a blank explicit key, while media processor starts without a shared key and rejects protected requests. Media processor also rejects protected requests if no key source is configured.
+
+For each key, a present direct variable takes priority over its `_FILE` variable, even when blank. When used, key files must be readable regular files of at most 4096 bytes. Their contents are trimmed and all internal whitespace is removed; missing, invalid, or empty files cause a startup error. File paths must exist and be readable inside each process or container that uses them; configure the backend and consumer separately. A consumer with its own service key does not need its master key file mounted.
 
 ### Session expiration
 

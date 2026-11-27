@@ -43,6 +43,7 @@
 (def ^:private schema:config
   [:map {:title "config"}
    [:secret-key {:optional true} :string]
+   [:secret-key-file {:optional true} :string]
    [:public-uri {:optional true} ::sm/uri]
    [:internal-uri {:optional true} ::sm/uri]
    [:exporter-shared-key {:optional true} :string]
@@ -138,11 +139,21 @@
   ([] (prepare-config (read-env "penpot")))
   ([env]
    (let [env  (d/without-nils env)
+         _    (when (and (contains? env :exporter-shared-key)
+                         (not (present? (c/get env :exporter-shared-key))))
+                (throw (js/Error. "Either PENPOT_EXPORTER_SHARED_KEY or PENPOT_SECRET_KEY is required; blank PENPOT_EXPORTER_SHARED_KEY disables the exporter")))
          env  (if (and (present? (c/get env :exporter-shared-key-file))
-                       (not (present? (c/get env :exporter-shared-key))))
+                       (not (contains? env :exporter-shared-key)))
                 (assoc env :exporter-shared-key
                        (get-key-file-value "PENPOT_EXPORTER_SHARED_KEY_FILE"
                                            (c/get env :exporter-shared-key-file)))
+                env)
+         env  (if (and (not (contains? env :exporter-shared-key))
+                       (not (contains? env :secret-key))
+                       (present? (c/get env :secret-key-file)))
+                (assoc env :secret-key
+                       (get-key-file-value "PENPOT_SECRET_KEY_FILE"
+                                           (c/get env :secret-key-file)))
                 env)
          data (merge defaults env)
          data (decode-config data)]
@@ -193,6 +204,8 @@
         secret-key (c/get config :secret-key)]
     (cond
       (present? explicit) explicit
+      (contains? config :exporter-shared-key)
+      (throw (js/Error. "Blank PENPOT_EXPORTER_SHARED_KEY disables the exporter"))
       (present? secret-key)
       (let [derived-key (crypto/hkdfSync "blake2b512" secret-key "exporter" "" 32)]
         (-> (.from buffer/Buffer derived-key)

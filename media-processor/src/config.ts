@@ -19,6 +19,7 @@ const envSchema = z.object({
   PENPOT_MEDIA_PROCESSOR_SHARED_KEY: z.string().optional(),
   PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE: z.string().optional(),
   PENPOT_SECRET_KEY: z.string().optional(),
+  PENPOT_SECRET_KEY_FILE: z.string().optional(),
   PENPOT_MEDIA_PROCESSOR_LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
@@ -73,8 +74,16 @@ export function loadConfig(): AppConfig {
       "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
       parsed.PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE
     );
-  } else if (parsed.PENPOT_SECRET_KEY?.trim()) {
-    sharedKey = deriveSharedKey(parsed.PENPOT_SECRET_KEY);
+  } else {
+    const secret =
+      parsed.PENPOT_SECRET_KEY !== undefined
+        ? parsed.PENPOT_SECRET_KEY
+        : parsed.PENPOT_SECRET_KEY_FILE
+          ? readSharedKeyFile("PENPOT_SECRET_KEY_FILE", parsed.PENPOT_SECRET_KEY_FILE)
+          : undefined;
+    if (secret?.trim()) {
+      sharedKey = deriveSharedKey(secret);
+    }
   }
 
   return {
