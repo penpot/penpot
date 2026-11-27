@@ -27,11 +27,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.checkbox :refer [checkbox*]]
    [app.main.ui.ds.controls.radio-buttons :refer [radio-buttons*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
@@ -204,8 +204,8 @@
 
         handle-change-mode
         (mf/use-fn
-         (fn [value]
-           (case value
+         (fn [mode-id]
+           (case (keyword mode-id)
              :color (st/emit! (dc/activate-colorpicker-color))
              :gradient (st/emit! (dc/activate-colorpicker-gradient :linear-gradient))
              :image (st/emit! (dc/activate-colorpicker-image))
@@ -270,13 +270,13 @@
            (modal/hide!)))
 
         options
-        (mf/with-memo [selected-mode disable-gradient disable-image]
+        (mf/with-memo [disable-gradient disable-image]
           (d/concat-vec
-           [{:value :color :label (tr "media.solid")}]
+           [{:id "color" :label (tr "media.solid")}]
            (when (not disable-gradient)
-             [{:value :gradient :label (tr "media.gradient")}])
+             [{:id "gradient" :label (tr "media.gradient")}])
            (when (not disable-image)
-             [{:value :image :label (tr "media.image")}])))
+             [{:id "image" :label (tr "media.image")}])))
 
         handle-change-gradient-selected-stop
         (mf/use-fn
@@ -419,11 +419,10 @@
 
         (when (and (= color-style :direct-color)
                    (or (not disable-gradient) (not disable-image)))
-          [:div {:class (stl/css :select)}
-           [:& select
-            {:default-value selected-mode
-             :options options
-             :on-change handle-change-mode}]])
+          [:> select* {:default-selected (d/name selected-mode)
+                       :options options
+                       :on-change handle-change-mode
+                       :wrapper-class (stl/css :select)}])
 
         (when (and (= origin :sidebar) show-tokens? token-color)
           [:> radio-buttons* {:selected (name color-style)
