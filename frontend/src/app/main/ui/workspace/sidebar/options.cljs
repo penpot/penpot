@@ -115,6 +115,14 @@
           (recur (pop queue) visited)))
       (sequence (keep (d/getf objects)) visited))))
 
+(defn- editing-existing-path?
+  "Whether the path `edition` is being edited. The shape can leave the
+  page while its edit state stays, e.g. deleted by another user or undone;
+  then there is no path to edit."
+  [edit-path edition objects]
+  (and (path.state/editing? edit-path edition)
+       (contains? objects edition)))
+
 (mf/defc design-menu*
   {::mf/private true}
   [{:keys [selected objects page-id file-id shapes]}]
@@ -129,7 +137,7 @@
         (path.state/current-edit-state edit-path edition)
 
         path-editing?
-        (path.state/editing? edit-path edition)
+        (editing-existing-path? edit-path edition objects)
 
         path-content
         (dm/get-in drawing [:object :content])
