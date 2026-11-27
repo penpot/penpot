@@ -168,3 +168,47 @@
           (when err
             (t/is (str/includes? (message err) "PENPOT_SECRET_KEY_FILE"))
             (t/is (str/includes? (message err) "too large"))))))))
+
+(t/deftest empty-master-file-path-is-rejected-only-when-selected
+  (with-temp-dir
+    (fn [dir]
+      (let [err (error-of #(cf/prepare-config {:secret-key-file ""}))
+            file (write-key! dir "service")]
+        (t/is (and err (str/includes? (message err) "PENPOT_SECRET_KEY_FILE")))
+        (t/is (= "direct" (:exporter-shared-key
+                           (cf/prepare-config {:exporter-shared-key "direct" :secret-key-file ""}))))
+        (t/is (= "service" (:exporter-shared-key
+                            (cf/prepare-config {:exporter-shared-key-file file :secret-key-file ""}))))
+        (t/is (= "master" (:secret-key
+                           (cf/prepare-config {:secret-key "master" :secret-key-file ""}))))
+        (doseq [env [{:secret-key "" :secret-key-file ""}
+                     {:exporter-shared-key "" :secret-key-file ""}
+                     {}]]
+          (let [err (error-of #(cf/prepare-config env))]
+            (t/is (and err (not (str/includes? (message err) "PENPOT_SECRET_KEY_FILE"))))))))))
+
+(t/deftest key-file-normalization-contract
+  (with-temp-dir
+    (fn [dir]
+      (let [points (concat (range 0x09 0x0e) [0x20 0x85 0xa0 0x1680]
+                           (range 0x2000 0x200b) [0x2028 0x2029 0x202f 0x205f 0x3000 0xfeff])]
+        (doseq [point points]
+          (let [ch (js/String.fromCodePoint point)
+                file (write-key! dir (str ch "mas" ch "ter" ch))
+                cfg (cf/prepare-config {:exporter-shared-key-file file})]
+            (t/is (= "master" (:exporter-shared-key cfg)) (str "code point " point))))
+        (let [whitespace (apply str (map js/String.fromCodePoint points))
+              file (write-key! dir whitespace)
+              err (error-of #(cf/prepare-config {:exporter-shared-key-file file}))]
+          (t/is (and err (str/includes? (message err) "missing or empty"))))
+        (let [file (write-key! dir "\u0085mas\u00a0ter\ufeff")
+              cfg (cf/prepare-config {:secret-key-file file})]
+          (t/is (= "master" (:secret-key cfg)))
+          (t/is (= "GIFntVZnqcaOnDmD-Ii09n8wkajiOfVXI-RTJGyjKxg" (cf/get-management-key cfg))))
+        (let [value "\u200b café\u180e"
+              file (write-key! dir value)
+              cfg (cf/prepare-config {:exporter-shared-key-file file})]
+          (t/is (= "\u200bcafé\u180e" (:exporter-shared-key cfg))))
+        (let [file (write-key! dir (str "a" (apply str (repeat 2048 "\u00a0"))))
+              err (error-of #(cf/prepare-config {:exporter-shared-key-file file}))]
+          (t/is (and err (str/includes? (message err) "too large"))))))))

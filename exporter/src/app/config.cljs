@@ -123,15 +123,14 @@
       (throw (js/Error. (str variable " key file is too large: " path))))
     (let [value (try
                   (some-> (fs/readFileSync path "utf8")
-                          (str/trim)
-                          (str/replace #"\s+" ""))
+                          (str/replace #"[\u0009-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+" ""))
                   (catch :default cause
                     (l/warn :hint "unable to read configuration key file"
                             :variable variable
                             :path path
                             :cause cause)
                     nil))]
-      (when (str/blank? value)
+      (when (or (nil? value) (empty? value))
         (throw (js/Error. (str variable " key file is missing or empty: " path))))
       value)))
 
@@ -150,7 +149,8 @@
                 env)
          env  (if (and (not (contains? env :exporter-shared-key))
                        (not (contains? env :secret-key))
-                       (present? (c/get env :secret-key-file)))
+                       (or (= "" (c/get env :secret-key-file))
+                           (present? (c/get env :secret-key-file))))
                 (assoc env :secret-key
                        (get-key-file-value "PENPOT_SECRET_KEY_FILE"
                                            (c/get env :secret-key-file)))

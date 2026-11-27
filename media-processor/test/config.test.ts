@@ -158,6 +158,79 @@ describe("shared key file", () => {
     });
   });
 
+  const whitespaceCodePoints = [
+    ...Array.from({ length: 5 }, (_, i) => 0x09 + i),
+    0x20,
+    0x85,
+    0xa0,
+    0x1680,
+    ...Array.from({ length: 11 }, (_, i) => 0x2000 + i),
+    0x2028,
+    0x2029,
+    0x202f,
+    0x205f,
+    0x3000,
+    0xfeff,
+  ];
+
+  it.each(whitespaceCodePoints)("removes U+%s at both edges and inside a service key file", (codePoint) => {
+    withTempDir((dir) => {
+      const character = String.fromCodePoint(codePoint);
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", writeKey(dir, `${character}mas${character}ter${character}`));
+      expect(loadConfig().sharedKey).toBe("master");
+    });
+  });
+
+  it("rejects a file containing only the specified Unicode whitespace", () => {
+    withTempDir((dir) => {
+      vi.stubEnv(
+        "PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE",
+        writeKey(dir, String.fromCodePoint(...whitespaceCodePoints))
+      );
+      expect(() => loadConfig()).toThrow(/PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE key file is missing or empty/);
+    });
+  });
+
+  it("preserves Unicode characters outside the specified list", () => {
+    withTempDir((dir) => {
+      const key = "\u180e\u200b café\u2060\u3001";
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", writeKey(dir, key));
+      expect(loadConfig().sharedKey).toBe("\u180e\u200bcafé\u2060\u3001");
+    });
+  });
+
+  it("checks original byte size before removing whitespace", () => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", writeKey(dir, "a" + "\u00a0".repeat(2048)));
+      expect(() => loadConfig()).toThrow(/too large/);
+    });
+  });
+
+  it("rejects an empty selected master file path", () => {
+    vi.stubEnv("PENPOT_SECRET_KEY_FILE", "");
+    expect(() => loadConfig()).toThrow(/PENPOT_SECRET_KEY_FILE/);
+  });
+
+  it.each(["master", "", "   "])("prefers direct master %j over an empty master file path", (master) => {
+    vi.stubEnv("PENPOT_SECRET_KEY", master);
+    vi.stubEnv("PENPOT_SECRET_KEY_FILE", "");
+    expect(loadConfig().sharedKey).toBe(master === "master" ? "xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM" : null);
+  });
+
+  it.each(["explicit", "", "   "])("prefers direct service key %j over an empty master file path", (key) => {
+    vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY", key);
+    vi.stubEnv("PENPOT_SECRET_KEY_FILE", "");
+    expect(loadConfig().sharedKey).toBe(key.trim() || null);
+  });
+
+  it("prefers a service key file over an empty master file path", () => {
+    withTempDir((dir) => {
+      vi.stubEnv("PENPOT_MEDIA_PROCESSOR_SHARED_KEY_FILE", writeKey(dir, "service"));
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", "");
+      expect(loadConfig().sharedKey).toBe("service");
+    });
+  });
+
   it("prefers the key file over derivation", () => {
     withTempDir((dir) => {
       vi.stubEnv("PENPOT_SECRET_KEY", "master");
@@ -213,7 +286,7 @@ describe("shared key file", () => {
 
   it("derives from a normalized master key file", () => {
     withTempDir((dir) => {
-      vi.stubEnv("PENPOT_SECRET_KEY_FILE", writeKey(dir, " ma \ns\tter "));
+      vi.stubEnv("PENPOT_SECRET_KEY_FILE", writeKey(dir, "\u0085ma\u00a0s\u2003ter\ufeff"));
       // Verified with backend app.setup.keys/derive using secret "master" and salt "media-processor".
       expect(loadConfig().sharedKey).toBe("xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM");
     });

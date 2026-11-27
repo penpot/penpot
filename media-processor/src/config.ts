@@ -52,7 +52,10 @@ function readSharedKeyFile(variable: string, path: string): string {
   }
   let value: string | undefined;
   try {
-    value = readFileSync(path, "utf8").trim().replace(/\s+/g, "");
+    value = readFileSync(path, "utf8").replace(
+      /[\u0009-\u000d\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]/g,
+      ""
+    );
   } catch (error) {
     console.error("unable to read configuration key file", variable, path, error);
   }
@@ -78,10 +81,10 @@ export function loadConfig(): AppConfig {
     const secret =
       parsed.PENPOT_SECRET_KEY !== undefined
         ? parsed.PENPOT_SECRET_KEY
-        : parsed.PENPOT_SECRET_KEY_FILE
+        : parsed.PENPOT_SECRET_KEY_FILE !== undefined
           ? readSharedKeyFile("PENPOT_SECRET_KEY_FILE", parsed.PENPOT_SECRET_KEY_FILE)
           : undefined;
-    if (secret?.trim()) {
+    if (secret && (parsed.PENPOT_SECRET_KEY === undefined || secret.trim())) {
       sharedKey = deriveSharedKey(secret);
     }
   }

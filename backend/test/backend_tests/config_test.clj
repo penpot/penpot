@@ -10,6 +10,8 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.setup.keys :as keys]
+   [buddy.core.codecs :as bc]
    [clojure.core :as c]
    [clojure.test :as t]))
 
@@ -233,6 +235,57 @@
   (with-key-file "from-\n file \tkey"
     (fn [path]
       (t/is (= "from-filekey" (:secret-key (read-config {:secret-key-file path})))))))
+
+(def ^:private key-file-whitespace
+  (concat (range 0x0009 0x000e) [0x0020 0x0085 0x00a0 0x1680]
+          (range 0x2000 0x200b) [0x2028 0x2029 0x202f 0x205f 0x3000 0xfeff]))
+
+(t/deftest read-config-normalizes-key-file-whitespace
+  (doseq [codepoint key-file-whitespace]
+    (t/testing (format "U+%04X at both edges and inside master and service keys" codepoint)
+      (let [space (str (char codepoint))]
+        (with-key-file (str space "mas" space "ter" space)
+          (fn [path]
+            (let [cfg (read-config {:secret-key-file path
+                                    :exporter-shared-key-file path})]
+              (t/is (= "master" (:secret-key cfg)))
+              (t/is (= "master" (:exporter-shared-key cfg))))))))))
+
+(t/deftest read-config-rejects-unicode-whitespace-only-key-files
+  (with-key-file (apply str (map char key-file-whitespace))
+    (fn [path]
+      (doseq [key [:secret-key-file :media-processor-shared-key-file]]
+        (t/testing (str key)
+          (t/is (= :invalid-key-file (:code (ex-data (key-file-error {key path}))))))))))
+
+(t/deftest read-config-preserves-other-key-file-characters
+  (with-key-file "\u0000é\u200b中\u0000"
+    (fn [path]
+      (let [cfg (read-config {:secret-key-file path
+                              :media-processor-shared-key-file path})]
+        (t/is (= "\u0000é\u200b中\u0000" (:secret-key cfg)))
+        (t/is (= "\u0000é\u200b中\u0000" (:media-processor-shared-key cfg)))))))
+
+(t/deftest read-config-does-not-normalize-direct-keys
+  (let [value "\u00a0mas\u00a0ter\ufeff"
+        cfg   (read-config {:secret-key value :exporter-shared-key value})]
+    (t/is (= value (:secret-key cfg)))
+    (t/is (= value (:exporter-shared-key cfg)))))
+
+(t/deftest read-config-checks-key-file-size-in-bytes-before-normalization
+  (with-key-file (str "a" (apply str (repeat 2048 "\u00a0")))
+    (fn [path]
+      (t/is (= :invalid-key-file
+               (:code (ex-data (key-file-error {:secret-key-file path}))))))))
+
+(t/deftest read-config-derives-keys-from-normalized-master-file
+  (with-key-file "\ufeffmas\u00a0ter\u0085"
+    (fn [path]
+      (let [master (:secret-key (read-config {:secret-key-file path}))]
+        (t/is (= "GIFntVZnqcaOnDmD-Ii09n8wkajiOfVXI-RTJGyjKxg"
+                 (bc/bytes->b64-str (keys/derive master :salt "exporter") true)))
+        (t/is (= "xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM"
+                 (bc/bytes->b64-str (keys/derive master :salt "media-processor") true)))))))
 
 (t/deftest read-config-prefers-direct-env-key-over-file
   (with-temp-dir

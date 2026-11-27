@@ -466,9 +466,8 @@
 
 (defn- get-key-file-value
   "Reads a secret from a regular file of at most `max-key-file-size` bytes.
-  Internal whitespace is removed so a wrapped base64 value works. A blank
-  value is an error: `app.setup` treats a blank shared key as disabled, which
-  would silently remove the credential."
+  Unicode White_Space and BOM are removed so a wrapped base64 value works.
+  An empty value is an error: it would silently disable the credential."
   [variable path]
   (let [file (io/file path)]
     (when-not (.isFile file)
@@ -476,16 +475,15 @@
     (when (> (.length file) max-key-file-size)
       (raise-key-file-error variable path "configuration key file is too large"))
     (let [value (try
-                  (some-> (slurp file)
-                          (str/trim)
-                          (str/replace #"\s+" ""))
+                  (str/replace (slurp file)
+                               #"[\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]+" "")
                   (catch Exception cause
                     (l/warn :hint "unable to read configuration key file"
                             :variable variable
                             :path path
                             :cause cause)
                     nil))]
-      (when (str/blank? value)
+      (when (empty? value)
         (raise-key-file-error variable path "configuration key file is missing or empty"))
       value)))
 

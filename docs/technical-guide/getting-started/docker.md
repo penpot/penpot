@@ -126,6 +126,8 @@ This will fetch the latest images. When you do <code class="language-bash">docke
 
 The backend now requires a stable master key and fails to start without one. Keep your existing `PENPOT_SECRET_KEY` when you upgrade. If you do not have a stable key, configure one before upgrading; setting a new key can invalidate existing sessions, invitations, and other tokens.
 
+Key files now remove the same Unicode whitespace in the backend, exporter, and media processor. If an existing key file contains such characters, the resulting key can change: a master key change can invalidate tokens, and a service key mismatch can break authentication. Before upgrading, review key files, configure the same key without whitespace on both sides of each service connection, and coordinate service restarts.
+
 The included Docker Compose file sets `PENPOT_SECRET_KEY` to `change-this-insecure-key`, a public and insecure value. Replace it with a random secret in every service that must share the master key. If you already use that value, changing it can invalidate existing tokens. See [Secret key configuration](/technical-guide/configuration/#secret-key) for file-based secrets, service keys, and their precedence.
 
 #### Upgrade to 2.19
