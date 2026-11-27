@@ -210,7 +210,18 @@
     :link-preview
 
     ;; Shows the "link later" option on the files export modal.
-    :export-link-later})
+    :export-link-later
+
+    ;; Compact binfile-v3 export: the frontend asks for one JSON entry
+    ;; per page with every shape of the page inside, instead of one JSON
+    ;; entry per shape. Off by default: a version 2 package only opens
+    ;; in an importer that reads it.
+    :binfile-v3-compact
+
+    ;; The same compact layout with the chunks written as zstd frames
+    ;; (manifest version 3). When both compact flags are on this one
+    ;; wins. Off by default for the same reason as the plain one.
+    :binfile-v3-compact-zstd})
 
 (def all-flags
   (set/union email login varia))

@@ -5,7 +5,7 @@
 ## Construction and compaction
 
 - Preserve redo and undo order when compacting: merge `:reg-objects` per container and place registrations after changes that resize children. Never compact across commit boundaries; the backend can reject individual commits by `commit-id`. Client save ordering is in `mem:frontend/workspace-persistence`.
-- Do not send a deleted component's entire object map for a metadata-only edit. Scope shape edits to `:component-id` using the builder's container context. Omitted `:objects` preserves stored shapes; explicit nil clears them. Reserve `:objects? true` for repairs that intentionally move or clear the whole map.
+- Do not send a deleted component's entire object map for a metadata-only edit. Scope shape edits to `:component-id` using the builder's container context. Omitted `:objects` preserves stored shapes; explicit nil clears them. Reserve `:objects? true` for repairs that intentionally move or clear the whole map and for variant repairs that write a main shape stored inside a deleted component (`:main-instance-not-a-variant` and `:invalid-variant-properties`); scoped `:mod-obj` changes validate the stored shape and can reject partially formed files those repairs must fix.
 - For fixture edits and validation controls see `mem:common/testing`.
 
 ## Application and schema validation

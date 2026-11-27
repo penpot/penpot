@@ -28,7 +28,7 @@
     "build:bundle": "./scripts/build",
     "fmt": "cljfmt fix --parallel=true src/ test/",
     "check-fmt": "cljfmt check --parallel=true src/ test/",
-    "lint": "clj-kondo --parallel --lint src/",
+    "lint": "clj-kondo --parallel --fail-level warning --config-dir ../.clj-kondo --lint src/",
     "test": "node --test",
     "watch:test": "node --test --watch",
     "watch": "pnpm run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"

@@ -73,7 +73,7 @@
         data1   {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :object-id "test-key-1"
+                 :object-id (thc/fmt-object-id (:id file) page-id (uuid/next) "frame")
                  :media {:filename "sample.jpg"
                          :size 312043
                          :path (th/tempfile "backend_tests/test_files/sample.jpg")
@@ -282,7 +282,7 @@
       (let [data {::th/type :create-file-object-thumbnail
                   ::rpc/profile-id (:id profile)
                   :file-id (:id file)
-                  :object-id "test-key-svg"
+                  :object-id (thc/fmt-object-id (:id file) (uuid/next) (uuid/next) "frame")
                   :media {:filename "evil.svg"
                           :size (fs/size path)
                           :path path
@@ -394,7 +394,7 @@
         data   {::th/type :create-file-object-thumbnail
                 ::rpc/profile-id (:id profile)
                 :file-id (:id file)
-                :object-id "test-key-2"
+                :object-id (thc/fmt-object-id (:id file) (uuid/next) (uuid/next) "frame")
                 :media {:filename "sample.jpg"
                         :size 7923
                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
@@ -421,7 +421,7 @@
       ;; (th/print-result! out)
 
       (let [result (:result out)]
-        (t/is (contains? result "test-key-2"))))))
+        (t/is (contains? result (:object-id data)))))))
 
 (t/deftest create-file-object-thumbnail
   (th/db-delete! :task {:name "object-update"})
@@ -433,7 +433,7 @@
         data    {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :object-id "test-key-2"
+                 :object-id (thc/fmt-object-id (:id file) (uuid/next) (uuid/next) "frame")
                  :media {:filename "sample.jpg"
                          :mtype "image/jpeg"}}]
 
@@ -468,11 +468,12 @@
         oid3    (thc/fmt-object-id (:id file) page-id (uuid/random) "component")]
 
     ;; Create three thumbnails
-    (doseq [oid [oid1 oid2 oid3]]
+    (doseq [[oid tag] [[oid1 "frame"] [oid2 "frame"] [oid3 "component"]]]
       (let [data   {::th/type :create-file-object-thumbnail
                     ::rpc/profile-id (:id profile)
                     :file-id (:id file)
                     :object-id oid
+                    :tag tag
                     :media {:filename "sample.jpg"
                             :size 7923
                             :path (th/tempfile "backend_tests/test_files/sample2.jpg")
@@ -1011,7 +1012,48 @@
     (t/is (th/ex-of-code? error :params-validation))
     (t/is (= 0 (count (th/db-query :file-thumbnail {:file-id (:id file)}))))))
 
+(t/deftest create-file-object-thumbnail-refuses-an-id-the-export-cannot-read
+  ;; The export reads the object id as `file/page/frame/tag` and skips a row it
+  ;; cannot parse, so the row would be a thumbnail the package never carries.
+  ;; The creation is the last place that can refuse it.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        file-id (:id file)
+        base    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id file-id
+                 :media {:filename "sample.jpg"
+                         :size 7923
+                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                         :mtype "image/jpeg"}}]
+
+    (doseq [[label params]
+            [["a short id"
+              {:object-id "test-key"}]
+             ["the id of another file"
+              {:object-id (thc/fmt-object-id (uuid/next) (uuid/next) (uuid/next) "frame")}]
+             ["a segment that is not a uuid"
+              {:object-id (str file-id "/not-a-uuid/" (uuid/next) "/frame")}]
+             ["a blank tag"
+              {:tag " "
+               :object-id (thc/fmt-object-id file-id (uuid/next) (uuid/next) " ")}]
+             ["a trailing separator"
+              {:object-id (str (thc/fmt-object-id file-id (uuid/next) (uuid/next) "frame") "/")}]]]
+      (let [out (th/multipart-command! (merge base params))]
+        (t/is (some? (:error out)) label)
+        (t/is (th/ex-of-code? (:error out) :params-validation) label)))
+
+    (t/is (= 0 (count (th/db-query :file-tagged-object-thumbnail
+                                   {:file-id file-id})))
+          "no row is stored for a refused id")))
+
 (t/deftest rejects-forged-path-on-create-file-object-thumbnail
+  ;; The object id passes the schema, so the command reaches the upload-path
+  ;; guard: the test fails if that guard disappears. The code alone would not
+  ;; prove it, because the schema rejects an id with the same code and hint, so
+  ;; the hint is the part that names the guard.
   (let [profile (th/create-profile* 1)
         file    (th/create-file* 1 {:profile-id (:id profile)
                                     :project-id (:default-project-id profile)
@@ -1019,15 +1061,67 @@
         data    {::th/type :create-file-object-thumbnail
                  ::rpc/profile-id (:id profile)
                  :file-id (:id file)
-                 :object-id "test-key-forged"
+                 :object-id (thc/fmt-object-id (:id file) (uuid/next)
+                                               (uuid/next) "frame")
                  :media {:filename "x.png"
                          :size 1
                          :path (fs/path "/etc/passwd")
                          :mtype "image/png"}}
-        out     (th/command! data)
+        out     (th/multipart-command! data)
         error   (:error out)]
     (t/is (nil? (:result out)))
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :params-validation))
+    (t/is (= "invalid upload path" (:hint (ex-data error)))
+          "the refusal comes from the upload-path guard")
     (t/is (= 0 (count (th/db-query :file-tagged-object-thumbnail {:file-id (:id file)}))))))
+
+(t/deftest create-file-object-thumbnail-refuses-a-tag-the-key-cannot-carry
+  ;; The tag is one segment of the thumbnail key in an exported package
+  ;; (`tag/page-id/frame-id`), so it cannot carry the separator and must match
+  ;; the last segment of the object id, which is the one the export reads.
+  (let [profile (th/create-profile* 1)
+        file    (th/create-file* 1 {:profile-id (:id profile)
+                                    :project-id (:default-project-id profile)
+                                    :is-shared false})
+        base    {::th/type :create-file-object-thumbnail
+                 ::rpc/profile-id (:id profile)
+                 :file-id (:id file)
+                 :media {:filename "sample.jpg"
+                         :size 7923
+                         :path (th/tempfile "backend_tests/test_files/sample2.jpg")
+                         :mtype "image/jpeg"}}]
+
+    (t/testing "a tag with the key separator is refused"
+      (let [out (th/multipart-command!
+                 (assoc base
+                        :tag "bad/tag"
+                        :object-id (thc/fmt-object-id (:id file) (uuid/next)
+                                                      (uuid/next) "bad/tag")))]
+        (t/is (some? (:error out)))))
+
+    (t/testing "a tag with a control character is refused"
+      (let [out (th/multipart-command!
+                 (assoc base
+                        :tag (str "bad" (char 9) "tag")
+                        :object-id (thc/fmt-object-id (:id file) (uuid/next)
+                                                      (uuid/next) (str "bad" (char 9) "tag"))))]
+        (t/is (some? (:error out)))))
+
+    (t/testing "an object id whose last segment is not the tag is refused"
+      (let [out (th/multipart-command!
+                 (assoc base
+                        :tag "component"
+                        :object-id (thc/fmt-object-id (:id file) (uuid/next)
+                                                      (uuid/next) "frame")))]
+        (t/is (some? (:error out)))))
+
+    (t/testing "a well formed pair is accepted"
+      (let [out (th/multipart-command!
+                 (assoc base
+                        :tag "frame"
+                        :object-id (thc/fmt-object-id (:id file) (uuid/next)
+                                                      (uuid/next) "frame")))]
+        (t/is (nil? (:error out)))
+        (t/is (map? (:result out)))))))

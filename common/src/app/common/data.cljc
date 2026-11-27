@@ -933,8 +933,8 @@
   and current value. For attributes which value is a map this will be recursive.
 
   For example:
-  (map-diff {:a 1 :b 2 :c { :foo 1 :var 2}
-            {:a 2      :c { :foo 10 } :d 10)
+  (map-diff {:a 1 :b 2 :c { :foo 1 :var 2 }}
+            {:a 2      :c { :foo 10 } :d 10 })
 
      => { :a [1 2]
           :b [2 nil]
@@ -942,7 +942,21 @@
                :var [2 nil]}
           :d [nil 10] }
 
-  If both maps are identical the result will be an empty map."
+  If both maps are identical the result will be an empty map.
+
+  Attributes whose value is not a map (vectors, sets, scalars) are
+  compared as a whole: the diff holds the entire previous and new
+  value, never an element-by-element diff.
+
+  A missing key and a key holding nil are indistinguishable here
+  (both read as nil), so changing a value to nil produces the same
+  entry as removing the key, and a nested change touching only nil
+  values can produce an empty nested diff.
+
+  For a richer diff, whose operations reach a single element inside a
+  vector and tell a missing key from a key holding nil apart, see
+  `app.common.data.object-diff/diff` and
+  `app.common.data.object-diff/apply-diff`."
   [m1 m2]
 
   (let [m1ks (set (keys m1))

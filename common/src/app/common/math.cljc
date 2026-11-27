@@ -130,7 +130,7 @@
 
   ([v]
    #?(:cljs (js/Math.round v)
-      :clj (Math/round (float v)))))
+      :clj (Math/round (double v)))))
 
 (defn ceil
   "Returns the smallest integer greater than

@@ -24,6 +24,8 @@ The `.penpot` format (version 3) uses a ZIP container with JSON files for metada
 | v2 | SQLite-based format | Removed (never released) |
 | v3 | ZIP + JSON format | **Current** |
 
+Do not confuse this file-format version with the `version` of the manifest, which names the layout of the pages and collections of one package; see [Manifest Specification](#manifest-specification).
+
 ## File Structure
 
 A `.penpot` file contains the following structure:
@@ -31,26 +33,31 @@ A `.penpot` file contains the following structure:
 ```
 pencil.penpot (ZIP archive)
 ├── manifest.json                          # Root metadata
+├── objects.json                           # Storage object metadata, packed (2 and 3)
 ├── files/
 │   ├── {file-id}.json                     # File metadata
 │   └── {file-id}/
 │       ├── pages/
 │       │   ├── {page-id}.json             # Page metadata
 │       │   └── {page-id}/
-│       │       └── {shape-id}.json        # Individual shapes
-│       ├── media/
-│       │   └── {media-id}.json            # Media references
-│       ├── colors/
-│       │   └── {color-id}.json            # Library colors
-│       ├── components/
-│       │   └── {component-id}.json        # Library components
-│       ├── typographies/
-│       │   └── {typography-id}.json       # Library typographies
+│       │       ├── {shape-id}.json        # Individual shapes (version 1)
+│       │       └── chunks/{i}.json        # Page chunks (2 and 3)
+│       │                                  #   .json.{codec} in version 3
+│       ├── media.json                     # Media references, packed (2 and 3)
+│       ├── colors.json                    # Library colors, packed (2 and 3)
+│       ├── components.json                # Library components, packed (2 and 3)
+│       ├── typographies.json              # Library typographies, packed (2 and 3)
+│       ├── thumbnails.json                # Thumbnail metadata, packed (2 and 3)
+│       ├── {family}/chunks/{i}.json       # Parts of a packed family (2 and 3)
 │       ├── tokens.json                    # Design tokens library
-│       └── thumbnails/
-│           └── {tag}/{page-id}/{frame-id}.json  # Thumbnail metadata
+│       ├── media/{media-id}.json          # One entry per object: version 1,
+│       ├── colors/{color-id}.json         #   and @penpot/library in version 2
+│       ├── components/{component-id}.json
+│       ├── typographies/{typography-id}.json
+│       └── thumbnails/{tag}/{page-id}/{frame-id}.json
 └── objects/
-    ├── {uuid}.json                        # Storage object metadata
+    ├── chunks/{i}.json                    # Parts of objects.json (2 and 3)
+    ├── {uuid}.json                        # Storage object metadata (version 1)
     └── {uuid}.{ext}                       # Binary media files (png, jpg, etc.)
 ```
 
@@ -81,7 +88,7 @@ The `manifest.json` file is the root of the archive and contains metadata about 
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `version` | integer | Yes | Format version (currently `1`) |
+| `version` | integer | Yes | Version of the layout: `1` writes one JSON entry per shape and packs nothing; `2` writes chunked pages and packs the per-object families as plain JSON; `3` writes the same layouts with chunks and packed families compressed by a codec. This is the manifest version, not the file-format version of the table above |
 | `type` | string | Yes | Must be `"penpot/export-files"` |
 | `generatedBy` | string | No | Penpot version that created the file |
 | `refer` | string | No | Source system (typically `"penpot"`) |
@@ -202,14 +209,40 @@ Each page is stored at `files/{file-id}/pages/{page-id}.json`.
 | `id` | UUID | Yes | Page identifier |
 | `name` | string | Yes | Page name |
 | `index` | integer | No | Page order in the file |
-| `options` | object | No | Page options (guides, etc.) |
+| `options` | object | No | Page options (guides, etc.); omitted in versions `2` and `3` |
 | `background` | string | No | Background color (hex) |
 | `flows` | object | No | Prototype flows |
 | `guides` | object | No | Ruler guides |
+| `chunks` | integer | Only in versions 2 and 3 | How many chunk entries the page has |
+
+A manifest with `version: 2` or `3` stores the shapes of a page in chunks and writes no per-shape files: the entry of the page names them with `chunks`, and chunk `i` lives at `files/{file-id}/pages/{page-id}/chunks/{i}.json` as a stream of `[id, shape]` pairs, one json value per line (a JSONL file); in `version: 3` the chunk is `chunks/{i}.json.{codec}` and its payload is a frame of that codec. A plain chunk holds at most 5 MiB of uncompressed JSON — a quarter of the 20 MiB an importer accepts per text entry — and a codec chunk at most 18 MiB of uncompressed JSON, 2 MiB under the same cap; both count the line breaks of the chunk, so a big page stays importable. A chunk that carries a single shape bigger than that is the exception, because a shape cannot be split. A shape omits what the reader rebuilds: its `id` (the key of the chunk is the identity), `:page-id`, the geometry that follows from its transform, the `constraints-h`/`constraints-v` that follow from the tree, the default values and the empty collections. `:grow-type` is **not** one of them: an absent value and `:fixed` take different branches in the text resize path, so it is written as it is and the reader never invents it. Versions `2` and `3` also round every float to 4 decimals, so the same shape carries slightly different numbers than in version `1`. The importer reads both layouts and picks the layout of a page by the manifest version, so a `version: 1` package keeps opening, and so does a `version: 2` one written before the chunks, which carries the shapes in the entry of the page.
+
+The manifest declares the layout of the whole package, and the content must match it: a `version: 1` package that carries page chunks, a packed family main entry or the packed storage metadata is refused, because the verbose reader would import fewer objects than the package holds. Entries whose path matches nothing the importer knows (`foobar.json`) are ignored, and so is a family or storage chunk whose main entry is missing, in every version: no layout would read them.
+
+A chunk is JSONL: each line is one `[id, shape]` pair, so a tool that expects a single json document must read it as a stream. `jq` already does, and prints the shape of every line:
+
+```bash
+unzip -p pencil.penpot 'files/*/pages/*/chunks/0.json' | jq -c '.[1]'
+```
+
+
+### Packed Collections
+
+Versions `2` and `3` also pack the collections of a file into one entry each: `files/{file-id}/components.json`, `.../colors.json`, `.../typographies.json`, `.../media.json`, `.../thumbnails.json` (keyed by `tag/page-id/frame-id`) and the top-level `objects.json` for the storage-object metadata. A non-empty family always writes a `{"chunks": n}` header and its parts at `<family>/chunks/{i}.json[.{codec}]`, each a stream of `[key, value]` lines like a page chunk; the header is always plain `.json`, because it only carries the count, and it is written after its chunks. An empty family writes no entry.
+
+The reader also accepts an inline entry: a family entry without chunk entries is read as a json object keyed by object id. The writers never produce one, but a package written while the layout was being settled still opens.
+
+A family exists because its main entry exists: chunk entries whose main entry is missing are ignored, like any other path the importer does not manage. Inside a packed family the key of an object must match its `id` (for thumbnails, the key is `tag/page-id/frame-id`: three segments, parseable uuids and a tag that is neither blank nor carries a control character, with no trailing separator); a package where they disagree or carries an invalid tag is refused instead of dropping the object. The same rule applies to a per-entry thumbnail, whose tag is a path segment. Pages keep the opposite rule on purpose: a page written before the shape pruning carries the `id` inside every shape, and it wins over the key.
+
+`@penpot/library` writes version `2` with the same packed families and the same header-plus-chunks rule, and version `1` with one entry per object (`files/{file-id}/components/{component-id}.json` and so on). It writes no thumbnails, because a build context has none. The importer accepts the packed layout and the per-entry layout in versions `2` and `3`; a package that carries the same family both packed and per entry is refused.
+
+### Codecs
+
+Version `3` writes the chunks and the packed families as frames of a codec, and names the codec in the entry suffix: `chunks/{i}.json.zstd`, `components/chunks/{i}.json.zstd`, `objects/chunks/{i}.json.zstd`. A family header (`components.json`) stays plain, because it only carries the count. A name ending in `.json` is plain JSON; a name ending in `.json.{codec}` is a frame of that codec, decompressed while reading, so the size limits count decompressed bytes. Adding a codec does not bump the manifest version: `3` means "the chunked layout, whose entries may carry a codec suffix". An unknown codec fails the import, naming the entry, instead of being skipped.
 
 ### Shapes
 
-Individual shapes are stored at `files/{file-id}/pages/{page-id}/{shape-id}.json`.
+With a manifest `version: 1`, individual shapes are stored at `files/{file-id}/pages/{page-id}/{shape-id}.json`.
 
 #### Shape Types
 
@@ -229,11 +262,11 @@ Penpot supports 9 shape types:
 
 #### Base Shape Attributes
 
-All shapes share these base attributes:
+All shapes share these base attributes. A version 2 shape also omits the ones the reader rebuilds (derived `selrect`/`points`, the default values and the empty collections), so the tables below describe version 1.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `id` | UUID | Yes | Shape identifier |
+| `id` | UUID | Yes in version 1 | Shape identifier; in versions 2 and 3 it is the key of the chunk and the shape does not carry it |
 | `name` | string | Yes | Shape name |
 | `type` | string | Yes | Shape type (see above) |
 | `selrect` | object | Yes | Selection rectangle `{x, y, width, height}` |
@@ -478,6 +511,8 @@ Each storage object has:
 - `objects/{uuid}.json` - Metadata
 - `objects/{uuid}.{ext}` - Binary content (png, jpg, svg, etc.)
 
+In versions `2` and `3` the metadata travels packed in the top-level `objects.json` header plus its `objects/chunks/{i}.json` parts, keyed by object id; the binary keeps one entry per object. A non-empty family always writes its header and its chunks, one chunk per budget; a family with no objects writes no entry.
+
 #### Metadata Schema
 
 | Field | Type | Required | Description |
@@ -574,6 +609,8 @@ cat /tmp/penpot-inspect/files/*/pages/*/*.json | jq .
 
 For an interactive way to explore a `.penpot` file, try the [**Penpot file inspector**](/technical-guide/developer/data-model/penpot-file-inspector/). It runs entirely in your browser, displays a collapsible file tree, syntax-highlighted JSON, image previews, and clickable cross-references between shapes, components, colors, and media.
 
+It reads packages in the verbose layout (manifest version `1`), which is the one without a compact variant: one JSON entry per shape and one per object of every family. A package exported with a compact layout (manifest versions `2` and `3`) keeps the shapes in `chunks/{i}.json` JSONL entries and the families in a header plus their chunks, which the inspector does not read, so it shows no shapes and no assets for them. To inspect a compact package, unzip it and read the chunks: a version `2` package keeps them as plain `chunks/{i}.json`, one JSON value per line; a version `3` package keeps them as `chunks/{i}.json.{codec}` frames (today `.json.zstd`), which must be decompressed first (`zstd -d` or `unzstd`) — see [Codecs](#codecs). Importing the package into Penpot works for both.
+
 ### Quick Inspection Script
 
 ```bash
@@ -598,6 +635,14 @@ for f in "$TMPDIR"/files/*/pages/*.json; do
   echo "- $(jq -r '.name' "$f")"
 done
 
+echo -e "\n=== Packed collections (versions 2 and 3) ==="
+ls "$TMPDIR"/files/*/components.json "$TMPDIR"/files/*/colors.json \
+   "$TMPDIR"/files/*/typographies.json "$TMPDIR"/files/*/media.json \
+   "$TMPDIR"/files/*/thumbnails.json "$TMPDIR"/objects.json 2>/dev/null
+
+echo -e "\n=== Codec entries (version 3) ==="
+unzip -l "$FILE" | grep -E '\.json\.[a-z0-9]+$' || echo "none"
+
 echo -e "\n=== Storage Objects ==="
 ls -lh "$TMPDIR"/objects/*.{png,jpg,svg} 2>/dev/null | wc -l
 echo "media files"
@@ -607,7 +652,7 @@ rm -rf "$TMPDIR"
 
 ## Cross-References
 
-- [Penpot file inspector](/technical-guide/developer/data-model/penpot-file-inspector/) - Browser-based interactive inspector
+- [Penpot file inspector](/technical-guide/developer/data-model/penpot-file-inspector/) - Browser-based interactive inspector for verbose (version 1) packages
 - [Data Model](/technical-guide/developer/data-model/) - Conceptual data model
 - [Data Guide](/technical-guide/developer/data-guide/) - Working with data structures
 - [Export/Import Files](/user-guide/export-import/export-import-files/) - User guide for exporting and importing

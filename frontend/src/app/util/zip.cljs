@@ -42,7 +42,11 @@
 
 (defn writer
   [stream-writer]
-  (new zip/ZipWriter stream-writer))
+  ;; `extendedTimestamp` is on by default in zip.js and, with the default
+  ;; `lastModDate`, it writes the extended-timestamp and NTFS extra fields in
+  ;; both the local header and the central directory: 90 bytes per entry, which
+  ;; a package with one entry per shape pays for every shape.
+  (new zip/ZipWriter stream-writer #js {:extendedTimestamp false}))
 
 (defn add
   [writer path content]

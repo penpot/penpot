@@ -77,8 +77,12 @@ jobs:
 
       - name: Lint
         working-directory: ./backend
+        # The module's own script is the single source of truth for the
+        # command, the config dir and the severity. The flag keeps pnpm from
+        # installing the workspace before the script: this job has no
+        # `pnpm install` step and the lint only needs the image's clj-kondo.
         run: |
-          clj-kondo --parallel --lint ../common/src/ src/
+          pnpm --config.verify-deps-before-run=false run lint:clj
 
       - name: Tests
         working-directory: ./backend

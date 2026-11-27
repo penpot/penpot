@@ -19,6 +19,9 @@ Some legacy code violates this layering; do not copy those violations into new c
 
 - URL construction on either runtime: `mem:common/uri` for relative-path resolution and preserving a deployment subpath.
 
+Generic data:
+- `app.common.data.object-diff` diffs and applies changes to arbitrary values, including individual vector elements; format and ordering rules: `mem:common/object-diff`.
+
 Model, schema, and persistence shape:
 - File/page/shape/component attr changes, import/export surfaces, inspector/codegen, and cross-module checklist: `mem:common/data-model-change-checklist`.
 - Design token model, import/export and workspace application: `mem:common/tokens`.

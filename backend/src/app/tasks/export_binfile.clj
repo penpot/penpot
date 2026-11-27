@@ -24,13 +24,14 @@
 
 (def schema:params
   "Business params of an export: the files to export, frozen when the job
-  was created, how their libraries are handled, and the base URI the
-  download link must use once the job runs outside the request."
+  was created, how their libraries are handled, the base URI for the
+  download link, and the layout of their pages."
   [:map {:title "export-binfile-params" :closed true}
    [:file-ids    [::sm/set ::sm/uuid]]
    [:export-type [::sm/one-of #{:include-libraries :merge-libraries
                                 :detach-libraries :link-later}]]
-   [:public-uri  {:optional true} ::sm/text]])
+   [:public-uri  {:optional true} ::sm/text]
+   [:variant     {:optional true} bfc/schema:variant]])
 
 (def schema:create-params
   "Business params an export caller may provide. The backend adds the base
@@ -76,6 +77,7 @@
     (let [output (tmp/tempfile* :suffix ".penpot")
           cfg    (bfc/export-cfg cfg {:file-ids    file-ids
                                       :export-type (:export-type params)
+                                      :variant     (:variant params)
                                       :output      output})]
       (try
         (bfj/check-active cfg context)

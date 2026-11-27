@@ -728,7 +728,9 @@
       (-> (pcb/empty-changes nil)
           (pcb/with-library-data file-data)
           (pcb/update-component (:id component)
-                                #(update-in % [:objects (:id shape)] repair-shape)))
+                                #(update-in % [:objects (:id shape)] repair-shape)
+                                ;; The main is inside the component objects, not on a page.
+                                :objects? true))
       (-> (pcb/empty-changes nil page-id)
           (pcb/with-file-data file-data)
           (pcb/update-shapes [(:id shape)] repair-shape)))))
@@ -784,7 +786,9 @@
                    (and deleted?
                         label-differs?
                         (map? (get-in component [:objects main-id])))
-                   (assoc-in [:objects main-id :variant-name] variant-name))))))
+                   (assoc-in [:objects main-id :variant-name] variant-name)))
+               ;; The label of a deleted main lives in the component objects.
+               :objects? true)))
         shape-changes
         (when (and (not deleted?) label-differs? (map? shape))
           (log/debug :hint "  -> set variant-name" :variant-name variant-name :page-id page-id)
