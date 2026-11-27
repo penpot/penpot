@@ -1365,12 +1365,61 @@
             (pr-str message)))))
 
 (t/deftest invalid-message-request-id-is-safe
-  (doseq [id [(uuid/next) 0 9007199254740991 -9007199254740991 "request"]]
-    (t/is (= id (-> (ws/prepare-message :transit {:type :unknown :request-id id})
-                    :error :request-id))))
-  (doseq [id [nil 9007199254740992 -9007199254740992 1.5 {} (apply str (repeat 129 "x"))]]
-    (t/is (not (contains? (:error (ws/prepare-message :transit {:request-id id}))
-                          :request-id)))))
+  (doseq [format [:json :transit]]
+    (let [encode (ws/resolve-encoder format)
+          decode (ws/resolve-decoder format)
+          prepare (fn [id]
+                    (->> {:type :unknown :request-id id}
+                         encode
+                         decode
+                         (ws/prepare-message format)
+                         :error))]
+      (doseq [id [0 9007199254740991 -9007199254740991 "request"]]
+        (t/is (= id (:request-id (prepare id)))))
+      (doseq [id [nil 9007199254740992 -9007199254740992 1.5 {} (apply str (repeat 129 "x"))]]
+        (t/is (not (contains? (prepare id) :request-id))))
+      (let [id (uuid/next)]
+        (t/is (= (if (= format :json) (str id) id)
+                 (:request-id (prepare id))))))))
+
+(t/deftest invalid-fields-are-rejected-for-both-formats
+  (let [id      (uuid/next)
+        pointer {:type :pointer-update :file-id id :page-id id
+                 :position {:x 1 :y 2}}
+        cases   [nil 1 [] {} {:type :open} {:type :close} {:type :unknown}
+                 {:type :subscribe-team}
+                 {:type :subscribe-team :team-id "invalid"}
+                 {:type :subscribe-team :team-id 42}
+                 {:type :subscribe-file}
+                 {:type :subscribe-file :file-id "invalid"}
+                 {:type :subscribe-file :file-id 42}
+                 {:type :subscribe-file :file-id id :version 42}
+                 {:type :unsubscribe-file}
+                 {:type :unsubscribe-file :file-id "invalid"}
+                 {:type :unsubscribe-file :file-id 42}
+                 (dissoc pointer :file-id)
+                 (assoc pointer :file-id "invalid")
+                 (dissoc pointer :page-id)
+                 (assoc pointer :page-id "invalid")
+                 (assoc pointer :page-id 42)
+                 (dissoc pointer :position)
+                 (assoc pointer :position {:x "invalid" :y 2})
+                 (assoc pointer :position {:x 1})
+                 (assoc pointer :zoom "invalid")
+                 (assoc pointer :zoom-inverse "invalid")
+                 (assoc pointer :vbox "invalid")
+                 (assoc pointer :vport "invalid")]]
+    (doseq [format [:json :transit]
+            message cases]
+      (let [encode (ws/resolve-encoder format)
+            decode (ws/resolve-decoder format)
+            result (ws/prepare-message format (decode (encode message)))]
+        (t/is (= {:type :error
+                  :error {:type :validation :code :invalid-websocket-message}}
+                 (:error result))
+              (str (name format) " " (pr-str message)))))
+    (t/is (some? (:error (ws/prepare-message :transit
+                                             {:type :subscribe-file :file-id (str id)}))))))
 
 (t/deftest invalid-frames-do-not-disconnect-or-dispatch
   (doseq [format [:json :transit]]
@@ -1413,6 +1462,61 @@
           (t/is (= 2 (count errors)))
           (t/is (not (contains? (second errors) :request-id))))
         (t/is (not-any? #(= :unknown (:type %)) @received))))))
+
+(t/deftest invalid-json-pointer-keeps-listener-open
+  (let [file-id   (uuid/next)
+        page-id   (uuid/next)
+        state     (atom {::ws/file-subscription {:file-id file-id}})
+        wsp       (make-wsp (uuid/next) state (sp/chan))
+        published (atom [])
+        handled   (atom [])
+        replied   (promise)
+        delivered (promise)
+        closed    (promise)
+        decode    (ws/resolve-decoder :json)
+        listener  (util-ws/listener
+                   {}
+                   ::util-ws/prepare-fn (partial ws/prepare-message :json)
+                   ::util-ws/encode-fn (ws/resolve-encoder :json)
+                   ::util-ws/decode-fn decode
+                   ::util-ws/on-rcv-message identity
+                   ::util-ws/on-snd-message identity
+                   ::util-ws/handler (fn [_ message]
+                                       (swap! handled conj (:type message))
+                                       (case (:type message)
+                                         :pointer-update (ws/handle-message th/*system* wsp message)
+                                         :close (deliver closed true)
+                                         nil)))
+        invalid   (str "{\"type\":\"pointer-update\",\"fileId\":\"" file-id
+                       "\",\"pageId\":\"invalid\",\"position\":{\"x\":1,\"y\":2},"
+                       "\"requestId\":42}")
+        valid     (str "{\"type\":\"pointer-update\",\"fileId\":\"" file-id
+                       "\",\"pageId\":\"" page-id "\",\"position\":{\"x\":1,\"y\":2}}")]
+    (with-redefs [yws/set-idle-timeout! (fn [& _])
+                  yws/open? (constantly true)
+                  yws/send (fn [_ frame] (deliver replied (decode frame)))
+                  yws/close (fn [& _])
+                  mbus/pub! (fn [_ & {:keys [message]}]
+                              (swap! published conj message)
+                              (deliver delivered true))]
+      ((:on-open listener) :channel)
+      (try
+        ((:on-message listener) :channel invalid)
+        (t/is (= {:type "error"
+                  :error {:type "validation" :code "invalid-websocket-message"}
+                  :request-id 42}
+                 (deref replied 3000 nil)))
+        (t/is (empty? @published))
+        (t/is (not-any? #{:pointer-update} @handled))
+        ((:on-message listener) :channel valid)
+        (t/is (true? (deref delivered 3000 false)))
+        (t/is (= 1 (count @published)))
+        (t/is (= file-id (:file-id (first @published))))
+        (t/is (= page-id (:page-id (first @published))))
+        (finally
+          ((:on-close listener) :channel 1000 "done")
+          (t/is (true? (deref closed 3000 false)))
+          (sp/close! (::util-ws/output-ch wsp)))))))
 
 (defn- ws-request
   [{:keys [headers params]}]
