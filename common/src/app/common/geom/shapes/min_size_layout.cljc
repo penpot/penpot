@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.geom.shapes.common :as gco]
    [app.common.geom.shapes.flex-layout.bounds :as fb]
    [app.common.geom.shapes.flex-layout.layout-data :as fd]
    [app.common.geom.shapes.grid-layout.bounds :as gb]
@@ -70,7 +71,7 @@
                 (keep (fn [c]
                         (when-let [b (get bounds (:id c))]
                           [@b c]))))
-           layout-data (gd/calc-layout-data child (:points child) children bounds objects true)
+           layout-data (gd/calc-layout-data child (gco/get-points-with-area child) children bounds objects true)
            auto-bounds (gb/layout-content-bounds bounds child layout-data)]
        (if auto-bounds
          (max (ctl/child-min-height child)
