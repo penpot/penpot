@@ -19,6 +19,7 @@
    [app.main.worker :as mw]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
 
@@ -46,12 +47,16 @@
 
   By default the transport responds through the `:response` subject. Pass a
   `respond` function (`(fn [cmd params] observable)`) to drive the transport
-  response directly instead. Delivery through the subject is asynchronous
-  (`observe-on :async`): await each effect — via `wait-for` — before
-  asserting it."
+  response directly instead. Delivery through the subject is asynchronous —
+  a promise microtask (`observe-on :asap`), so no timer can race it — and
+  the `:answers` atom lists the answers already delivered to the pipeline:
+  await each effect — via `wait-for` — before asserting it, and wait on
+  `:answers` right after a push when the test must tell a lost answer from
+  a hung save."
   [f & [respond]]
   (let [file-id   (uuid/next)
         response  (rx/subject)
+        answers   (atom [])
         failures  (atom [])
         requests  (atom [])
         requests$ (rx/subject)
@@ -67,7 +72,10 @@
                                        (rx/push! requests$ entry))
                                      (if respond
                                        (respond cmd params)
-                                       (->> response (rx/take 1) (rx/observe-on :async)))))
+                                       (->> response
+                                            (rx/take 1)
+                                            (rx/observe-on :asap)
+                                            (rx/tap #(swap! answers conj %))))))
        errors/flash     (fn [& {:keys [cause]}]
                           (swap! failures conj cause))
        ;; Index updates of applied changes go to a worker the tests lack
@@ -75,13 +83,28 @@
        st/ongoing-tasks tasks}
       (try
         (ptk/emit! store (dps/initialize-persistence))
-        (await (f {:file-id file-id :response response :failures failures
-                   :requests requests :requests$ requests$ :store store
-                   :tasks tasks}))
+        (await (f {:file-id file-id :response response :answers answers
+                   :failures failures :requests requests :requests$ requests$
+                   :store store :tasks tasks}))
         (finally
           (rx/dispose! store)
           (rx/end! requests$)
           (rx/end! response))))))
+
+(defn ^:async answer!
+  "Answers the in-flight save with `value` through the fixture's `response`
+  subject and resolves once the pipeline received it. Waiting on `answers`,
+  the fixture's record of delivered answers, keeps a dropped delivery
+  failing here instead of in the assertions that follow the push.
+
+  The delivery runs in a microtask, so attach the handlers of any promise
+  the answer can reject before calling this: a rejection that settles
+  during this await is unhandled and fatal to the test process."
+  [response answers value]
+  (let [before (count @answers)]
+    (rx/push! response value)
+    (await (async/wait-for #(= (inc before) (count @answers))
+                           "the save answer reaches the pipeline"))))
 
 (defn set-attr
   "A change that sets `attr` of shape `shape-id` to `val`."

@@ -249,13 +249,16 @@
 
   Evaluates to a promise resolving once `f` settles and teardown completes;
   `await` it from an `^:async` test. The transport answers when the test
-  pushes into `:response` (scenario timing stays in test hands); delivery
-  is asynchronous, so await each effect — via `wait-for` — before asserting
-  it. `f` is awaited (usually an `^:async` fn)."
+  pushes into `:response` (scenario timing stays in test hands); delivery is
+  asynchronous — a promise microtask (`observe-on :asap`), so no timer can
+  race it — and the `:answers` atom lists the answers already delivered to
+  the pipeline, so await each effect — via `wait-for` — before asserting it.
+  `f` is awaited (usually an `^:async` fn)."
   [f]
   (let [clock    (atom 0)
         ticks    (rx/subject)
         response (rx/subject)
+        answers  (atom [])
         requests (atom [])
         reports  (atom [])
         causes   (atom [])
@@ -269,7 +272,10 @@
        rx/interval            (mock/stub (fn [_] ticks))
        rp/cmd!                (mock/stub (fn [cmd params]
                                            (swap! requests conj {:cmd cmd :params params})
-                                           (->> response (rx/take 1) (rx/observe-on :async))))
+                                           (->> response
+                                                (rx/take 1)
+                                                (rx/observe-on :asap)
+                                                (rx/tap #(swap! answers conj %)))))
        st/state               store
        errors/generate-report (fn [cause & _]
                                 (swap! causes conj cause)
@@ -286,8 +292,9 @@
        st/ongoing-tasks       (atom #{})}
       (try
         (ptk/emit! store (dps/initialize-persistence))
-        (await (f {:clock clock :ticks ticks :response response :requests requests
-                   :causes causes :reports reports :store store :file-id file-id}))
+        (await (f {:clock clock :ticks ticks :response response :answers answers
+                   :requests requests :causes causes :reports reports
+                   :store store :file-id file-id}))
         (finally
           (rx/dispose! store)
           (rx/end! ticks)
@@ -354,18 +361,18 @@
 ;; watchdog; a later hang reports again. Proves: progress resets the clock,
 ;; and every new stall earns its own report.
 ;;
-;; Note the awaits: a push only schedules delivery, so each tick must
-;; observe the completed save — awaiting after the push is what separates
-;; "answered" from "completed".
+;; Note the waits: `answer!` resolves once the answer reaches the pipeline,
+;; so each tick must still observe the completed save — the store wait is
+;; what separates "answered" from "completed".
 (t/deftest ^:async successful-saves-reset-the-stall-clock-and-allow-a-new-report
   (await
    (with-watchdog
-     (^:async fn [{:keys [clock ticks reports response store file-id]}]
+     (^:async fn [{:keys [clock ticks reports response answers store file-id]}]
        (ptk/emit! store (local-commit file-id) ::dps/force-persist
                   (local-commit file-id) ::dps/force-persist)
        ;; Phase 1 — two commits share the first request; its landing starts the second.
        (reset! clock 290000)
-       (rx/push! response {:revn 1})
+       (await (thp/answer! response answers {:revn 1}))
        (await (async/wait-for-store store #(= 1 (count (get-in @store [:persistence :queue])))
                                     "first save lands, second request starts"))
        (reset! clock 300001)
@@ -379,7 +386,7 @@
        (await (async/wait-for #(= 1 (count @reports)) "second request stalls"))
        (t/is (= 1 (count @reports)) "The second request has now stalled")
 
-       (rx/push! response {:revn 2})
+       (await (thp/answer! response answers {:revn 2}))
        (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                 (empty? (get-in @store [:persistence :queue])))
                                     "second save lands"))
@@ -870,7 +877,7 @@
 (t/deftest ^:async initialization-recovers-an-unsent-commit-with-a-dangling-run-id
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [commit (pcm/queue-entry [@(local-commit file-id)])
              id     (:id commit)]
          (ptk/emit! store
@@ -880,7 +887,7 @@
                     (dps/initialize-persistence))
          (await (async/wait-for #(= 1 (count @requests)) "dangling commit is sent" {:signal requests$}))
          (t/is (= 1 (count @requests)))
-         (rx/push! response {:revn 1})
+         (await (thp/answer! response answers {:revn 1}))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "recovered save lands"))
@@ -892,12 +899,12 @@
   reinitializes persistence: the pending request must not be sent again."
   [interrupt]
   (with-persistence
-    (^:async fn [{:keys [file-id response requests requests$ store]}]
+    (^:async fn [{:keys [file-id response answers requests requests$ store]}]
       (apply ptk/emit! store (local-commit file-id) ::dps/force-persist interrupt)
       (ptk/emit! store (dps/initialize-persistence))
       (await (async/wait-for #(= 1 (count @requests)) "only the active request is sent" {:signal requests$}))
       (t/is (= 1 (count @requests)))
-      (rx/push! response {:revn 1})
+      (await (thp/answer! response answers {:revn 1}))
       (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                (empty? (get-in @store [:persistence :queue])))
                                    "active request completes"))
@@ -967,10 +974,10 @@
 (t/deftest ^:async recovery-keeps-an-acknowledgment-received-without-a-runner
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests store]}]
+     (^:async fn [{:keys [file-id response answers requests store]}]
        (ptk/emit! store (local-commit file-id) ::dps/force-persist
                   (ptk/data-event ::dps/error))
-       (rx/push! response {:revn 1})
+       (await (thp/answer! response answers {:revn 1}))
        (await (async/wait-for-store store #(= 1 (count (get-in @store [:persistence :queue])))
                                     "acknowledged commit stays queued"))
        (t/is (= 1 (count (get-in @store [:persistence :queue]))))
@@ -989,7 +996,7 @@
 (t/deftest ^:async recovery-sends-again-a-save-with-an-unknown-outcome
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [commit (assoc (pcm/queue-entry [@(local-commit file-id)]) ::dps/request-id (uuid/next))
              id     (:id commit)]
          (ptk/emit! store
@@ -998,7 +1005,7 @@
                     (dps/initialize-persistence))
          (await (async/wait-for #(= 1 (count @requests)) "the commit is sent again" {:signal requests$}))
          (t/is (= id (:commit-id (second (first @requests)))))
-         (rx/push! response {:revn 1})
+         (await (thp/answer! response answers {:revn 1}))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the resent commit saves"))
@@ -1011,7 +1018,7 @@
 (t/deftest ^:async initialization-flushes-buffered-edits-without-duplicating-them
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (ptk/emit! store (local-commit file-id)
                   (dps/initialize-persistence)
                   ::dps/force-persist)
@@ -1023,7 +1030,7 @@
                               {:signal (rx/merge requests$ (ptk/input-stream store))}))
        (t/is (= 1 (count @requests)))
        (t/is (= 1 (count (get-in @store [:persistence :queue]))))
-       (rx/push! response {:revn 1})
+       (await (thp/answer! response answers {:revn 1}))
        (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                     "buffered edit saves"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
@@ -1052,14 +1059,14 @@
 (t/deftest ^:async unsaved-edits-keep-the-leave-page-guard
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store tasks]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store tasks]}]
        (ptk/emit! store (local-commit file-id))
        (await (async/wait-for #(contains? @tasks :persistence)
                               "a buffered edit turns the guard on"))
        (ptk/emit! store ::dps/force-persist)
        (await (async/wait-for #(seq @requests) "the edit is sent" {:signal requests$}))
        (t/is (contains? @tasks :persistence) "the guard stays on while the save is in flight")
-       (rx/push! response {:revn 1})
+       (await (thp/answer! response answers {:revn 1}))
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the save turns the guard off"))
        (t/is (= :saved (get-in @store [:persistence :status])))))))
@@ -1071,18 +1078,18 @@
 (t/deftest ^:async edits-buffered-during-a-save-keep-the-leave-page-guard
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store tasks]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store tasks]}]
        (ptk/emit! store (local-commit file-id) ::dps/force-persist)
        (await (async/wait-for #(= 1 (count @requests)) "the first edit is sent" {:signal requests$}))
        (ptk/emit! store (local-commit file-id))
-       (rx/push! response {:revn 1})
+       (await (thp/answer! response answers {:revn 1}))
        (await (async/wait-for-store store #(empty? (get-in @store [:persistence :queue]))
                                     "the first save lands"))
        (await (async/settle))
        (t/is (contains? @tasks :persistence) "the buffered edit keeps the guard on")
        (ptk/emit! store ::dps/force-persist)
        (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent" {:signal requests$}))
-       (rx/push! response {:revn 2})
+       (await (thp/answer! response answers {:revn 2}))
        (await (async/wait-for #(not (contains? @tasks :persistence))
                               "the second save turns the guard off"))
        (t/is (empty? (get-in @store [:persistence :queue])))))))
@@ -1166,7 +1173,7 @@
   (let [done (atom false)]
     (await
      (with-persistence
-       (^:async fn [{:keys [file-id response requests requests$ store]}]
+       (^:async fn [{:keys [file-id response answers requests requests$ store]}]
          (await
           (mock/with-mocks*
             {refs/persistence (l/derived :persistence store)}
@@ -1175,7 +1182,7 @@
             (await (async/wait-for #(= 1 (count @requests)) "the edit is sent at once" {:signal requests$}))
             (await (async/settle))
             (t/is (false? @done) "the wait holds while the save is in flight")
-            (rx/push! response {:revn 1})
+            (await (thp/answer! response answers {:revn 1}))
             (await (async/wait-for #(true? @done) "the landed save ends the wait"))
             (t/is (not (dps/unsaved-changes? @store #{file-id}))))))))))
 
@@ -1251,7 +1258,7 @@
 (t/deftest ^:async buffered-commits-stay-in-the-store-until-queued
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [commit (local-commit file-id)]
          (ptk/emit! store commit)
          (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
@@ -1265,7 +1272,7 @@
                   (->> (get-in @store [:persistence :queue])
                        (mapcat #(get-in @store [:persistence :index % :commits]))
                        (mapv :id))))
-         (rx/push! response {:revn 1})
+         (await (thp/answer! response answers {:revn 1}))
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the save lands")))))))
 
@@ -1365,7 +1372,7 @@
 (t/deftest ^:async a-repair-answered-before-its-message-goes-under-the-saved-commit
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [session-id (uuid/next)
              page-id    (uuid/next)
              shape-id   (uuid/next)
@@ -1376,9 +1383,10 @@
          (open-with-new-child store file-id session-id page-id shape-id child)
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
-         (rx/push! response {:revn 0
-                             :lagged [(lagged-row file-id 1 repair-session-id repair)
-                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+         (await (thp/answer! response answers
+                             {:revn 0
+                              :lagged [(lagged-row file-id 1 repair-session-id repair)
+                                       (lagged-row file-id 2 session-id (:redo-changes @commit))]}))
          (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
                                       "the saved commit waits for the repair"))
          (t/is (= [(:id @commit)] (vec (get-in @store [:persistence :queue]))))
@@ -1395,7 +1403,7 @@
 (t/deftest ^:async a-save-answer-does-not-wait-for-changes-already-received
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [session-id (uuid/next)
              page-id    (uuid/next)
              shape-id   (uuid/next)
@@ -1407,9 +1415,10 @@
          (ptk/emit! store commit ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
          (ptk/emit! store (thp/remote-commit file-id 1 repair))
-         (rx/push! response {:revn 0
-                             :lagged [(lagged-row file-id 1 repair-session-id repair)
-                                      (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+         (await (thp/answer! response answers
+                             {:revn 0
+                              :lagged [(lagged-row file-id 1 repair-session-id repair)
+                                       (lagged-row file-id 2 session-id (:redo-changes @commit))]}))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the save lands at once"))
@@ -1429,7 +1438,7 @@
     (try
       (await
        (with-persistence
-         (^:async fn [{:keys [file-id response requests requests$ store]}]
+         (^:async fn [{:keys [file-id response answers requests requests$ store]}]
            (await
             (mock/with-mocks*
               {rx/timer (mock/stub (fn [ms]
@@ -1445,10 +1454,11 @@
                 (open-with-new-child store file-id session-id page-id shape-id child)
                 (ptk/emit! store commit ::dps/force-persist)
                 (await (async/wait-for #(= 1 (count @requests)) "the new child is sent" {:signal requests$}))
-                (rx/push! response {:revn 0
-                                    :lagged [(lagged-row file-id 1 repair-session-id
-                                                         [(set-root-children page-id [shape-id])])
-                                             (lagged-row file-id 2 session-id (:redo-changes @commit))]})
+                (await (thp/answer! response answers
+                                    {:revn 0
+                                     :lagged [(lagged-row file-id 1 repair-session-id
+                                                          [(set-root-children page-id [shape-id])])
+                                              (lagged-row file-id 2 session-id (:redo-changes @commit))]}))
                 (await (async/wait-for-store store #(get-in @store [:persistence :index (:id @commit) ::dps/awaiting])
                                              "the saved commit waits for the repair"))
                 (t/is (zero? @reloads))
@@ -1468,7 +1478,7 @@
 (t/deftest ^:async a-save-sends-each-commit-as-its-own-group
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [commit1 (local-commit file-id)
              commit2 (local-commit file-id)]
          (ptk/emit! store commit1 commit2 ::dps/force-persist)
@@ -1478,7 +1488,7 @@
            (t/is (= [{:commit-id (:id @commit1) :changes (:redo-changes @commit1)}
                      {:commit-id (:id @commit2) :changes (:redo-changes @commit2)}]
                     (:changes-with-metadata params))))
-         (rx/push! response {:revn 1})
+         (await (thp/answer! response answers {:revn 1}))
          (await (async/wait-for-store store #(= :saved (get-in @store [:persistence :status]))
                                       "the save lands")))))))
 
@@ -1490,14 +1500,14 @@
 (t/deftest ^:async waiting-for-the-save-covers-the-buffered-edits
   (await
    (with-persistence
-     (^:async fn [{:keys [file-id response requests requests$ store]}]
+     (^:async fn [{:keys [file-id response answers requests requests$ store]}]
        (let [released? #(dps/terminal-status? (:persistence @store))]
          (ptk/emit! store (local-commit file-id) ::dps/force-persist)
          (await (async/wait-for #(= 1 (count @requests)) "the first edit is sent" {:signal requests$}))
          (ptk/emit! store (local-commit file-id))
          (await (async/wait-for-store store #(seq (get-in @store [:persistence :buffer]))
                                       "the second edit waits in the buffer"))
-         (rx/push! response {:revn 1})
+         (await (thp/answer! response answers {:revn 1}))
          (await (async/wait-for-store store #(and (= :saved (get-in @store [:persistence :status]))
                                                   (empty? (get-in @store [:persistence :queue])))
                                       "the first save lands"))
@@ -1505,5 +1515,5 @@
          (t/is (not (released?)) "the buffered edit is not saved yet")
          (ptk/emit! store ::dps/force-persist)
          (await (async/wait-for #(= 2 (count @requests)) "the buffered edit is sent" {:signal requests$}))
-         (rx/push! response {:revn 2})
+         (await (thp/answer! response answers {:revn 2}))
          (await (async/wait-for released? "the waiters are released")))))))
