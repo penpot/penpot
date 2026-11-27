@@ -617,7 +617,7 @@ test.describe("Tokens: Apply token", () => {
       const row = workspacePage.layers.getByTestId("layer-row").nth(index);
       await workspacePage.selectRow(row);
       await page.getByRole("tab", { name: "Tokens" }).click();
-      await unfoldTokenType(tokensSidebar, "dimensions");
+      await unfoldTokenType(tokensSidebar, "dimension");
     };
 
     await selectShape(1);
@@ -855,7 +855,7 @@ test.describe("Tokens: Apply token", () => {
     const tokensTab = page.getByRole("tab", { name: "Tokens" });
     await expect(tokensTab).toBeVisible();
     await tokensTab.click();
-    await unfoldTokenType(workspace.tokensSidebar, "dimensions");
+    await unfoldTokenType(workspace.tokensSidebar, "dimension");
     const tokensSidebar = workspace.tokensSidebar;
     await expect(
       tokensSidebar.getByRole("button", { name: "dim.md" }),
@@ -1651,7 +1651,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
     // Create a token with a reference value in other set.
     await createToken(
       page,
-      "Dimensions",
+      "Dimension",
       "reference-token",
       "Value",
       "combobox",
@@ -1665,7 +1665,7 @@ test.describe("Numeric Input and Token Integration Tests", () => {
 
     const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
     await tokensTabButton.click();
-    await unfoldTokenType(tokensSidebar, "dimensions");
+    await unfoldTokenType(tokensSidebar, "dimension");
 
     await tokensSidebar
       .getByRole("button", { name: "reference-token" })
@@ -1709,10 +1709,10 @@ test("BUG: 14234, Numeric input token filtering must be case sensitive", async (
 
   const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
   await tokensTabButton.click();
-  await unfoldTokenType(tokensSidebar, "dimensions");
+  await unfoldTokenType(tokensSidebar, "dimension");
 
-  await createToken(page, "Dimensions", "Dim-up", "Value", "combobox", "20");
-  await createToken(page, "Dimensions", "dim-up", "Value", "combobox", "10");
+  await createToken(page, "Dimension", "Dim-up", "Value", "combobox", "20");
+  await createToken(page, "Dimension", "dim-up", "Value", "combobox", "10");
   const measuresSection = page.getByRole("region", {
     name: "shape-measures-section",
   });

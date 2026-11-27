@@ -289,7 +289,7 @@ test.describe("Tokens: stroke per side", () => {
     await enablePerSide(page);
 
     await openTokensTab(page);
-    await unfoldTokenType(workspace.tokensSidebar, "dimensions");
+    await unfoldTokenType(workspace.tokensSidebar, "dimension");
     await workspace.tokensSidebar
       .getByRole("button", { name: "dim.md" })
       .click({ button: "right" });
