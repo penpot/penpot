@@ -347,6 +347,15 @@ impl Shape {
 
     pub fn set_shape_type(&mut self, shape_type: Type) {
         self.shape_type = shape_type;
+        self.sync_text_fill_width();
+    }
+
+    /// Tells the text content whether its parent layout fills its width.
+    fn sync_text_fill_width(&mut self) {
+        let fill_width = self.is_layout_horizontal_fill();
+        if let Type::Text(text) = &mut self.shape_type {
+            text.set_fill_width(fill_width);
+        }
     }
 
     #[allow(dead_code)]
@@ -517,6 +526,7 @@ impl Shape {
             z_index,
             align_self,
         });
+        self.sync_text_fill_width();
     }
 
     pub fn clear_layout(&mut self) {
@@ -524,6 +534,7 @@ impl Shape {
         if let Type::Frame(data) = &mut self.shape_type {
             data.layout = None;
         }
+        self.sync_text_fill_width();
     }
 
     // FIXME: These arguments could be grouped or simplified
@@ -1547,6 +1558,7 @@ impl Shape {
         if let Type::Text(old_text_content) = &self.shape_type {
             let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
             self.shape_type = Type::Text(new_text_content);
+            self.sync_text_fill_width();
         }
     }
 

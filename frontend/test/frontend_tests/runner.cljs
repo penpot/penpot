@@ -62,6 +62,7 @@
    [frontend-tests.data.workspace-variant-rename-test]
    [frontend-tests.data.workspace-variants-test]
    [frontend-tests.data.workspace-versions-test]
+   [frontend-tests.data.workspace-wasm-text-test]
    [frontend-tests.debug-logging-test]
    [frontend-tests.errors-governor-test]
    [frontend-tests.errors-test]
@@ -189,6 +190,7 @@
    [frontend-tests.ui.subscription-test]
    [frontend-tests.ui.team-container-test]
    [frontend-tests.ui.text-attrs-multiple-test]
+   [frontend-tests.ui.text-styles-test]
    [frontend-tests.ui.viewport-texts-html-test]
    [frontend-tests.ui.viewport-top-bar-test]
    [frontend-tests.ui.workspace-libraries-test]
@@ -283,6 +285,7 @@
    'frontend-tests.data.workspace-variant-rename-test
    'frontend-tests.data.workspace-variants-test
    'frontend-tests.data.workspace-versions-test
+   'frontend-tests.data.workspace-wasm-text-test
    'frontend-tests.debug-logging-test
    'frontend-tests.errors-governor-test
    'frontend-tests.errors-test
@@ -411,6 +414,7 @@
    'frontend-tests.ui.subscription-test
    'frontend-tests.ui.team-container-test
    'frontend-tests.ui.text-attrs-multiple-test
+   'frontend-tests.ui.text-styles-test
    'frontend-tests.ui.viewport-texts-html-test
    'frontend-tests.ui.viewport-top-bar-test
    'frontend-tests.ui.workspace-libraries-test

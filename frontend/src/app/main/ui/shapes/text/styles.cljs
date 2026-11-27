@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.transit :as transit]
    [app.common.types.color :as cc]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.ui.formats :as fmt]
@@ -39,11 +40,14 @@
   ;; the property it's known.
   ;; `inline-flex` is similar to flex but `overflows` outside the bounds of the
   ;; parent
-  (let [auto-width?  (= grow-type :auto-width)]
+  ;; An auto-width text with Fill width spans its box, so alignment and
+  ;; direction act inside it, as in render-wasm.
+  (let [span-box? (or (not= grow-type :auto-width)
+                      (ctl/fill-width? shape))]
     #js {:display "inline-flex"
          :flexDirection "column"
          :justifyContent "inherit"
-         :minWidth (when-not auto-width? "100%")
+         :minWidth (when span-box? "100%")
          :marginRight "1px"
          :verticalAlign "top"}))
 

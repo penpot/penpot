@@ -25,7 +25,7 @@
           ;; finalize-only), so measure the live WASM text for the growing axes.
           live (wasm.api/get-text-dimensions (:id shape))
           {:keys [width height]} (dwt/merge-live-text-dimensions
-                                  (:grow-type shape) selrect live)]
+                                  shape selrect live)]
       [:rect.main.viewport-selrect
        {:x (:x selrect)
         :y (:y selrect)

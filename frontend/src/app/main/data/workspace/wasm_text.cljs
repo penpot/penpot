@@ -16,6 +16,7 @@
    [app.common.geom.point :as gpt]
    [app.common.render-wasm.api.select :as wselect]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.modifiers :as dwm]
@@ -29,13 +30,23 @@
 
 (def debounce-resize-text-time 40)
 
+(defn- keep-layout-fill-size
+  "Keeps the stored size on the axes the parent layout fills, as
+  `commit-resize-text` does."
+  [objects {:keys [selrect] :as shape} size]
+  (if (ctl/any-layout-immediate-child? objects shape)
+    (cond-> size
+      (ctl/fill-width? shape)  (assoc :width (:width selrect))
+      (ctl/fill-height? shape) (assoc :height (:height selrect)))
+    size))
+
 (defn get-wasm-text-new-size
   "Computes the new {width, height} for a text shape from WASM text layout.
-  For :fixed grow-type, updates WASM content and returns current dimensions (no resize)."
-  ([shape]
-   (get-wasm-text-new-size shape (:content shape)))
+  :fixed texts and axes that fill a layout parent keep their current size."
+  ([objects shape]
+   (get-wasm-text-new-size objects shape (:content shape)))
 
-  ([{:keys [id selrect grow-type] :as shape} content]
+  ([objects {:keys [id selrect grow-type] :as shape} content]
    ;; Skip when the WASM context is not ready (e.g. switching renderer while a
    ;; text shape is being edited): there is no design state to query, and
    ;; returning nil makes callers skip the WASM resize/modifier path.
@@ -53,19 +64,22 @@
                        (wasm.api/get-text-dimensions))]
        ;; nil dimension = shape not present in WASM state; skip the resize.
        (when (or (= :fixed grow-type) (some? dimension))
-         {:width  (if (#{:fixed :auto-height} grow-type)
-                    (:width selrect)
-                    (:width dimension))
-          :height (if (= :fixed grow-type)
-                    (:height selrect)
-                    (:height dimension))})))))
+         (keep-layout-fill-size
+          objects
+          shape
+          {:width  (if (#{:fixed :auto-height} grow-type)
+                     (:width selrect)
+                     (:width dimension))
+           :height (if (= :fixed grow-type)
+                     (:height selrect)
+                     (:height dimension))}))))))
 
 (defn resize-wasm-text-modifiers
-  ([shape]
-   (resize-wasm-text-modifiers shape (:content shape)))
+  ([objects shape]
+   (resize-wasm-text-modifiers objects shape (:content shape)))
 
-  ([{:keys [id points selrect] :as shape} content]
-   (when-let [new-size (get-wasm-text-new-size shape content)]
+  ([objects {:keys [id points selrect] :as shape} content]
+   (when-let [new-size (get-wasm-text-new-size objects shape content)]
      (let [width-scale  (/ (:width new-size) (:width selrect))
            height-scale (/ (:height new-size) (:height selrect))
            resize-v     (gpt/point width-scale height-scale)
@@ -98,7 +112,7 @@
              (if (and (some? shape)
                       (cfh/text-shape? shape)
                       (not= :fixed (:grow-type shape)))
-               (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers shape) apply-opts))
+               (rx/of (dwm/apply-wasm-modifiers (resize-wasm-text-modifiers objects shape) apply-opts))
                (rx/empty))]
          (wrf/with-pending :text-resize [id] resize-stream))))))
 
@@ -132,7 +146,7 @@
                    (and (some? shape)
                         (cfh/text-shape? shape)
                         (not= :fixed (:grow-type shape)))
-                   (merge (resize-wasm-text-modifiers shape)))))
+                   (merge (resize-wasm-text-modifiers objects shape)))))
              {}
              ids)
 
