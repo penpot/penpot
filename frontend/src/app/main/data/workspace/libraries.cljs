@@ -1920,6 +1920,28 @@
                    (d/index-by :id))))))
 
 
+(defn- file-not-loadable?
+  "True when the backend can not load the data of a file (a corrupted
+  blob, a migration that fails on old data)."
+  [cause]
+  (= :file-not-loadable (:code (ex-data cause))))
+
+(defn on-library-load-error
+  "Error handler for loading `library`, connected to `file-id`. A library
+  the backend can not load stays connected with its metadata and empty
+  data, so it shows no assets and the file that uses it still opens. Any
+  other error goes on."
+  [file-id library]
+  (fn [cause]
+    (if (file-not-loadable? cause)
+      (let [library-id (:id library)]
+        (log/error :hint "unable to load library"
+                   :file-id (str file-id)
+                   :library-id (str library-id))
+        (rx/of (libraries-fetched file-id
+                                  [(assoc library :data (ctf/make-file-data library-id nil))])))
+      (rx/throw cause))))
+
 (defn- load-library-file
   [file-id library-id]
   (ptk/reify ::load-library-file
@@ -1931,7 +1953,17 @@
               (rx/merge-map fpmap/resolve-file)
               (rx/mapcat (fn [file]
                            (rx/of
-                            (libraries-fetched file-id [file])))))
+                            (libraries-fetched file-id [file]))))
+              ;; The library is already linked here, so `get-file-libraries`
+              ;; has its name, also when it comes linked by another library.
+              (rx/catch (fn [cause]
+                          (if (file-not-loadable? cause)
+                            (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+                                 (rx/map (fn [libraries]
+                                           (or (d/seek #(= library-id (:id %)) libraries)
+                                               {:id library-id})))
+                                 (rx/mapcat #((on-library-load-error file-id %) cause)))
+                            (rx/throw cause)))))
          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
               (rx/map (fn [thumbnails]
                         (fn [state]
@@ -2035,31 +2067,3 @@
            (rx/mapcat (fn [_]
                         (rp/cmd! :get-file-libraries {:file-id file-id})))
            (rx/map (partial cleanup-unlinked-libraries file-id))))))
-
-(defn broken-library-error?
-  "True when `cause` comes from the backend failing to load a library
-  file. Transport and transient errors (network, gateway, offline,
-  rate limit) do not count, so they never disconnect a library."
-  [cause]
-  (= :server-error (:type (ex-data cause))))
-
-(defn library-load-failed
-  "Handles a library of `file-id` that fails to load, so a single
-  broken library does not break the whole file: a directly connected
-  library is disconnected and the user is told; an indirect one is only
-  dropped from the state."
-  [file-id {:keys [id name is-indirect]} cause]
-  (ptk/reify ::library-load-failed
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (log/error :hint "unable to load library"
-                 :file-id (str file-id)
-                 :library-id (str id)
-                 :cause cause)
-      (if is-indirect
-        (rx/of (ptk/reify ::drop-broken-library
-                 ptk/UpdateEvent
-                 (update [_ state]
-                   (update state :files dissoc id))))
-        (rx/of (unlink-file-from-library file-id id)
-               (ntf/warn (tr "workspace.libraries.broken-library-disconnected" name)))))))
