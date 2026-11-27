@@ -1,0 +1,126 @@
+name: _PREVIEW
+
+run-name: >-
+  _PREVIEW (${{ inputs.gh_ref }}${{ inputs.nitrate_ref != '' && format(' / admin-console:{0}', inputs.nitrate_ref) || '' }})
+
+# Builds the images for a preview environment: single architecture, pushed
+# to the preview registry, leaving the branch tags alone. Only the branch is
+# asked for; everything else is set below so it cannot be got wrong.
+#
+# Use _ADHOC instead to build a branch for the fixed environments.
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Branch or ref to build'
+        type: string
+        required: true
+      nitrate_ref:
+        description: 'Branch or ref to build admin-console from, defaults to gh_ref'
+        type: string
+        required: false
+      force:
+        description: 'Rebuild even if this commit was already built'
+        type: boolean
+        required: false
+        default: false
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Branch or ref to build'
+        type: string
+        required: true
+      nitrate_ref:
+        description: 'Branch or ref to build admin-console from, defaults to gh_ref'
+        type: string
+        required: false
+      force:
+        description: 'Rebuild even if this commit was already built'
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      build_key:
+        description: 'Tag the images were published under'
+        value: ${{ jobs.build-docker.outputs.build_key }}
+      registry:
+        description: 'Registry the images were published to'
+        value: ${{ jobs.build-docker.outputs.registry }}
+      admin_console_image:
+        description: 'Exact reference of the admin-console image'
+        value: ${{ jobs.build-docker-admin-console.outputs.image }}
+
+concurrency:
+  group: preview-build-${{ inputs.gh_ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  # Unchanged from any other build. The bundle is identified by commit, so a
+  # branch pointing at an already built commit reuses it and compiles
+  # nothing.
+  build-bundle:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-bundle.yml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+    with:
+      gh_ref: ${{ inputs.gh_ref }}
+      force: ${{ inputs.force }}
+
+  build-docker:
+    needs: build-bundle
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-docker.yml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      MATTERMOST_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK }}
+      PREVIEW_REGISTRY_PASSWORD: ${{ secrets.PREVIEW_REGISTRY_PASSWORD }}
+      PREVIEW_REGISTRY_URL: ${{ secrets.PREVIEW_REGISTRY_URL }}
+      PREVIEW_REGISTRY_USERNAME: ${{ secrets.PREVIEW_REGISTRY_USERNAME }}
+      PUB_DOCKER_PASSWORD: ${{ secrets.PUB_DOCKER_PASSWORD }}
+      PUB_DOCKER_USERNAME: ${{ secrets.PUB_DOCKER_USERNAME }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+    with:
+      gh_ref: ${{ inputs.gh_ref }}
+      # Build the images from the exact commit that was bundled.
+      sha: ${{ needs.build-bundle.outputs.sha }}
+      force: ${{ inputs.force }}
+      preview: true
+      # The preview cluster is x86.
+      platforms: 'linux/amd64'
+      # storybook and mcp are not useful in a preview.
+      images: 'backend frontend exporter'
+      # Not published, so there is nothing to attest.
+      attestations: false
+      # The important one: moving them would change what the fixed
+      # environments deploy.
+      move_branch_tags: false
+
+  # Needs the admin-console workflow on its default branch to already accept
+  # preview, platforms and attestations and to publish the reference as an
+  # artifact. A dispatch with inputs the target does not declare is rejected,
+  # so this fails loudly rather than quietly building the wrong thing.
+  build-docker-admin-console:
+    permissions: {}
+    uses: ./.github/workflows/build-docker-admin-console.yml
+    secrets:
+      ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
+    with:
+      gh_ref: ${{ inputs.nitrate_ref || inputs.gh_ref }}
+      force: ${{ inputs.force }}
+      preview: true
+      platforms: 'linux/amd64'
+      attestations: false

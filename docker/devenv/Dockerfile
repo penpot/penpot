@@ -1,4 +1,4 @@
-FROM dhi.io/debian-base:trixie-debian13-dev@sha256:3fa66c79193ec70e04ce95ab7a695a65e8eab39b313500e0454d9ea607b1da10 AS base
+FROM dhi.io/debian-base:trixie-debian13-dev@sha256:36cada6ceac36fc775a1ce0597dc7a02b4f97d48163d955a0b382f2a0ae6add0 AS base
 
 ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \

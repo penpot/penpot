@@ -348,6 +348,14 @@
 (def ^:private check-progress-params
   (sm/check-fn schema:progress-params))
 
+(def ^:private schema:progress-update-params
+  [:map {:title "ProgressUpdate"}
+   [:index ::sm/int]
+   [:total ::sm/int]])
+
+(def ^:private check-progress-update-params
+  (sm/check-fn schema:progress-update-params))
+
 (defn initialize-progress
   [& {:keys [key index total hints slow-progress-threshold] :as params}]
 
@@ -372,7 +380,7 @@
 (defn update-progress
   [{:keys [index total] :as params}]
 
-  (assert (check-progress-params params))
+  (assert (check-progress-update-params params))
 
   (ptk/reify ::update-progress
     ptk/UpdateEvent
@@ -381,7 +389,7 @@
               (fn [state]
                 (let [last-update (get state :last-update)
                       hints       (get state :hints)
-                      threshold   (get state :slow-progress-threshold)
+                      threshold   (get state :threshold)
 
                       time-diff   (ct/diff-ms last-update (ct/now))
                       healthy?    (< time-diff threshold)

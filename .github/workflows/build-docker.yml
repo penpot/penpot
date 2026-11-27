@@ -9,10 +9,16 @@ on:
         required: true
         default: 'develop'
       force:
-        description: 'Rebuild and overwrite even if this sha is already promoted'
+        description: 'Rebuild even if this commit was already built'
         type: boolean
         required: false
         default: false
+
+      # preview, platforms, images, attestations and move_branch_tags are
+      # deliberately not exposed here. They change what gets built, and the
+      # completion marker only records the commit, so a manual run with
+      # non-default values would let a later full build skip its work. They
+      # are reachable through workflow_call, where each caller fixes them.
   workflow_call:
     inputs:
       gh_ref:
@@ -21,17 +27,59 @@ on:
         required: true
       sha:
         description: >-
-          Exact commit to check out (full 40-char SHA, e.g. from
-          build-bundle.yml). Falls back to gh_ref when empty; gh_ref
-          always still names the branch tag to move.
+          Exact commit to build, normally taken from build-bundle so that
+          both build the same thing. Falls back to gh_ref when empty; the
+          branch tag to move always comes from gh_ref.
         type: string
         required: false
         default: ''
       force:
-        description: 'Rebuild and overwrite even if this sha is already promoted'
+        description: 'Rebuild even if this commit was already built'
         type: boolean
         required: false
         default: false
+      preview:
+        description: >-
+          When true, the images are pushed to the preview registry instead of
+          the usual one.
+        type: boolean
+        required: false
+        default: false
+      platforms:
+        description: >-
+          Architectures to build the images for. Both are needed for anything
+          deployed or published; a preview only needs linux/amd64.
+        type: string
+        required: false
+        default: 'linux/amd64,linux/arm64'
+      images:
+        description: >-
+          Which images to build, space separated. Defaults to all of them.
+        type: string
+        required: false
+        default: 'backend frontend exporter storybook mcp'
+      attestations:
+        description: >-
+          When true, an SBOM and provenance data are attached to each image.
+          Needed for anything published, and it makes the build slower.
+        type: boolean
+        required: false
+        default: true
+      move_branch_tags:
+        description: >-
+          When true, the branch tag (backend:develop and so on) is repointed
+          to this build. Previews leave it alone, so that they never change
+          what the fixed environments deploy.
+        type: boolean
+        required: false
+        default: true
+    outputs:
+      build_key:
+        description: 'Tag the images were published under'
+        value: ${{ jobs.prepare.outputs.build_key }}
+      registry:
+        description: 'Registry the images were published to'
+        value: ${{ jobs.prepare.outputs.registry }}
     secrets:
       AWS_ACCESS_KEY_ID:
         required: false
@@ -47,6 +95,12 @@ on:
         required: false
       MATTERMOST_WEBHOOK:
         required: false
+      PREVIEW_REGISTRY_PASSWORD:
+        required: false
+      PREVIEW_REGISTRY_URL:
+        required: false
+      PREVIEW_REGISTRY_USERNAME:
+        required: false
       PUB_DOCKER_PASSWORD:
         required: false
       PUB_DOCKER_USERNAME:
@@ -58,12 +112,15 @@ on:
 # caller's workflow, which put this workflow and the other reusable one called
 # by the same caller into a single shared group, and left a manual dispatch of
 # the same ref in a group of its own, free to race on the same artifacts.
+# The mode is part of the group. Without it a preview and a published build
+# of the same ref cancel each other, and the one that dies can leave images
+# pushed with no marker.
 concurrency:
-  group: build-docker-${{ inputs.gh_ref }}
+  group: build-docker-${{ inputs.preview && 'preview' || 'published' }}-${{ inputs.gh_ref }}
   cancel-in-progress: true
 
 env:
-  ALL_IMAGES: backend frontend exporter storybook mcp
+  ALL_IMAGES: ${{ inputs.images }}
   # All runner instances live on the same server, so the bundle is
   # downloaded from S3 once and shared between build jobs through this
   # host-local directory. Each build job falls back to S3 if the file is
@@ -87,6 +144,9 @@ jobs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
       build_key: ${{ steps.vars.outputs.build_key }}
       commit_title: ${{ steps.vars.outputs.commit_title }}
+      registry: ${{ steps.vars.outputs.registry }}
+      marker_key: ${{ steps.vars.outputs.marker_key }}
+      images_json: ${{ steps.vars.outputs.images_json }}
       exists: ${{ steps.check.outputs.exists }}
 
     steps:
@@ -101,6 +161,9 @@ jobs:
         id: vars
         env:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
+          PREVIEW: ${{ inputs.preview }}
+          PREVIEW_REGISTRY: ${{ secrets.PREVIEW_REGISTRY_URL }}
+          DEFAULT_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
         run: |
           # A git ref accepts characters that a Docker tag does not.
           REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
@@ -115,6 +178,40 @@ jobs:
           echo "commit_title=$(git log -1 --pretty=%s)" >> $GITHUB_OUTPUT
           echo "bundle_version=$BUNDLE_VERSION" >> $GITHUB_OUTPUT
           echo "build_key=sha-${SHORT_SHA}-${VERSION_TAG}" >> $GITHUB_OUTPUT
+          # Previews need their own marker. The build key only depends on
+          # the commit, so a preview that wrote the normal one would make a
+          # later release build of that commit think it had nothing to do.
+          if [ "$PREVIEW" = "true" ]; then
+            if [ -z "$PREVIEW_REGISTRY" ]; then
+              echo "::error::preview=true but PREVIEW_REGISTRY_URL is not set"
+              exit 1
+            fi
+            REGISTRY="$PREVIEW_REGISTRY"
+            MARKER_KEY="markers/images-preview-sha-${SHORT_SHA}-${VERSION_TAG}"
+          else
+            REGISTRY="$DEFAULT_REGISTRY"
+            MARKER_KEY="markers/images-sha-${SHORT_SHA}-${VERSION_TAG}"
+          fi
+          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
+          echo "marker_key=$MARKER_KEY" >> $GITHUB_OUTPUT
+          # Validated here so that a bad value fails with a clear message
+          # instead of producing an empty matrix or a Dockerfile name that
+          # does not exist.
+          KNOWN="backend frontend exporter storybook mcp"
+          for img in $ALL_IMAGES; do
+            case " $KNOWN " in
+              *" $img "*) ;;
+              *) echo "::error::unknown image '$img'; expected one of: $KNOWN"
+                 exit 1 ;;
+            esac
+          done
+          if [ -z "$ALL_IMAGES" ]; then
+            echo "::error::images is empty"
+            exit 1
+          fi
+          # Actions expressions have no split(), so the matrix gets its JSON
+          # from here and the input stays a readable space-separated list.
+          echo "images_json=[$(printf '\"%s\",' $ALL_IMAGES | sed 's/,$//')]" >> $GITHUB_OUTPUT
 
       # The image set is a single block, so a single set-level check is
       # enough: `promote` drops a marker object in S3 only after every
@@ -130,6 +227,7 @@ jobs:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           FORCE: ${{ inputs.force }}
           BUILD_KEY: ${{ steps.vars.outputs.build_key }}
+          MARKER_KEY: ${{ steps.vars.outputs.marker_key }}
         run: |
           if [ "$FORCE" = "true" ]; then
             echo "exists=false" >> $GITHUB_OUTPUT
@@ -148,7 +246,7 @@ jobs:
 
           if aws s3api head-object \
                --bucket "$S3_BUCKET" \
-               --key "markers/images-${BUILD_KEY}" \
+               --key "$MARKER_KEY" \
                > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
             {
@@ -185,13 +283,18 @@ jobs:
       # never queue behind long builds.
       max-parallel: 3
       matrix:
-        image: [backend, frontend, exporter, storybook, mcp]
+        image: ${{ fromJSON(needs.prepare.outputs.images_json) }}
 
     steps:
       - name: Set common environment variables
+        # The matrix is now built from an input, so the image name reaches
+        # the shell through the environment rather than being expanded into
+        # the script.
+        env:
+          IMAGE: ${{ matrix.image }}
         run: |
           # Each job execution will use its own docker configuration.
-          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}-${{ matrix.image }}" >> $GITHUB_ENV
+          echo "DOCKER_CONFIG=${{ runner.temp }}/.docker-${{ github.run_id }}-${{ github.job }}-${IMAGE}" >> $GITHUB_ENV
 
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -202,9 +305,9 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
+          username: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_PASSWORD || secrets.DOCKER_PASSWORD }}
 
       # To avoid the "429 Too Many Requests" error when downloading
       # images from DockerHub for unregistered users.
@@ -253,10 +356,14 @@ jobs:
           mv "penpot/${IMAGE}" "bundle-${IMAGE}"
           popd
 
+      # Only needed to build for a foreign architecture. It registers
+      # binfmt for the whole host, which the other runners on this machine
+      # share, so it is skipped when nothing has to be emulated.
       - name: Set up QEMU (stable)
+        if: contains(inputs.platforms, 'arm64')
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -274,16 +381,18 @@ jobs:
         with:
           context: ./docker/images/
           file: ./docker/images/Dockerfile.${{ matrix.image }}
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ inputs.platforms }}
           push: true
-          provenance: mode=max
-          sbom: true
+          provenance: ${{ inputs.attestations && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.attestations }}
           # Immutable tag only; branch tags are moved atomically for the
           # whole image set by the `promote` job.
-          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:${{ needs.prepare.outputs.build_key }}
+          tags: ${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:${{ needs.prepare.outputs.build_key }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
+          # One cache per registry, so a single-arch preview build cannot
+          # overwrite the cache a multi-arch release build needs.
+          cache-from: type=registry,ref=${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:buildcache,mode=max
 
   # ── 3a. Move the branch tags of ALL images together (fresh build) ──────
   promote:
@@ -303,13 +412,16 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
+          username: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_PASSWORD || secrets.DOCKER_PASSWORD }}
 
+      # Skipped for previews: these are the tags the fixed environments
+      # deploy from.
       - name: Point branch tags to the new build key
+        if: inputs.move_branch_tags
         env:
-          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_REGISTRY: ${{ needs.prepare.outputs.registry }}
           REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
         run: |
@@ -328,10 +440,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
+          MARKER_KEY: ${{ needs.prepare.outputs.marker_key }}
         run: |
           echo "$GITHUB_RUN_ID" | aws s3 cp - \
-            "s3://${S3_BUCKET}/markers/images-${BUILD_KEY}"
+            "s3://${S3_BUCKET}/${MARKER_KEY}"
 
       - name: Write step summary
         env:
@@ -340,15 +452,22 @@ jobs:
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
+          REGISTRY: ${{ needs.prepare.outputs.registry }}
+          MOVE_BRANCH_TAGS: ${{ inputs.move_branch_tags }}
         run: |
           {
             echo "### ✅ Image set promoted"
             echo ""
             echo "- Version: \`${BUNDLE_VERSION}\` (\`./manage.sh version\`)"
             echo "- Commit: [\`${SHORT_SHA}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${SHORT_SHA}) — ${COMMIT_TITLE}"
+            echo "- Registry: \`${REGISTRY}\`"
             echo "- Built at: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
             echo ""
-            echo "All \`:${REF_SLUG}\` tags now point to \`${BUILD_KEY}\`."
+            if [ "$MOVE_BRANCH_TAGS" = "true" ]; then
+              echo "All \`:${REF_SLUG}\` tags now point to \`${BUILD_KEY}\`."
+            else
+              echo "Branch tags were left untouched; deploy \`${BUILD_KEY}\`."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
   # ── 3b. Skip path: make sure THIS ref's tags point to the existing
@@ -360,7 +479,9 @@ jobs:
     runs-on: penpot-standar-runner
     timeout-minutes: 10
     needs: prepare
-    if: needs.prepare.outputs.exists == 'true'
+    # Nothing to ensure when the branch tags are not being moved, and running
+    # it anyway would log in for nothing and claim tags were repointed.
+    if: needs.prepare.outputs.exists == 'true' && inputs.move_branch_tags
 
     steps:
       - name: Set common environment variables
@@ -373,13 +494,14 @@ jobs:
       - name: Login to Docker Registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
+          username: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_USERNAME || secrets.DOCKER_USERNAME }}
+          password: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_PASSWORD || secrets.DOCKER_PASSWORD }}
 
       - name: Point branch tags to the existing build key
+        if: inputs.move_branch_tags
         env:
-          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_REGISTRY: ${{ needs.prepare.outputs.registry }}
           REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
         run: |

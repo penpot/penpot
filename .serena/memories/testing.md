@@ -16,3 +16,4 @@ Every behavior change needs a test. Read the affected modules' testing guidance 
 - Never pipe test output directly to filters. Redirect it to a file first, inspect the full result and exit status, then search the file if needed. Use focused runs to narrow scope, not output filters to hide failures.
 - Run the affected modules' tests, lint and format checks; use `mem:scripts/ci` for the local CI entry point. A focused test does not replace the required module checks. Register new test namespaces where the module's runner requires it.
 - For backend direct and focused JVM runs, preserve existing `PENPOT_FLAGS` and append `enable-backend-asserts` before the process starts; otherwise assertions can compile out. Prefer `./scripts/ci backend` for the full checks.
+- For backend edit-and-rerun cycles use the warm test JVM; use cold Kaocha through `scripts/ci` for CI parity. Its default selector does not cover the common suite. See `mem:backend/testing`.

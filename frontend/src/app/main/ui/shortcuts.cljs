@@ -719,7 +719,9 @@
        command-translate]
       [:div {:class (stl/css :shortcut-actions)
              :aria-labelledby (dm/str command-translate "-label")}
-       (if (and customized? (str/blank? content))
+       ;; No key, whether the user removed it or the shortcut has none by
+       ;; default.
+       (if (str/blank? content)
          [:> icon* {:icon-id i/broken-link
                     :size "s"
                     :class (stl/css :shortcut-detach-icon)}]
@@ -759,10 +761,14 @@
         (when-let [default-cmd reset-notification]
           [:> context-notification* {:level :info :class (stl/css :modal-reset-msg)}
            (tr "shortcuts.edit-modal.reset-pending")
-           [:> shortcuts-keys* {:content default-cmd
-                                :command (keyword "default")
-                                :is-customized false
-                                :has-conflict? false}]])
+           (if (str/blank? default-cmd)
+             [:> icon* {:icon-id i/broken-link
+                        :size "s"
+                        :class (stl/css :shortcut-detach-icon)}]
+             [:> shortcuts-keys* {:content default-cmd
+                                  :command (keyword "default")
+                                  :is-customized false
+                                  :has-conflict? false}])])
 
         (when (and recorded-command (not reset-pending))
           (cond
@@ -864,7 +870,9 @@
                [:span {:class (stl/css :not-customizable-label)} "(not customizable)"])]
             [:div {:class (stl/css :shortcut-actions)
                    :aria-labelledby (dm/str command-translate "-label")}
-             (if (and customized? (str/blank? content))
+             ;; No key, whether the user removed it or the shortcut has none
+             ;; by default.
+             (if (str/blank? content)
                [:> tooltip* {:content (tr "shortcuts.disabled-shortcut")
                              :trigger-ref trigger-ref
                              :id (dm/str command-translate "-tooltip")

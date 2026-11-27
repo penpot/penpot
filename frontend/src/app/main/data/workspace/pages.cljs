@@ -190,6 +190,44 @@
              (rx/of (update-page-root file-id id))
              (rx/empty))))))))
 
+(defn start-rename-page-item
+  [id]
+  (ptk/reify ::start-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-local :page-item] id))))
+
+(defn stop-rename-page-item
+  []
+  (ptk/reify ::stop-rename-page-item
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [local (-> (:workspace-local state)
+                      (dissoc :page-item))]
+        (assoc state :workspace-local local)))))
+
+(defn create-page-and-focus
+  "Create a page from the sitemap and move the focus to it: open the new
+  page and start renaming it. Only the user who adds the page gets the
+  focus; a page added by someone else arrives as a change and leaves
+  their sitemap alone."
+  [{:keys [file-id]}]
+  (let [id (uuid/next)]
+    (ptk/reify ::create-page-and-focus
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        ;; The rename waits for the new page to initialize, because
+        ;; initializing a page replaces `:workspace-local`.
+        (rx/merge
+         (->> stream
+              (rx/filter (ptk/type? ::initialized))
+              (rx/filter #(= id (deref %)))
+              (rx/take 1)
+              (rx/map #(start-rename-page-item id)))
+         (rx/of (create-page {:page-id id :file-id file-id})
+                :interrupt
+                (dcm/go-to-workspace :file-id file-id :page-id id)))))))
+
 (defn duplicate-page
   [page-id]
   (ptk/reify ::duplicate-page
@@ -336,31 +374,35 @@
   (ptk/reify ::rename-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [page             (dsh/lookup-page state id)
-            objects          (:objects page)
-            empty-page?       (and (= 1 (count objects))
-                                   (= uuid/zero (first (keys objects))))
-            changes          (-> (pcb/empty-changes it)
-                                 (pcb/with-page page)
-                                 (pcb/mod-page page {:name name}))
-            pages            (-> (dsh/lookup-file-data state) :pages)
-            index            (d/index-of pages id)
-            prev-id          (when (and (some? index) (pos? index))
-                               (nth pages (dec index) nil))
-            next-id          (when (some? index)
-                               (nth pages (inc index) nil))
-            fallback-page-id (or prev-id next-id)
-            separator?       (= "---" (str/trim name))]
-        (rx/concat
-         (rx/of (dch/commit-changes changes))
-         ;; Go to other page only if page is empty (only has the root shape)
-         ;; and the separator page is being renamed, otherwise user can rename
-         ;; any page to separator and be forced to go to another page
-         (when (and separator?
-                    empty-page?
-                    (= id (:current-page-id state))
-                    (some? fallback-page-id))
-           (rx/of (dcm/go-to-workspace :page-id fallback-page-id))))))))
+      (let [page (dsh/lookup-page state id)]
+        ;; Keeping the same name commits nothing, so the next undo still
+        ;; reverts the last visible change (for example, the page creation).
+        (if (= name (:name page))
+          (rx/empty)
+          (let [objects          (:objects page)
+                empty-page?      (and (= 1 (count objects))
+                                      (= uuid/zero (first (keys objects))))
+                changes          (-> (pcb/empty-changes it)
+                                     (pcb/with-page page)
+                                     (pcb/mod-page page {:name name}))
+                pages            (-> (dsh/lookup-file-data state) :pages)
+                index            (d/index-of pages id)
+                prev-id          (when (and (some? index) (pos? index))
+                                   (nth pages (dec index) nil))
+                next-id          (when (some? index)
+                                   (nth pages (inc index) nil))
+                fallback-page-id (or prev-id next-id)
+                separator?       (= "---" (str/trim name))]
+            (rx/concat
+             (rx/of (dch/commit-changes changes))
+             ;; Go to other page only if page is empty (only has the root shape)
+             ;; and the separator page is being renamed, otherwise user can rename
+             ;; any page to separator and be forced to go to another page
+             (when (and separator?
+                        empty-page?
+                        (= id (:current-page-id state))
+                        (some? fallback-page-id))
+               (rx/of (dcm/go-to-workspace :page-id fallback-page-id))))))))))
 
 (defn- delete-page-components
   [changes page]

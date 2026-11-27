@@ -822,7 +822,7 @@
                  {:slow-progress-threshold
                   mconst/default-slow-progress-threshold
                   :total (count ids)
-                  :hints {:progress progress-hint
+                  :hints {:normal progress-hint
                           :slow slow-hint}}))
 
          (->> stream
@@ -942,7 +942,7 @@
                  {:slow-progress-threshold
                   mconst/default-slow-progress-threshold
                   :total (count ids)
-                  :hints {:progress progress-hint
+                  :hints {:normal progress-hint
                           :slow slow-hint}}))
 
          (let [stream (->> (rp/cmd! ::sse/restore-deleted-team-files {:team-id team-id :ids ids})

@@ -42,6 +42,8 @@ async (page) => {
 }
 ```
 
+For the primary modifier (Ctrl on Linux/Windows, Command on macOS) use `ControlOrMeta`, not `Control`; see `mem:frontend/testing-playwright`.
+
 ## Coordinate Planning
 
 Playwright mouse coordinates and `getBoundingClientRect()` use viewport CSS pixels, not screen coordinates or device pixels. Read the viewport controls' `viewBox` and rectangle at the time of the gesture; pan, zoom and panels change the mapping. Ruler labels can be frame-relative and are not a substitute for the viewBox.

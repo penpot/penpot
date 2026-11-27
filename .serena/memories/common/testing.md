@@ -2,6 +2,7 @@
 
 - **Read `mem:testing` first** for test design and output discipline. Common tests are CLJC under `common/test/common_tests/`; cover the relevant JVM and JS runtimes. JVM tests alone cannot prove CLJS-specific state or WASM behavior.
 - From the repo root, `./scripts/ci common` runs lint, tests and format. From `common/`, use `clojure -M:dev:test` for JVM tests and `pnpm run test:quiet` for JS tests. Both support focused runs, e.g. `--focus common-tests.logic.comp-sync-test`; repeat `--focus` for multiple JVM selections.
+- The warm backend test JVM's default selector covers backend tests, not common tests; use the common commands for its full suite. See `mem:backend/testing`.
 - JS tests compile before running. Register new namespaces in `common_tests/runner.cljc`; new vars in registered namespaces need no runner change. Direct `node target/tests/test.js` runs the existing build and does not rebuild after edits.
 - JVM coverage uses `clojure -M:dev:test:coverage`; it instruments all configured namespaces, even for a focused run, and is slower. Its lcov, HTML and EMMA form counts go under `target/coverage/`; see `tests.edn` for exclusions.
 - Helpers live under `common/src/app/common/test_helpers/`. Tests using label-to-UUID helpers need `(t/use-fixtures :each thi/test-fixture)` to reset labels between tests. Inspect the builders there rather than recreating common file, component or variant setup.

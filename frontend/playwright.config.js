@@ -1,15 +1,10 @@
-import { defineConfig, devices } from "@playwright/test";
-import { platform } from "os";
+import { defineConfig } from "@playwright/test";
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 // require('dotenv').config();
-
-const userAgent = platform === 'darwin' ?
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" :
-  undefined;
 
 // Default timeout of the retrying expects (toBeVisible and friends). CI
 // runners are slower and the first load of a page fetches its module, so
@@ -60,11 +55,9 @@ export default defineConfig({
       name: "default",
       testDir: "./playwright/ui/specs",
       use: {
-        ...devices["Desktop Chrome"],
         viewport: { width: 1920, height: 1080 }, // Add custom viewport size
         video: 'retain-on-failure',
         trace: 'retain-on-failure',
-        userAgent,
       },
       snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
       expect: {
@@ -76,7 +69,6 @@ export default defineConfig({
     },
     {
       name: "ds",
-      use: { ...devices["Desktop Chrome"] },
       testDir: "./playwright/ui/visual-specs",
       expect: {
         timeout: expectTimeout,
@@ -86,7 +78,6 @@ export default defineConfig({
     {
       name: "render-wasm",
       use: {
-        ...devices["Desktop Chrome"],
         viewport: { width: 1920, height: 1080 }, // Add custom viewport size
         deviceScaleFactor: 2,
         launchOptions: {

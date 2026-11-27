@@ -204,9 +204,9 @@ test.describe("Design tab", () => {
     await workspace.rectShapeButton.click();
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
     await workspace.clickLeafLayer("Rectangle");
-    await page.keyboard.press("Control+D");
+    await page.keyboard.press("ControlOrMeta+D");
     await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: "Flatten" }),
@@ -308,9 +308,9 @@ test.describe("Design tab", () => {
     await workspace.rectShapeButton.click();
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
     await workspace.clickLeafLayer("Rectangle");
-    await page.keyboard.press("Control+D");
+    await page.keyboard.press("ControlOrMeta+D");
     await expect(workspace.layers.getByText("Rectangle")).toHaveCount(2);
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: /^Align left/ }),
@@ -365,6 +365,50 @@ test.describe("Design tab", () => {
       maxDiffPixelRatio: 0,
       threshold: 0,
     });
+  });
+});
+
+test.describe("Measures controls", () => {
+  test("Shows the clip content, show in view mode and ratio lock toggles", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+    await workspace.clickLeafLayer("Board");
+
+    const sidebar = workspace.rightSidebar;
+    const toggles = sidebar.locator("[class*='menus_measures__clip-show']");
+    // A label over a hidden checkbox before, a button after.
+    const clip = sidebar
+      .getByTitle("Clip content")
+      .or(sidebar.getByRole("button", { name: "Clip content" }));
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+
+    await expect(toggles).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(toggles).toHaveScreenshot("measures-toggles-rest.png", shot);
+
+    await clip.hover();
+    await expect(toggles).toHaveScreenshot("measures-toggles-hover.png", shot);
+
+    // Both start on: one click turns clip content off.
+    await clip.click();
+    await page.mouse.move(0, 0);
+    await expect(toggles).toHaveScreenshot("measures-toggles-off.png", shot);
+
+    const lock = sidebar.getByRole("button", { name: /^(Lock|Unlock) ratio$/ });
+    await expect(lock).toHaveScreenshot("measures-lock-off.png", shot);
+    await lock.click();
+    await page.mouse.move(0, 0);
+    await expect(
+      sidebar.getByRole("button", { name: "Unlock ratio" }),
+    ).toBeVisible();
+    await expect(lock).toHaveScreenshot("measures-lock-on.png", shot);
   });
 });
 
@@ -902,7 +946,7 @@ test.describe("Undo history", () => {
     await page.keyboard.press("r");
     await workspace.clickWithDragViewportAt(128, 128, 200, 100);
 
-    await page.keyboard.press("Control+Alt+h");
+    await page.keyboard.press("ControlOrMeta+Alt+h");
     await page.getByRole("tab", { name: "Actions" }).click();
     const panel = page.getByRole("tabpanel", { name: "Actions" });
     const entry = panel.getByText("New rectangle");
@@ -991,7 +1035,7 @@ test.describe("Plugins", () => {
       await workspace.mockRPC("get-profile", profile);
     }
     await workspace.goToWorkspace();
-    await workspace.page.keyboard.press("Control+Alt+P");
+    await workspace.page.keyboard.press("ControlOrMeta+Alt+P");
   };
 
   test("Shows the plugins manager without plugins", async ({ page }) => {
@@ -1115,13 +1159,82 @@ test.describe("Selected colors", () => {
     });
 
     await workspace.clickToggableLayer("Board");
-    await page.keyboard.press("Control+A");
+    await page.keyboard.press("ControlOrMeta+A");
 
     await expect(
       workspace.rightSidebar.getByRole("button", { name: "More colors" }),
     ).toBeVisible();
     // The button is a small part of the sidebar: compare every pixel.
     await expect(workspace.rightSidebar).toHaveScreenshot({
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+});
+
+test.describe("Export menu controls", () => {
+  test("Shows the export button at rest, on hover and exporting", async ({
+    page,
+  }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    // The export never answers, so the button stays in "Exporting…".
+    await page.route(/\/api\/export$/, () => {});
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add export" })
+      .click();
+
+    const button = workspace.rightSidebar.getByRole("button", {
+      name: /^Export(ing| 1 element)/,
+    });
+    await expect(button).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(button).toHaveScreenshot("export-button-rest.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await button.hover();
+    await expect(button).toHaveScreenshot("export-button-hover.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+
+    await button.click();
+    await expect(button).toHaveText("Exporting…");
+    await page.mouse.move(0, 0);
+    await expect(button).toHaveScreenshot("export-button-exporting.png", {
+      maxDiffPixelRatio: 0,
+      threshold: 0,
+    });
+  });
+
+  test("Shows the export row", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(/get\-file\?/, "workspace/get-file-9066.json");
+    await workspace.goToWorkspace({
+      fileId: "e179d9df-de35-80bf-8005-283bbd5516b0",
+      pageId: "e179d9df-de35-80bf-8005-283bbd5516b1",
+    });
+
+    await workspace.clickLeafLayer("Board");
+    await workspace.rightSidebar
+      .getByRole("button", { name: "Add export" })
+      .click();
+    const row = workspace.rightSidebar.locator(
+      "[class*='menus_exports__element-group']",
+    );
+    await expect(row).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(row).toHaveScreenshot("export-row.png", {
       maxDiffPixelRatio: 0,
       threshold: 0,
     });
@@ -1407,6 +1520,142 @@ test.describe("Gradient type select", () => {
     // The whole gradient panel: preview bar, stops and the stop list.
     const panel = workspace.colorpicker.locator("[class*='gradient-panel']");
     await expect(panel).toHaveScreenshot(shot);
+  });
+});
+
+test.describe("Font variant select", () => {
+  test("Shows the font variant select closed, open and mixed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-text-variants.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "434b0541-fa2f-802f-8006-6a827d964a9b",
+      pageId: "434b0541-fa2f-802f-8006-6a827d964a9c",
+    });
+    await workspace.selectLayer("Text multiple selection one");
+
+    const variantSelect = workspace.rightSidebar.locator(
+      "[class*='font-variant-options']",
+    );
+    await expect(variantSelect).toContainText("400");
+    const sidebarBox = await workspace.rightSidebar.boundingBox();
+    const selectBox = await variantSelect.boundingBox();
+    // The font row and the variant row, with room below for the list.
+    const clip = {
+      x: Math.floor(sidebarBox.x),
+      y: Math.floor(selectBox.y) - 48,
+      width: Math.ceil(sidebarBox.width),
+      height: 220,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.click();
+    const bold = variantSelect.getByText("700", { exact: true });
+    await expect(bold).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await bold.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+    await page.keyboard.press("Escape");
+
+    // Two texts with different variants show "--".
+    await workspace.selectLayer("Text multiple selection two", {
+      modifiers: ["Shift"],
+    });
+    await expect(variantSelect).toContainText("--");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.click();
+    await expect(variantSelect.getByText("700", { exact: true })).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+  });
+});
+
+test.describe("Constraints selects", () => {
+  test("Shows the constraint selects closed, open, changed and mixed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "design/get-file-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "get-file-object-thumbnails?file-id=*",
+      "design/get-file-object-thumbnails-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*",
+      "design/get-file-fragment-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "03bff843-920f-81a1-8004-756365e1eb6a",
+      pageId: "03bff843-920f-81a1-8004-756365e1eb6b",
+    });
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickLeafLayer("Ellipse");
+
+    const hSelect = page.getByTestId("constraint-h-select");
+    const vSelect = page.getByTestId("constraint-v-select");
+    await expect(hSelect).toBeVisible();
+    const sidebarBox = await workspace.rightSidebar.boundingBox();
+    const hBox = await hSelect.boundingBox();
+    // The two selects, with room below them for an open list.
+    const clip = {
+      x: Math.floor(sidebarBox.x),
+      y: Math.floor(hBox.y) - 8,
+      width: Math.ceil(sidebarBox.width),
+      height: 240,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await hSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await hSelect.click();
+    const left = hSelect.getByText("Left", { exact: true });
+    await expect(left).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await left.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await left.click();
+    await expect(hSelect).toContainText("Left");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // Two shapes with different constraints show "Mixed".
+    await workspace.clickLeafLayer("Rectangle", { modifiers: ["Shift"] });
+    await expect(vSelect).toContainText("Mixed");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await vSelect.click();
+    await expect(vSelect.getByText("Top", { exact: true })).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
   });
 });
 

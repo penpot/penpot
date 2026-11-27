@@ -53,7 +53,8 @@ export class WasmWorkspacePage extends WorkspacePage {
   }
 
   async waitForFirstRender() {
-    await this.pageName.waitFor();
+    // The sitemap shows one name per page; any of them proves the UI is up.
+    await this.pageName.first().waitFor();
     await this.canvas.waitFor();
     await this.page.waitForFunction(() => {
       console.log("RAF:", window.wasmSetObjectsFinished);
@@ -81,7 +82,7 @@ export class WasmWorkspacePage extends WorkspacePage {
 
   async hideUI() {
     await this.page.keyboard.press("\\");
-    await expect(this.pageName).not.toBeVisible();
+    await expect(this.pageName.first()).not.toBeVisible();
   }
 
   static async mockGoogleFont(page, fontSlug, assetFilename, options = {}) {
