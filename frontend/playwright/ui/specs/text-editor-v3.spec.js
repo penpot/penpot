@@ -23,6 +23,52 @@ async function openEditorAndSelectAll(workspace) {
   await workspace.page.keyboard.press("ControlOrMeta+a");
 }
 
+test("BUG 7661 - Double-click keeps text editing active inside a grid", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page, { textEditor: true });
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("workspace/get-file-13415.json");
+  await workspace.goToWorkspace();
+  await workspace.waitForFirstRender();
+
+  const textStart = await page
+    .locator("svg.viewport-controls")
+    .evaluate((svg) => {
+      const point = new DOMPoint(350, 310).matrixTransform(svg.getScreenCTM());
+      return { x: point.x, y: point.y };
+    });
+  await page.getByRole("button", { name: "Text (T)" }).click();
+  await page.mouse.move(textStart.x, textStart.y);
+  await page.mouse.down();
+  await page.mouse.move(textStart.x + 110, textStart.y + 35, { steps: 8 });
+  await page.mouse.up();
+
+  const editor = page.getByTestId("text-editor-container");
+  await expect(editor).toBeVisible();
+  await page.keyboard.type("Hello brave world");
+  await workspace.textEditor.stopEditing();
+  await workspace.clickLeafLayer("Hello brave world");
+  await workspace.textEditor.startEditing();
+  await editor.dblclick({ position: { x: 45, y: 8 } });
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await expect(editor).toBeVisible();
+  await expect(
+    page.getByText("Editing grid Board", { exact: true }),
+  ).toBeHidden();
+  await page.keyboard.press("End");
+  await page.keyboard.type("!");
+  await workspace.textEditor.stopEditing();
+  await expect(
+    workspace.layers.getByText("Hello brave world!", { exact: true }),
+  ).toBeVisible();
+});
+
 test("Typography at a collapsed caret only styles newly typed text", async ({
   page,
 }) => {
