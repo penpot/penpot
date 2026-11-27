@@ -60,8 +60,14 @@
         data (if rotation
                (str/fmt "%3Cg transform='rotate(%s 8,8)'%3E%s%3C/g%3E" rotation data)
                data)]
-    (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='" width "px' "
-         "height='" height "px' %3E" data "%3C/svg%3E\") " x " " y ", auto")))
+;; No width/height on the svg root: an intrinsic size pins the CSS cursor
+;; to those pixels and ignores the OS cursor-size preference (the Linux
+;; accessibility scaling of issue #10040). Without it the browser renders
+;; the cursor at its default slot size, which follows the OS setting, and
+;; the hotspot scales with the image because it is given in the viewBox
+;; coordinate space. height/width stay in the signature for the existing
+;; call sites but are intentionally not emitted.
+    (str "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' %3E" data "%3C/svg%3E\") " x " " y ", auto")))
 
 (defmacro cursor-ref
   "Creates a static SVG cursor."
