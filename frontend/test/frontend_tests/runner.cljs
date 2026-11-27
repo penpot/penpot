@@ -53,6 +53,7 @@
    [frontend-tests.data.workspace-notifications-test]
    [frontend-tests.data.workspace-pages-test]
    [frontend-tests.data.workspace-path-edition-test]
+   [frontend-tests.data.workspace-position-data-test]
    [frontend-tests.data.workspace-reflow-test]
    [frontend-tests.data.workspace-shape-layout-test]
    [frontend-tests.data.workspace-shortcuts-test]
@@ -130,6 +131,7 @@
    [frontend-tests.render-wasm.modifiers-test]
    [frontend-tests.render-wasm.process-objects-test]
    [frontend-tests.render-wasm.serialization-test]
+   [frontend-tests.render-wasm.set-objects-async-test]
    [frontend-tests.render-wasm.shape-proxy-test]
    [frontend-tests.render-wasm.stale-text-selrects-test]
    [frontend-tests.render-wasm.text-editor-apply-styles-test]
@@ -299,6 +301,7 @@
    'frontend-tests.data.workspace-notifications-test
    'frontend-tests.data.workspace-pages-test
    'frontend-tests.data.workspace-path-edition-test
+   'frontend-tests.data.workspace-position-data-test
    'frontend-tests.data.workspace-reflow-test
    'frontend-tests.data.workspace-shape-layout-test
    'frontend-tests.data.workspace-shortcuts-test
@@ -375,6 +378,7 @@
    'frontend-tests.render-wasm.fonts-test
    'frontend-tests.render-wasm.process-objects-test
    'frontend-tests.render-wasm.serialization-test
+   'frontend-tests.render-wasm.set-objects-async-test
    'frontend-tests.render-wasm.shape-proxy-test
    'frontend-tests.render-wasm.stale-text-selrects-test
    'frontend-tests.render-wasm.text-editor-apply-styles-test

@@ -254,6 +254,21 @@
                     :ignore-save-lock true}))
            (rx/empty)))))))
 
+(defn get-text-position-data
+  "Pairs of `[id position-data]` for the texts added or modified by `commits`.
+  Nil while shapes load; `update-page-position-data` fills nil data when the
+  page is next loaded."
+  [commits objects]
+  (let [loading? @wasm.api/shapes-loading?]
+    (->> commits
+         (mapcat :redo-changes)
+         (filter #(contains? #{:mod-obj :add-obj} (:type %)))
+         (filter #(cfh/text-shape? objects (:id %)))
+         (map #(vector
+                (:id %)
+                (when-not loading?
+                  (wasm.api/calculate-position-data (get objects (:id %)))))))))
+
 (defn- workspace-initialized
   [file-id]
   (ptk/reify ::workspace-initialized
@@ -564,13 +579,7 @@
                       (rx/with-latest-from objects-s)
                       (rx/map
                        (fn [[commits objects]]
-                         (->> commits
-                              (mapcat :redo-changes)
-                              (filter #(contains? #{:mod-obj :add-obj} (:type %)))
-                              (filter #(cfh/text-shape? objects (:id %)))
-                              (map #(vector
-                                     (:id %)
-                                     (wasm.api/calculate-position-data (get objects (:id %))))))))
+                         (get-text-position-data commits objects)))
 
                       (rx/with-latest-from current-page-id-s)
                       (rx/map
