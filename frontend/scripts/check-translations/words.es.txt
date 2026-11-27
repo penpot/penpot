@@ -232,6 +232,7 @@ borradores
 borrarlo
 bloquearla
 cambiada
+cambiarlo
 caracteres
 como
 comparte
@@ -291,6 +292,7 @@ peso
 primero
 principales
 propiedades
+proporcionales
 proveedores
 publicarla
 publicarlo

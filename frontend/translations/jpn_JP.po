@@ -7636,6 +7636,10 @@ msgstr "注釈の間隔"
 msgid "workspace.options.text-options.annotation-clearance-auto"
 msgstr "自動"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-readings"
+msgstr "読み"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.line-adjustment"
 msgstr "禁則調整方式"
@@ -7700,6 +7704,26 @@ msgstr "文字間隔"
 msgid "workspace.options.text-options.line-height"
 msgstr "行の高さ"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-advanced-options"
+msgstr "ピンインの詳細設定"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-hidden"
+msgstr "ピンインを非表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-shown"
+msgstr "ピンインを表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-hidden"
+msgstr "読みを非表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.readings-shown"
+msgstr "読みを表示"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-advanced-options"
 msgstr "ふりがなの詳細設定"
@@ -7726,7 +7750,11 @@ msgstr "先頭"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
 msgid "workspace.options.text-options.ruby-hidden"
-msgstr "非表示"
+msgstr "ふりがなを非表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.ruby-shown"
+msgstr "ふりがなを表示"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-overhang"
@@ -7747,6 +7775,14 @@ msgstr "ふりがな"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-side"
 msgstr "位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "上 / 右"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "下 / 左"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.ruby-size"
@@ -7771,6 +7807,14 @@ msgstr "取り消し線（%s）"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:69
 msgid "workspace.options.text-options.text-align-center"
 msgstr "中央揃え"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.text-align-distribute"
+msgstr "均等割り付け"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+msgid "workspace.options.text-options.text-align-distribute-hint"
+msgstr "最終行を含むすべての行の文字を、ボックスの幅いっぱいに均等に配置します。日本語・中国語・韓国語の見出しやラベルで使われます。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
 msgid "workspace.options.text-options.text-align-justify"
@@ -7887,6 +7931,14 @@ msgstr "横書き"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
 msgid "workspace.options.text-options.writing-mode-vertical"
 msgstr "縦書き（右から左）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "注音符号を非表示"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.zhuyin-shown"
+msgstr "注音符号を表示"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -8462,6 +8514,62 @@ msgstr "ページを追加"
 #: src/app/main/ui/workspace/left_header.cljs:100
 msgid "workspace.sitemap"
 msgstr "サイトマップ"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.back"
+msgstr "戻る"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.combine"
+msgstr "縦中横"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.emphasis"
+msgstr "圏点"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.furigana"
+msgstr "ふりがな"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.pinyin"
+msgstr "ピンイン"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.pinyin-options"
+msgstr "ピンインの詳細設定"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading"
+msgstr "読み"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.reading-hint"
+msgstr "読みや割注のないテキスト、または読み全体を選択してください"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.remove"
+msgstr "削除"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.ruby-options"
+msgstr "ルビの詳細設定"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.single-span-hint"
+msgstr "単一スタイルのテキスト、または注釈全体を選択してください"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.title"
+msgstr "テキスト注釈"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.warichu"
+msgstr "割注"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+msgid "workspace.text-selection-menu.zhuyin"
+msgstr "注音符号"
 
 #: src/app/main/data/workspace/comments.cljs:49
 msgid "workspace.toast.comments-hidden"
@@ -9328,3 +9436,166 @@ msgstr "この上限を引き上げたい場合は、[support@penpot.app](%s)ま
 #: src/app/main/ui/workspace/sidebar/versions.cljs:462
 msgid "workspace.versions.warning.text"
 msgstr "自動保存されたバージョンは%s日間保持されます。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-japanese"
+msgstr "日本語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-korean"
+msgstr "韓国語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap"
+msgstr "折り返し"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-syllable"
+msgstr "音節単位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-spaces-only"
+msgstr "スペース位置（試験的）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-mainland-simplified"
+msgstr "中国語、中国大陸（簡体字）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-mainland-traditional"
+msgstr "中国語、中国大陸（繁体字）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-taiwan"
+msgstr "中国語、台湾"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-chinese-hong-kong"
+msgstr "中国語、香港"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.korean-wrap-keep-words"
+msgstr "単語単位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin"
+msgstr "ピンイン"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.pinyin-placeholder"
+msgstr "ピンイン"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.emphasis-position"
+msgstr "圏点の位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.underline-position"
+msgstr "下線の位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-under"
+msgstr "下"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-left"
+msgstr "左"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.position-right"
+msgstr "右"
+
+msgid "workspace.options.text-options.zhuyin"
+msgstr "注音符号"
+
+msgid "workspace.options.text-options.zhuyin-placeholder"
+msgstr "注音符号"
+
+msgid "workspace.options.text-options.chinese-reading-format"
+msgstr "読みの形式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.combine-characters"
+msgstr "文字の組み合わせ"
+
+msgid "workspace.options.text-options.zhuyin-selection-hint"
+msgstr "漢字を1文字選択してください。注音符号を1〜3個と、必要なら声調を1つ入力します。符号は右側に正立で置かれ、軽声は上に付きます。このモードではサイズと位置は固定です。"
+
+msgid "workspace.options.text-options.zhuyin-invalid"
+msgstr "注音符号を1〜3個、声調は1つまで入力してください。軽声は符号の前か後に、その他の声調は末尾に置きます。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language"
+msgstr "言語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-none"
+msgstr "なし"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-options"
+msgstr "言語オプション"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-selected-text"
+msgstr "選択したテキスト"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-layout"
+msgstr "組版"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-ruby"
+msgstr "ふりがな"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.add-language"
+msgstr "言語を追加"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-japanese"
+msgstr "日本語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-korean"
+msgstr "韓国語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+msgid "workspace.options.text-options.language-group-chinese"
+msgstr "中国語"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.option.language"
+msgstr "言語プロファイル"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.option.default-language-profile"
+msgstr "デフォルトの言語プロファイル"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+msgid "workspace.header.menu.language-none"
+msgstr "なし"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.title"
+msgstr "言語プロファイル"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.description"
+msgstr "新しいファイルはこのプロファイルで始まります。各ファイルはメインメニューの「ファイル」で変更できます。どのプロファイルも、デザインサイドバーで任意のテキストに適用できます。"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.label"
+msgstr "デフォルトのプロファイル"
+
+#: src/app/main/ui/settings/options.cljs
+msgid "dashboard.text-language.none"
+msgstr "なし"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+msgid "workspace.options.text-options.position-over"
+msgstr "上"

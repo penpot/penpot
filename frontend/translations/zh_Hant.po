@@ -1186,6 +1186,26 @@ msgstr "團隊專案"
 msgid "dashboard.template.add-to-project"
 msgstr "新增至你的專案"
 
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.text-language.description"
+msgstr "新檔案會使用此設定檔。每個檔案都可以在主功能表的「檔案」下變更。任何設定檔都可以在設計側邊欄中套用到任何文字。"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.text-language.label"
+msgstr "預設設定檔"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.text-language.none"
+msgstr "無"
+
+#: src/app/main/ui/settings/options.cljs
+#, fuzzy
+msgid "dashboard.text-language.title"
+msgstr "語言設定檔"
+
 #: src/app/main/ui/settings/options.cljs:77
 msgid "dashboard.theme-change"
 msgstr "介面主題"
@@ -6094,6 +6114,11 @@ msgstr "隱藏尺規"
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "隱藏字型面板"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+#, fuzzy
+msgid "workspace.header.menu.language-none"
+msgstr "無"
+
 #: src/app/main/ui/workspace/main_menu.cljs:416
 msgid "workspace.header.menu.lock-guides"
 msgstr "鎖定參考線"
@@ -6114,6 +6139,11 @@ msgstr "管理（狀態：已停用）"
 msgid "workspace.header.menu.mcp.server.status.enabled"
 msgstr "管理（狀態：已啟用）"
 
+#: src/app/main/ui/workspace/main_menu.cljs
+#, fuzzy
+msgid "workspace.header.menu.option.default-language-profile"
+msgstr "預設語言設定檔"
+
 #: src/app/main/ui/workspace/main_menu.cljs:1039
 msgid "workspace.header.menu.option.edit"
 msgstr "編輯"
@@ -6125,6 +6155,11 @@ msgstr "檔案"
 #: src/app/main/ui/workspace/main_menu.cljs:1123
 msgid "workspace.header.menu.option.help-info"
 msgstr "說明與資訊"
+
+#: src/app/main/ui/workspace/main_menu.cljs
+#, fuzzy
+msgid "workspace.header.menu.option.language"
+msgstr "語言設定檔"
 
 #: src/app/main/ui/workspace/main_menu.cljs:1105
 msgid "workspace.header.menu.option.mcp"
@@ -7467,6 +7502,11 @@ msgstr "實線"
 msgid "workspace.options.stroke.toggle-stroke"
 msgstr "開啟或關閉筆畫"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.add-language"
+msgstr "新增語言"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:135
 msgid "workspace.options.text-options.align-bottom"
 msgstr "靠下對齊"
@@ -7479,6 +7519,30 @@ msgstr "垂直置中"
 msgid "workspace.options.text-options.align-top"
 msgstr "靠上對齊"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.annotation-clearance"
+msgstr "標註間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.annotation-clearance-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.annotation-clearance-none"
+msgstr "使用行高"
+
+#, fuzzy
+msgid "workspace.options.text-options.chinese-reading-format"
+msgstr "讀音格式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.combine-characters"
+msgstr "合併字元"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:100
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "由左至右"
@@ -7486,6 +7550,31 @@ msgstr "由左至右"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:104
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "由右至左"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.emphasis-position"
+msgstr "著重號位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.font-features"
+msgstr "比例間距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.font-features-none"
+msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.font-features-palt"
+msgstr "橫排（palt）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.font-features-vpal"
+msgstr "直排（vpal）"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:167
 msgid "workspace.options.text-options.grow-auto-height"
@@ -7499,13 +7588,288 @@ msgstr "自動寬度"
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "固定"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.korean-wrap"
+msgstr "換行方式"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.korean-wrap-keep-words"
+msgstr "按詞"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.korean-wrap-spaces-only"
+msgstr "在空格處（實驗性）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.korean-wrap-syllable"
+msgstr "按音節"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language"
+msgstr "語言"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-chinese-hong-kong"
+msgstr "中文，香港"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-chinese-mainland-simplified"
+msgstr "中文，中國大陸（簡體）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-chinese-mainland-traditional"
+msgstr "中文，中國大陸（繁體）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-chinese-taiwan"
+msgstr "中文，台灣"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-chinese"
+msgstr "中文"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-japanese"
+msgstr "日語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-korean"
+msgstr "韓語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-layout"
+msgstr "排版"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-readings"
+msgstr "讀音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-ruby"
+msgstr "振假名"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-group-selected-text"
+msgstr "所選文字"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-japanese"
+msgstr "日語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-korean"
+msgstr "韓語"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-none"
+msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.language-options"
+msgstr "語言選項"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:732
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "字距"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.line-adjustment"
+msgstr "避頭尾調整"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.line-adjustment-push-in-first"
+msgstr "先推入"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.line-adjustment-push-out-first"
+msgstr "先推出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.line-adjustment-push-out-only"
+msgstr "僅推出"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:713
 msgid "workspace.options.text-options.line-height"
 msgstr "行高"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.pinyin"
+msgstr "拼音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.pinyin-advanced-options"
+msgstr "拼音選項"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.pinyin-hidden"
+msgstr "隱藏拼音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.pinyin-placeholder"
+msgstr "拼音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.pinyin-shown"
+msgstr "顯示拼音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.position-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.position-left"
+msgstr "左側"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.position-over"
+msgstr "上方"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.position-right"
+msgstr "右側"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.position-under"
+msgstr "下方"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.readings-hidden"
+msgstr "隱藏讀音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.readings-shown"
+msgstr "顯示讀音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-advanced-options"
+msgstr "振假名選項"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-align"
+msgstr "對齊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-align-center"
+msgstr "置中"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-align-space-around"
+msgstr "均勻分佈"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-align-space-between"
+msgstr "兩端對齊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-align-start"
+msgstr "起始"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_japanese_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-hidden"
+msgstr "隱藏振假名"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-overhang"
+msgstr "超出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-overhang-auto"
+msgstr "自動"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-overhang-none"
+msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-placeholder"
+msgstr "振假名"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-shown"
+msgstr "顯示振假名"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-side"
+msgstr "位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-side-over"
+msgstr "上方 / 右側"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-side-under"
+msgstr "下方 / 左側"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-size"
+msgstr "大小"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-size-half"
+msgstr "二分之一"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-size-quarter"
+msgstr "四分之一"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.ruby-size-third"
+msgstr "三分之一"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:212
 msgid "workspace.options.text-options.strikethrough"
@@ -7514,6 +7878,16 @@ msgstr "刪除線 (%s)"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:69
 msgid "workspace.options.text-options.text-align-center"
 msgstr "置中對齊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-align-distribute"
+msgstr "分散對齊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_cjk_controls.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-align-distribute-hint"
+msgstr "將每一行（包括最後一行）的字元平均分佈在文字框中。常用於中文、日文和韓文的標題與標籤。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:77
 msgid "workspace.options.text-options.text-align-justify"
@@ -7526,6 +7900,91 @@ msgstr "靠左對齊"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:73
 msgid "workspace.options.text-options.text-align-right"
 msgstr "靠右對齊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-all"
+msgstr "直排內橫排"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-digits"
+msgstr "僅數字"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-digits-2"
+msgstr "最多 2 位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-digits-3"
+msgstr "最多 3 位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-digits-4"
+msgstr "最多 4 位"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-digits-count"
+msgstr "合併位數"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-combine-upright-none"
+msgstr "正常"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis"
+msgstr "著重號"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-filled-circle"
+msgstr "實心圓（大）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-filled-dot"
+msgstr "實心圓點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-filled-sesame"
+msgstr "實心芝麻點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-none"
+msgstr "無"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-open-circle"
+msgstr "空心圓（大）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-open-dot"
+msgstr "空心圓點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-emphasis-open-sesame"
+msgstr "空心芝麻點"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-orientation-mixed"
+msgstr "混合"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.text-orientation-upright"
+msgstr "直立"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:509
 msgid "workspace.options.text-options.text-section"
@@ -7546,6 +8005,57 @@ msgstr "所選文字"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:207
 msgid "workspace.options.text-options.underline"
 msgstr "底線（%s）"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.underline-position"
+msgstr "底線位置"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.warichu"
+msgstr "夾注"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.warichu-none"
+msgstr "正常"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.writing-mode-horizontal"
+msgstr "橫排"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs
+#, fuzzy
+msgid "workspace.options.text-options.writing-mode-vertical"
+msgstr "直排（由右至左）"
+
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin"
+msgstr "注音"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin-hidden"
+msgstr "隱藏注音"
+
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin-invalid"
+msgstr "請輸入 1–3 個注音符號，最多一個聲調。輕聲可放在符號前或後；其他聲調放在最後。"
+
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin-placeholder"
+msgstr "注音"
+
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin-selection-hint"
+msgstr "請選取一個漢字。輸入 1–3 個注音符號，可加上一個聲調。符號直立排在右側；輕聲標在上方。此模式的大小與位置固定。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/text_language_layout.cljs
+#, fuzzy
+msgid "workspace.options.text-options.zhuyin-shown"
+msgstr "顯示注音"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:788
 msgid "workspace.options.use-play-button"
@@ -8115,6 +8625,76 @@ msgstr "新增頁面"
 #: src/app/main/ui/workspace/left_header.cljs:100
 msgid "workspace.sitemap"
 msgstr "網站地圖"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.back"
+msgstr "返回"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.combine"
+msgstr "直排內橫排"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.emphasis"
+msgstr "著重號"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.furigana"
+msgstr "振假名"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.pinyin"
+msgstr "拼音"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.pinyin-options"
+msgstr "拼音選項"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.reading"
+msgstr "讀音"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.reading-hint"
+msgstr "請選取沒有讀音或夾注的文字，或選取一個完整的讀音"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.remove"
+msgstr "移除"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.ruby-options"
+msgstr "旁註選項"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.single-span-hint"
+msgstr "請選取只有一種樣式的文字，或一個完整的標註"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.title"
+msgstr "文字標註"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.warichu"
+msgstr "夾注"
+
+#: src/app/main/ui/workspace/shapes/text/selection_menu.cljs
+#, fuzzy
+msgid "workspace.text-selection-menu.zhuyin"
+msgstr "注音"
 
 #: src/app/main/data/workspace/comments.cljs:49
 msgid "workspace.toast.comments-hidden"
