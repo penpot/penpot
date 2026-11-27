@@ -75,10 +75,12 @@
 (t/deftest ^:async teardown-stops-a-load-in-progress
   (let [module      wasm/internal-module
         initialized wasm/context-initialized?
-        calls       (atom [])
+        old-calls   (atom [])
+        new-calls   (atom [])
         uploaded    (atom 0)
-        ready       (atom 0)]
-    (install-live-module calls)
+        old-ready   (atom 0)
+        new-ready   (atom 0)]
+    (install-live-module old-calls)
     (await
      (mock/with-mocks*
        {serialize-shape/serialize-shapes-batch
@@ -87,20 +89,23 @@
           (vec shapes))}
 
        ;; The first chunk runs synchronously; the rest waits for a yield.
-       (wasm.api/set-objects (make-objects) (fn [] nil) #(swap! ready inc) false)
+       (wasm.api/set-objects (make-objects) (fn [] nil) #(swap! old-ready inc) false)
        (t/is (= 512 @uploaded))
 
        (wasm.api/clear-canvas)
-       ;; The next page starts loading on a fresh renderer.
-       (install-live-module calls)
-       (reset! wasm.api/shapes-loading? true)
+       ;; The next page loads on a fresh renderer, sharing the yield channel.
+       (install-live-module new-calls)
+       (wasm.api/set-objects (make-objects) (fn [] nil) #(swap! new-ready inc) false)
 
+       (await (thasync/wait-for #(pos? @new-ready) "next page on-shapes-ready"))
        (await (thasync/settle))
        (await (thasync/settle))
 
-       (t/is (= 512 @uploaded) "no chunk is uploaded after teardown")
-       (t/is (zero? @ready) "on-shapes-ready is not called")
-       (t/is (= [:begin-loading] @calls) "_end_loading is not called")
-       (t/is (true? @wasm.api/shapes-loading?)
-             "the next page's loading flag is left alone")))
+       (t/is (= (+ 512 shape-count) @uploaded)
+             "the old load uploads no chunk after teardown")
+       (t/is (zero? @old-ready) "the old load does not call on-shapes-ready")
+       (t/is (= [:begin-loading] @old-calls) "the old load does not end loading")
+       (t/is (= 1 @new-ready))
+       (t/is (= [:begin-loading :end-loading :set-view-end] @new-calls))
+       (t/is (false? @wasm.api/shapes-loading?))))
     (restore-module module initialized)))

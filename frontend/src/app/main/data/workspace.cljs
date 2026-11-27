@@ -256,7 +256,8 @@
 
 (defn get-text-position-data
   "Pairs of `[id position-data]` for the texts added or modified by `commits`.
-  Nil while shapes load: `update-page-position-data` fills it afterwards."
+  Nil while shapes load; `update-page-position-data` fills nil data when the
+  page is next loaded."
   [commits objects]
   (let [loading? @wasm.api/shapes-loading?]
     (->> commits
