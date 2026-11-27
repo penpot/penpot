@@ -8,6 +8,7 @@
   (:require
    [app.common.math :as mth]
    [app.common.types.color :as colors]
+   [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
 ;; --- Predicates
@@ -239,3 +240,22 @@
       (t/is (< (mth/abs (- r1 r2)) 2))
       (t/is (< (mth/abs (- g1 g2)) 2))
       (t/is (< (mth/abs (- b1 b2)) 2)))))
+
+;; --- Library colors
+
+(t/deftest color-to-library-color
+  (let [file-id  (uuid/next)
+        id       (uuid/next)
+        other-id (uuid/next)]
+    (t/testing "drops the reference of a color picked from a library"
+      (let [picked (colors/library-color->color
+                    {:id other-id :name "red" :color "#e63946" :opacity 1}
+                    file-id)
+            result (colors/color->library-color picked id "yellow")]
+        (t/is (= {:id id :name "yellow" :color "#e63946" :opacity 1} result))
+        (t/is (colors/valid-library-color? result))))
+
+    (t/testing "keeps the attributes of a plain color"
+      (let [result (colors/color->library-color {:color "#ffd166" :opacity 0.5} id "yellow")]
+        (t/is (= {:id id :name "yellow" :color "#ffd166" :opacity 0.5} result))
+        (t/is (colors/valid-library-color? result))))))
