@@ -4,48 +4,51 @@
 
 ### :boom: Breaking changes & Deprecations
 
-#### Add table partitioning for file-change
+#### Make the legacy-db file data backend read-only
 
-The file history table (`file_change`) is now partitioned by file, with the same 16 partitions as the file payload table (`file_data`). Queries that filter by file, and the join between the two tables, resolve against a single partition, so they stay fast as the table grows. The rewrite also removes the dead columns and stores the table in its final layout; the space the old table held comes back when it is dropped. A save no longer writes the file features on every revision, and the team snapshot quota is a single lookup.
+Reading legacy file data keeps working; writing to the legacy-db location does not. `PENPOT_FILE_DATA_BACKEND=legacy-db` becomes read-only: `fdata/upsert!` rejects it with `:legacy-backend-read-only`, the legacy write paths into `file.data` and `file_change.data` are removed, and the default stays `db`.
 
-The four snapshot RPC methods (`update-file-snapshot`, `delete-file-snapshot`, `lock-file-snapshot` and `unlock-file-snapshot`) now require `file-id`. The frontend already sends it; API clients that call them must add it.
+If you upgrade with `PENPOT_FILE_DATA_BACKEND=legacy-db` still set nothing breaks: the backend reads `legacy-db` as `db` at startup and logs a warning, so saves keep working and file data lands in `file_data`. Remove the variable (or set it to `db`) anyway, so the deployment does not claim a read-only backend. Deployments that never set the variable are unaffected.
 
-On small and medium instances the table is rewritten automatically on boot; there is nothing to do. On large instances (hundreds of GB in `file_change`) it does not fit in the startup transaction: run it by hand **before upgrading to 2.20.0** following the [large-instance runbook](https://github.com/penpot/penpot/blob/staging/operations/2.20.0-file-change-partition.md). The copy runs while the instance is online, followed by a cutover of a few minutes with the backend and the workers stopped. The old table is kept for rollback; check the disk headroom before starting, and drop the old table days later to get the space back.
+[#13101](https://github.com/penpot/penpot/issues/13101) (PR: [#13102](https://github.com/penpot/penpot/pull/13102))
 
-[#12416](https://github.com/penpot/penpot/issues/12416) (PR: [#12417](https://github.com/penpot/penpot/pull/12417))
+#### Group the 2.20.0 breaking-change database migrations under one upgrade runbook
 
-#### Protect the file data storage objects with a foreign key in the backend
+This manual upgrade procedure is only for large instances: databases with hundreds of GB in `file_change`, `file_data` or `audit_log`. If you can afford a prolonged stop while 2.20.0 starts, let the migration system do the work: the boot migrations apply the three changes automatically, with no intervention from you. Do not follow the runbook on a small or medium instance.
 
-This release moves the file data storage pointer out of `file_data.metadata->>'storage-ref-id'` and into a new `file_data.storage_object_id` column with a foreign key to `storage_object(id)`. The metadata key is gone: nothing writes or reads it.
+Release 2.20.0 changes three database areas in the same upgrade: `file_change` is partitioned by `file_id` into 16 partitions aligned with `file_data`, with the primary key changing to `(file_id, id)`; the file data storage pointer moves from `file_data.metadata->>'storage-ref-id'` into a `file_data.storage_object_id` column with a foreign key to `storage_object(id)`; and the audit-log buffer moves to per-consumer cursors with a new jobs substrate. The four snapshot RPC methods (`update-file-snapshot`, `delete-file-snapshot`, `lock-file-snapshot`, `unlock-file-snapshot`) now require `file-id`; API clients must add it.
 
-What it means for self-hosted instances:
+On the large instances that need the manual path, run the pre-flight queries first: they size the three areas and tell you whether the storage backend was ever used. Do not let the boot migrations run: register the migration steps and pre-apply the DDL online before upgrading, while 2.19 still serves traffic. If the storage backend, tiered offload or pending offloads are present, the deploy is a coordinated full stop with the backfill inside it, not a rolling one. The partitioned-table cutover is the one maintenance window with backend and workers stopped, after the deploy. Keep `:audit-log-archive` and `:audit-log-gc` off while old and new versions coexist; after every instance runs 2.20.0, remove `:audit-log-archive` and turn on `:audit-log-gc`.
 
-- The release is a coordinated restart. The new code reads the column; the migration drops `storage-ref-id` from the rows it backfills. Rolling back to the previous binary is not supported after this release runs.
-- A fresh database or a small instance needs nothing special: the startup migration does the whole job.
-- A large instance should not let the startup migration run. Build the column, the index and the foreign key online beforehand, stop the instances, run the backfill only if a row still carries `metadata.storage-ref-id`, verify the end state, and mark the migration as applied. The full procedure is documented in [`operations/2.20.0-file-data-storage-object-id.md`](https://github.com/penpot/penpot/blob/main/operations/2.20.0-file-data-storage-object-id.md).
-- If the storage backend was never enabled, there is nothing to backfill and the stopped window is just the restart.
+If you upgrade a large instance without preparing it, the boot migration can fail on every start (`file_change` guard) or hold locks for minutes and stall writes (audit-log index builds, foreign key validation). The storage pointer has no schema rollback: 2.20 writes only the new column, so a failed upgrade is recovered from the backup. The ordered, self-contained procedure is in the [unified 2.20.0 upgrade runbook](https://github.com/penpot/penpot/blob/staging/operations/2.20.0-unified.md).
 
-If you upgrade blindly: on fresh databases and small instances the startup migration completes the change. On a large instance, the foreign key validation scan can block writes for a long time; follow the runbook instead.
-
-[#12768](https://github.com/penpot/penpot/issues/12768) (PR: [#12769](https://github.com/penpot/penpot/pull/12769))
+[#13199](https://github.com/penpot/penpot/issues/13199)
 
 ### :rocket: Epics and highlights
 
-- Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759)
-- Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761)
+- Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759) (PR: [#11927](https://github.com/penpot/penpot/pull/11927))
+- Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761) (PR: [#12090](https://github.com/penpot/penpot/pull/12090))
 
 ### :lock: Security fixes
 
-- Fix real-time collaboration WebSocket never re-validates file access after `:subscribe-file`, letting revoked users keep receiving live edit content (https://github.com/penpot/penpot/security/advisories/GHSA-m53j-2766-6jqw)
+- Fix password recovery leaves pre-existing sessions valid, allowing continued account access (https://github.com/penpot/penpot/security/advisories/GHSA-3j2p-qr45-q365) (PR: [#12967](https://github.com/penpot/penpot/pull/12967))
+
+- Fix page-scoped share link exposes excluded-page deleted-component shapes in view-only bundle (2.19.1) (https://github.com/penpot/penpot/security/advisories/GHSA-7x37-x2r5-9c55) (PR: [#13118](https://github.com/penpot/penpot/pull/13118))
+
+- Fix MCP server: missing Host/Origin validation lets any website drive the local MCP server (DNS rebinding + cross-site WebSocket), leading to local file write and code execution in the user's Penpot session (https://github.com/penpot/penpot/security/advisories/GHSA-q3q6-8jff-p9px)
+
+- Fix A caller-chosen URL becomes the OIDC callback redirect target (https://github.com/penpot/penpot/security/advisories/GHSA-r23w-xj5x-5g9p) (PR: [#12952](https://github.com/penpot/penpot/pull/12952))
+
+- Fix page-limited share link exposes deleted component shapes from excluded pages via the components fragment (https://github.com/penpot/penpot/security/advisories/GHSA-xr4q-h3c3-j7rw) (PR: [#13118](https://github.com/penpot/penpot/pull/13118))
 
 ### :tada: Features
 
 - Add a feedback channel to the MCP server [#12490](https://github.com/penpot/penpot/issues/12490) (PR: [#12551](https://github.com/penpot/penpot/pull/12551))
-- Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759)
+- Allow MCP to work with multiple open Penpot files [#11759](https://github.com/penpot/penpot/issues/11759) (PR: [#11927](https://github.com/penpot/penpot/pull/11927))
 - Implement full text format paste within Penpot [#12047](https://github.com/penpot/penpot/issues/12047) (PR: [#12137](https://github.com/penpot/penpot/pull/12137))
 - Add team, project and file management to the Plugin API for global plugins [#12170](https://github.com/penpot/penpot/issues/12170) (PR: [#12169](https://github.com/penpot/penpot/pull/12169))
 - Serve Penpot under a subpath [#3194](https://github.com/penpot/penpot/issues/3194) (PR: [#12358](https://github.com/penpot/penpot/pull/12358))
-- Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761)
+- Allow MCP to access and manage Penpot Dashboard resources [#11761](https://github.com/penpot/penpot/issues/11761) (PR: [#12090](https://github.com/penpot/penpot/pull/12090))
 - Add OAuth support for MCP client connections [#12034](https://github.com/penpot/penpot/issues/12034) (PR: [#12480](https://github.com/penpot/penpot/pull/12480))
 
 ### :sparkles: Enhancements
@@ -67,19 +70,25 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 - Use WASM to generate SVG markup in the code inspector when render-wasm is active [#12567](https://github.com/penpot/penpot/issues/12567) (PR: [#12608](https://github.com/penpot/penpot/pull/12608))
 - Close the workspace search with the Escape key (by @filipsajdak) [#9540](https://github.com/penpot/penpot/issues/9540) (PR: [#12374](https://github.com/penpot/penpot/pull/12374))
 - Restrict management RPC methods to their declared shared keys [#12730](https://github.com/penpot/penpot/issues/12730) (PR: [#12736](https://github.com/penpot/penpot/pull/12736))
-- Reduce memory used by duplicate shape ids in the workspace [#12791](https://github.com/penpot/penpot/issues/12791) (PR: [#12792](https://github.com/penpot/penpot/pull/12792))
-- Reduce memory consumption on shape decoding [#12789](https://github.com/penpot/penpot/issues/12789) (PR: [#12790](https://github.com/penpot/penpot/pull/12790))
 - Notify other users when a snapshot is restored [#12425](https://github.com/penpot/penpot/issues/12425) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Normalize the configured tenant to lowercase [#12842](https://github.com/penpot/penpot/issues/12842) (PR: [#12843](https://github.com/penpot/penpot/pull/12843))
 - Speed up saves on large files by checking only the pages a save changes [#12602](https://github.com/penpot/penpot/issues/12602) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Retry saves after short server failures and keep the workspace open when a save fails [#12601](https://github.com/penpot/penpot/issues/12601) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Switch the workspace to read-only mode when the file can't be saved [#12507](https://github.com/penpot/penpot/issues/12507) (PR: [#12555](https://github.com/penpot/penpot/pull/12555))
 - Validate upload content against real file bytes in media uploads [#12796](https://github.com/penpot/penpot/issues/12796) (PR: [#12801](https://github.com/penpot/penpot/pull/12801))
-- Add the file and MCP session to audit events sent from plugins and the MCP [#12902](https://github.com/penpot/penpot/issues/12902) (PR: [#12972](https://github.com/penpot/penpot/pull/12972))
 - Add skip-if-active option to job submission in the backend jobs substrate [#12265](https://github.com/penpot/penpot/issues/12265) (PR: [#12266](https://github.com/penpot/penpot/pull/12266))
 - Add HTML paste from clipboard in text editor v3 [#10465](https://github.com/penpot/penpot/issues/10465)
-- Skip loading the thumbnail rasterizer in WebGL renderer sessions to cut workspace memory [#13029](https://github.com/penpot/penpot/issues/13029) (PR: [#12835](https://github.com/penpot/penpot/pull/12835))
-- Speed up uploading page shapes to WASM [#13030](https://github.com/penpot/penpot/issues/13030) (PR: [#12854](https://github.com/penpot/penpot/pull/12854))
+- Reduce worker memory consumption [#12737](https://github.com/penpot/penpot/issues/12737) (PR: [#12751](https://github.com/penpot/penpot/pull/12751), [#12840](https://github.com/penpot/penpot/pull/12840))
+- Reduce workspace memory consumption [#12746](https://github.com/penpot/penpot/issues/12746) (PR: [#12790](https://github.com/penpot/penpot/pull/12790), [#12792](https://github.com/penpot/penpot/pull/12792), [#12835](https://github.com/penpot/penpot/pull/12835), [#12854](https://github.com/penpot/penpot/pull/12854), [#12877](https://github.com/penpot/penpot/pull/12877))
+- Expose frontend audit events to host callbacks via config.js [#13091](https://github.com/penpot/penpot/issues/13091) (PR: [#13175](https://github.com/penpot/penpot/pull/13175))
+- Add pgjdbc prepared statement cache settings to the backend database configuration [#13092](https://github.com/penpot/penpot/issues/13092) (PR: [#13099](https://github.com/penpot/penpot/pull/13099))
+- Partition the file history table by file to keep queries fast as it grows [#12416](https://github.com/penpot/penpot/issues/12416) (PR: [#12417](https://github.com/penpot/penpot/pull/12417))
+- Protect the file data storage objects with a foreign key in the backend [#12768](https://github.com/penpot/penpot/issues/12768) (PR: [#12769](https://github.com/penpot/penpot/pull/12769))
+- Deliver audit-log events independently to the Nexus and admin console consumers [#12700](https://github.com/penpot/penpot/issues/12700) (PR: [#12701](https://github.com/penpot/penpot/pull/12701), [#13230](https://github.com/penpot/penpot/pull/13230))
+- Add the failure cause and renderer state to WASM error reports [#12910](https://github.com/penpot/penpot/issues/12910) (PR: [#13274](https://github.com/penpot/penpot/pull/13274))
+- Let MCP detect whether the new render engine (WebGL) is active [#13167](https://github.com/penpot/penpot/issues/13167) (PR: [#13169](https://github.com/penpot/penpot/pull/13169))
+- Add a backend flag that makes file-gc skip its media clean-up under change log retention [#13219](https://github.com/penpot/penpot/issues/13219) (PR: [#13220](https://github.com/penpot/penpot/pull/13220))
+- Hide the "Text v3 editor" overlay [#13289](https://github.com/penpot/penpot/issues/13289) (PR: [#13293](https://github.com/penpot/penpot/pull/13293))
 
 ### :bug: Bugs
 
@@ -104,12 +113,50 @@ If you upgrade blindly: on fresh databases and small instances the startup migra
 - Fix inner shadow fill not working in the SVG render while it works in WebGL [#11967](https://github.com/penpot/penpot/issues/11967) (PR: [#12141](https://github.com/penpot/penpot/pull/12141))
 - Fix @penpot/plugin-styles loading Work Sans from a third-party CDN (by @ump45nose) [#12023](https://github.com/penpot/penpot/issues/12023) (PR: [#12087](https://github.com/penpot/penpot/pull/12087))
 - Fix schema error on swatch component for image fills [#12135](https://github.com/penpot/penpot/issues/12135) (PR: [#12136](https://github.com/penpot/penpot/pull/12136))
-- Fix worker storing more shape data than needed [#12740](https://github.com/penpot/penpot/issues/12740) (PR: [#12840](https://github.com/penpot/penpot/pull/12840))
-- Fix worker not freeing pages [#12738](https://github.com/penpot/penpot/issues/12738) (PR: [#12751](https://github.com/penpot/penpot/pull/12751))
 - Fix editing the L value in HSL mode resetting H and S to 0 (by @makesomethingshit) [#12615](https://github.com/penpot/penpot/issues/12615) (PR: [#12629](https://github.com/penpot/penpot/pull/12629))
-- Restrict dashboard plugins to the MCP plugin and localhost plugins [#12948](https://github.com/penpot/penpot/issues/12948) (PR: [#12949](https://github.com/penpot/penpot/pull/12949))
-- Fix workspace memory growing on every page switch with the WebGL renderer [#13028](https://github.com/penpot/penpot/issues/13028) (PR: [#12877](https://github.com/penpot/penpot/pull/12877))
 - Fix workspace showing React error #310 when the team container renders without a team id (by @filipsajdak) [#12728](https://github.com/penpot/penpot/issues/12728) (PR: [#12920](https://github.com/penpot/penpot/pull/12920))
+- Fix corrupted imported SVG attributes [#6915](https://github.com/penpot/penpot/issues/6915) (PR: [#13130](https://github.com/penpot/penpot/pull/13130), [#13132](https://github.com/penpot/penpot/pull/13132))
+- Fix zombie chrome-headless processes left behind by element exports (by @rayen-khammar) [#10339](https://github.com/penpot/penpot/issues/10339) (PR: [#12969](https://github.com/penpot/penpot/pull/12969))
+- Fix custom font conversion to TTF dropping glyphs in large CJK fonts [#10976](https://github.com/penpot/penpot/issues/10976) (PR: [#13074](https://github.com/penpot/penpot/pull/13074))
+- Fix Penpot crashing when duplicating a file [#12336](https://github.com/penpot/penpot/issues/12336) (PR: [#13045](https://github.com/penpot/penpot/pull/13045))
+- Fix MCP execute_code reporting success before its changes are saved [#12577](https://github.com/penpot/penpot/issues/12577) (PR: [#13027](https://github.com/penpot/penpot/pull/13027))
+- Fix color swatch not shown when editing an alias token after changing the primitive token it references [#12672](https://github.com/penpot/penpot/issues/12672) (PR: [#13038](https://github.com/penpot/penpot/pull/13038))
+- Fix wasm-critical errors not triggering the error screen [#12990](https://github.com/penpot/penpot/issues/12990) (PR: [#13100](https://github.com/penpot/penpot/pull/13100))
+- Fix Penpot MCP not exposing the Penpot instance URL, so agents could not build correct links to files [#13013](https://github.com/penpot/penpot/issues/13013) (PR: [#13018](https://github.com/penpot/penpot/pull/13018))
+- Fix auto-height text in a component copy going back to the main's height after a component sync [#13065](https://github.com/penpot/penpot/issues/13065) (PR: [#12995](https://github.com/penpot/penpot/pull/12995))
+- Fix auto-width and auto-height texts keeping the wrong box size after their characters change [#13095](https://github.com/penpot/penpot/issues/13095) (PR: [#13097](https://github.com/penpot/penpot/pull/13097))
+- Fix export boards dialog listing boards in reverse layer order [#13197](https://github.com/penpot/penpot/issues/13197) (PR: [#13198](https://github.com/penpot/penpot/pull/13198))
+- Fix PNG and PDF exports keeping the board fill when Show in exports is off [#12930](https://github.com/penpot/penpot/issues/12930) (PR: [#13073](https://github.com/penpot/penpot/pull/13073))
+- Fix a component copy set to fill in a flex layout showing the main's width and keeping its swapped icon slot at the main's position [#13015](https://github.com/penpot/penpot/issues/13015) (PR: [#13154](https://github.com/penpot/penpot/pull/13154))
+- Fix MCP plugin throwing "Cannot read properties of undefined (reading 'error')" when a plugin task fails [#12503](https://github.com/penpot/penpot/issues/12503) (PR: [#13224](https://github.com/penpot/penpot/pull/13224))
+- Fix update-file skipping the referential check when an add-page change has no id [#12666](https://github.com/penpot/penpot/issues/12666) (PR: [#12675](https://github.com/penpot/penpot/pull/12675))
+- Fix text box size not changing in component copies [#12721](https://github.com/penpot/penpot/issues/12721) (PR: [#12995](https://github.com/penpot/penpot/pull/12995))
+- Fix variant properties losing their order and editing the wrong property when a component has more than 8 properties [#12867](https://github.com/penpot/penpot/issues/12867) (PR: [#13014](https://github.com/penpot/penpot/pull/13014))
+- Fix removing a property from a variant set leaving duplicate or empty values in the remaining properties [#12959](https://github.com/penpot/penpot/issues/12959) (PR: [#12960](https://github.com/penpot/penpot/pull/12960))
+- Fix text set through the Plugin API in a component copy getting clipped after a library update [#12997](https://github.com/penpot/penpot/issues/12997) (PR: [#12995](https://github.com/penpot/penpot/pull/12995))
+- Fix pasting a nested copy with a deeply swapped component failing to save with missing-slot [#13076](https://github.com/penpot/penpot/issues/13076) (PR: [#13178](https://github.com/penpot/penpot/pull/13178))
+- Fix an auto-width text box keeping its size after changing its typography from assets [#13124](https://github.com/penpot/penpot/issues/13124) (PR: [#13315](https://github.com/penpot/penpot/pull/13315))
+- Update dependencies to fix CVEs [#13155](https://github.com/penpot/penpot/issues/13155) (PR: [#13191](https://github.com/penpot/penpot/pull/13191))
+- Fix disabled primary DS button label being nearly invisible in the light theme [#13171](https://github.com/penpot/penpot/issues/13171) (PR: [#13193](https://github.com/penpot/penpot/pull/13193))
+- Fix disabled "invite people" button being left-aligned instead of centered in the invitations empty state [#13173](https://github.com/penpot/penpot/issues/13173) (PR: [#13193](https://github.com/penpot/penpot/pull/13193))
+- Fix detaching a copy failing to save with missing-slot when a nested copy holds a swapped component [#13176](https://github.com/penpot/penpot/issues/13176) (PR: [#13178](https://github.com/penpot/penpot/pull/13178))
+- Fix variant switch dropping overrides from the main when the outer component is deleted [#13177](https://github.com/penpot/penpot/issues/13177) (PR: [#13178](https://github.com/penpot/penpot/pull/13178))
+- Fix variant switch dropping a swapped child when the variant copy is nested in another copy [#13179](https://github.com/penpot/penpot/issues/13179) (PR: [#13185](https://github.com/penpot/penpot/pull/13185))
+- Fix variant copy losing its swapped child when undoing a variant switch [#13181](https://github.com/penpot/penpot/issues/13181) (PR: [#13185](https://github.com/penpot/penpot/pull/13185))
+- Fix WebGL workspace showing an internal error when a plugin changes a text font right after switching pages [#13205](https://github.com/penpot/penpot/issues/13205) (PR: [#13235](https://github.com/penpot/penpot/pull/13235))
+- Fix wrong typography in the "Your Account" sections [#13216](https://github.com/penpot/penpot/issues/13216) (PR: [#13218](https://github.com/penpot/penpot/pull/13218))
+- Fix drop shadows on PNG images ignoring their transparency [#13234](https://github.com/penpot/penpot/issues/13234) (PR: [#13279](https://github.com/penpot/penpot/pull/13279))
+- Fix Plugin API returning variant properties in random order when a variant set has more than 8 properties [#13247](https://github.com/penpot/penpot/issues/13247) (PR: [#13283](https://github.com/penpot/penpot/pull/13283))
+- Fix guide size and typography font size fields accepting typed values outside their limits [#13250](https://github.com/penpot/penpot/issues/13250) (PR: [#13251](https://github.com/penpot/penpot/pull/13251))
+- Fix legacy text editor saving a null text decoration that the backend rejects [#13252](https://github.com/penpot/penpot/issues/13252) (PR: [#13253](https://github.com/penpot/penpot/pull/13253))
+- Fix a grid board with a 0fr column breaking and failing to save when its width is set to auto [#13255](https://github.com/penpot/penpot/issues/13255) (PR: [#13256](https://github.com/penpot/penpot/pull/13256))
+- Fix undo with the stroke color picker open breaking gradients [#13261](https://github.com/penpot/penpot/issues/13261) (PR: [#13262](https://github.com/penpot/penpot/pull/13262))
+- Fix changing the style of a missing stroke saving a stroke without color [#13263](https://github.com/penpot/penpot/issues/13263) (PR: [#13264](https://github.com/penpot/penpot/pull/13264))
+- Fix setting one padding side on a layout without padding saving an incomplete padding [#13265](https://github.com/penpot/penpot/issues/13265) (PR: [#13266](https://github.com/penpot/penpot/pull/13266))
+- Fix autosave failing after uploading an SVG while a shape inside a group is selected [#13281](https://github.com/penpot/penpot/issues/13281) (PR: [#13282](https://github.com/penpot/penpot/pull/13282))
+- Fix Selected colors saving an invalid text fill when an image is picked [#13312](https://github.com/penpot/penpot/issues/13312) (PR: [#13313](https://github.com/penpot/penpot/pull/13313))
+- Fix workspace saves failing after a path is squashed almost flat far from the origin [#13324](https://github.com/penpot/penpot/issues/13324) (PR: [#13325](https://github.com/penpot/penpot/pull/13325))
+- Fix pasting a component copied from 2.19 failing with an "expected valid shape" error [#13327](https://github.com/penpot/penpot/issues/13327) (PR: [#13334](https://github.com/penpot/penpot/pull/13334))
 
 ## 2.19.5
 
