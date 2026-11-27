@@ -151,6 +151,7 @@
                     :thumbnail-uri "test"
                     :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
         system (-> (merge main/system-config main/worker-config)
+                   (assoc-in [:app.setup/props :app.setup/key] "test-secret-key")
                    (assoc-in [:app.redis/client :app.redis/uri] (:redis-uri config))
                    (assoc-in [::db/pool ::db/uri] (:database-uri config))
                    (assoc-in [::db/pool ::db/username] (:database-username config))

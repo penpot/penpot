@@ -10,6 +10,8 @@
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.setup.keys :as keys]
+   [buddy.core.codecs :as bc]
    [clojure.core :as c]
    [clojure.test :as t]))
 
@@ -186,3 +188,147 @@
       (t/is (not (contains? flags :audit-log)))
       (t/is (contains? flags :nexus))
       (t/is (cf/persist-audit-events? flags)))))
+
+;; Key files are the delivery channel for the per-service shared keys written
+;; by an external generator. A direct environment value still wins.
+
+(defn- with-key-file
+  [content f]
+  (let [file (java.io.File/createTempFile "penpot-key" ".txt")]
+    (spit file content)
+    (try
+      (f (.getAbsolutePath file))
+      (finally (.delete file)))))
+
+(defn- with-temp-dir
+  [f]
+  (let [dir (java.nio.file.Files/createTempDirectory
+             "penpot-key"
+             (into-array java.nio.file.attribute.FileAttribute []))]
+    (try
+      (f (str dir))
+      (finally (java.nio.file.Files/deleteIfExists dir)))))
+
+(defn- key-file-error
+  [config]
+  (try
+    (read-config config)
+    nil
+    (catch Exception e e)))
+
+(t/deftest read-config-reads-key-files
+  (with-key-file "from-file\n"
+    (fn [path]
+      (let [cfg (read-config {:secret-key-file path
+                              :exporter-shared-key-file path
+                              :admin-console-shared-key-file path
+                              :nexus-shared-key-file path
+                              :media-processor-shared-key-file path})]
+        (t/testing "all five key files are read and trimmed"
+          (t/is (= "from-file" (:secret-key cfg)))
+          (t/is (= "from-file" (:exporter-shared-key cfg)))
+          (t/is (= "from-file" (:admin-console-shared-key cfg)))
+          (t/is (= "from-file" (:nexus-shared-key cfg)))
+          (t/is (= "from-file" (:media-processor-shared-key cfg))))))))
+
+(t/deftest read-config-removes-internal-whitespace
+  (with-key-file "from-\n file \tkey"
+    (fn [path]
+      (t/is (= "from-filekey" (:secret-key (read-config {:secret-key-file path})))))))
+
+(def ^:private key-file-whitespace
+  (concat (range 0x0009 0x000e) [0x0020 0x0085 0x00a0 0x1680]
+          (range 0x2000 0x200b) [0x2028 0x2029 0x202f 0x205f 0x3000 0xfeff]))
+
+(t/deftest read-config-normalizes-key-file-whitespace
+  (doseq [codepoint key-file-whitespace]
+    (t/testing (format "U+%04X at both edges and inside master and service keys" codepoint)
+      (let [space (str (char codepoint))]
+        (with-key-file (str space "mas" space "ter" space)
+          (fn [path]
+            (let [cfg (read-config {:secret-key-file path
+                                    :exporter-shared-key-file path})]
+              (t/is (= "master" (:secret-key cfg)))
+              (t/is (= "master" (:exporter-shared-key cfg))))))))))
+
+(t/deftest read-config-rejects-unicode-whitespace-only-key-files
+  (with-key-file (apply str (map char key-file-whitespace))
+    (fn [path]
+      (doseq [key [:secret-key-file :media-processor-shared-key-file]]
+        (t/testing (str key)
+          (t/is (= :invalid-key-file (:code (ex-data (key-file-error {key path}))))))))))
+
+(t/deftest read-config-preserves-other-key-file-characters
+  (with-key-file "\u0000é\u200b中\u0000"
+    (fn [path]
+      (let [cfg (read-config {:secret-key-file path
+                              :media-processor-shared-key-file path})]
+        (t/is (= "\u0000é\u200b中\u0000" (:secret-key cfg)))
+        (t/is (= "\u0000é\u200b中\u0000" (:media-processor-shared-key cfg)))))))
+
+(t/deftest read-config-does-not-normalize-direct-keys
+  (let [value "\u00a0mas\u00a0ter\ufeff"
+        cfg   (read-config {:secret-key value :exporter-shared-key value})]
+    (t/is (= value (:secret-key cfg)))
+    (t/is (= value (:exporter-shared-key cfg)))))
+
+(t/deftest read-config-checks-key-file-size-in-bytes-before-normalization
+  (with-key-file (str "a" (apply str (repeat 2048 "\u00a0")))
+    (fn [path]
+      (t/is (= :invalid-key-file
+               (:code (ex-data (key-file-error {:secret-key-file path}))))))))
+
+(t/deftest read-config-derives-keys-from-normalized-master-file
+  (with-key-file "\ufeffmas\u00a0ter\u0085"
+    (fn [path]
+      (let [master (:secret-key (read-config {:secret-key-file path}))]
+        (t/is (= "GIFntVZnqcaOnDmD-Ii09n8wkajiOfVXI-RTJGyjKxg"
+                 (bc/bytes->b64-str (keys/derive master :salt "exporter") true)))
+        (t/is (= "xNYzcEWx3FaEOA0hM_-CqfYPHv_bjbDfncqkAE2wJzM"
+                 (bc/bytes->b64-str (keys/derive master :salt "media-processor") true)))))))
+
+(t/deftest read-config-prefers-direct-env-key-over-file
+  (with-temp-dir
+    (fn [dir]
+      (let [cfg (read-config {:exporter-shared-key "direct"
+                              :exporter-shared-key-file (str dir "/missing")})]
+        (t/is (= "direct" (:exporter-shared-key cfg)))))))
+
+(t/deftest read-config-rejects-a-missing-key-file
+  (with-temp-dir
+    (fn [dir]
+      (let [path (str dir "/missing")
+            err  (key-file-error {:secret-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))
+        (t/is (= path (:path (ex-data err))))))))
+
+(t/deftest read-config-rejects-a-directory-as-key-file
+  (with-temp-dir
+    (fn [dir]
+      (let [err (key-file-error {:secret-key-file dir})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-rejects-an-empty-key-file
+  (with-key-file "  \n\t"
+    (fn [path]
+      (let [err (key-file-error {:nexus-shared-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_NEXUS_SHARED_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-rejects-an-oversized-key-file
+  (with-key-file (apply str (repeat 5000 "a"))
+    (fn [path]
+      (let [err (key-file-error {:secret-key-file path})]
+        (t/is (some? err))
+        (t/is (= "PENPOT_SECRET_KEY_FILE" (:variable (ex-data err))))))))
+
+(t/deftest read-config-without-key-files-is-unchanged
+  (let [cfg (read-config {})]
+    (t/is (nil? (:secret-key cfg)))
+    (t/is (nil? (:exporter-shared-key cfg)))))
+
+(t/deftest read-config-keeps-a-blank-direct-key
+  (let [cfg (read-config {:exporter-shared-key ""})]
+    (t/is (= "" (:exporter-shared-key cfg)))))
