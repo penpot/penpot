@@ -176,6 +176,7 @@
    [frontend-tests.ui.comments-clustering-test]
    [frontend-tests.ui.comments-position-modifier-test]
    [frontend-tests.ui.context-menu-submenu-test]
+   [frontend-tests.ui.dashboard-fonts-test]
    [frontend-tests.ui.dashboard-import-linking-test]
    [frontend-tests.ui.drawarea-test]
    [frontend-tests.ui.ds-controls-numeric-input-test]
@@ -421,6 +422,7 @@
    'frontend-tests.ui.comments-clustering-test
    'frontend-tests.ui.comments-position-modifier-test
    'frontend-tests.ui.context-menu-submenu-test
+   'frontend-tests.ui.dashboard-fonts-test
    'frontend-tests.ui.dashboard-import-linking-test
    'frontend-tests.ui.drawarea-test
    'frontend-tests.ui.ds-controls-numeric-input-test

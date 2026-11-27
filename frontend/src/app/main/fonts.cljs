@@ -305,10 +305,18 @@
       (u/join "assets/by-id/" asset-id)
       (str)))
 
+(defn- escape-css-string
+  "Escapes `s` to sit inside a single-quoted CSS string, so a family name
+  with an apostrophe (\"Suisse Int'l\") can't end the string early."
+  [s]
+  (-> (str s)
+      (str/replace "\\" "\\\\")
+      (str/replace "'" "\\'")))
+
 (defn generate-custom-font-variant-css
   [family variant]
   (str/fmt font-face-template
-           {:family family
+           {:family (escape-css-string family)
             :style (:style variant)
             :weight (:weight variant)
             :uri (asset-id->uri (::woff1-file-id variant))}))
@@ -481,7 +489,7 @@
       (let [{:keys [weight style suffix]} (get-variant font font-variant-id)
             suffix (or suffix font-variant-id)
             params {:uri (str (u/join cf/public-uri (str "fonts/" family "-" suffix ".woff")))
-                    :family family
+                    :family (escape-css-string family)
                     :style style
                     :weight weight}]
         (rx/of (str/fmt font-face-template params))))))

@@ -59,15 +59,41 @@
   (and (contains? font :font-family-tmp)
        (str/blank? (:font-family-tmp font))))
 
+(defn- valid-font-family?
+  [item]
+  (sm/validate ctf/schema:font-family (:font-family item)))
+
+(defn- upload-error-message
+  "The notice for a font that failed to upload: the allowed characters when
+  the backend would reject its family name, else the generic message."
+  [item]
+  (if (valid-font-family? item)
+    (tr "errors.bad-font" (first (:names item)))
+    (tr "errors.font-family-invalid-chars")))
+
 (defn- handle-font-upload
   [{:keys [id] :as item}]
-  (->> (df/upload-font-variant item)
-       ;; This delay fixes the UI problem. When the font is uploaded quickly,
-       ;; the user only sees a flicker on the button. With a small delay we
-       ;; have a clear transition from uploading state to uploaded
-       (rx/delay-at-least 2000)
-       (rx/map (fn [font]
-                 [id font]))))
+  (if (valid-font-family? item)
+    (->> (df/upload-font-variant item)
+         ;; This delay fixes the UI problem. When the font is uploaded quickly,
+         ;; the user only sees a flicker on the button. With a small delay we
+         ;; have a clear transition from uploading state to uploaded
+         (rx/delay-at-least 2000)
+         (rx/map (fn [font]
+                   [id font])))
+    (rx/throw (ex-info "Invalid font family" {:font-family (:font-family item)}))))
+
+(defn- upload-fonts
+  "Uploads the items one after another. Emits `[id font]` for each one;
+  `font` is nil when its upload failed, after showing the error notice."
+  [items]
+  (->> (rx/from items)
+       (rx/mapcat (fn [{:keys [id] :as item}]
+                    (->> (handle-font-upload item)
+                         (rx/catch (fn [cause]
+                                     (st/emit! (ntf/error (upload-error-message item)))
+                                     (js/console.error "Unexpected error on uploading font" cause)
+                                     (rx/of [id nil]))))))))
 
 (mf/defc header*
   {::mf/memo true
@@ -140,7 +166,8 @@
                               (swap! uploading* disj previous-id)
                               (st/emit! (df/add-font font)))
                             (fn [cause]
-                              (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
+                              (swap! uploading* disj id)
+                              (st/emit! (ntf/error (upload-error-message item)))
                               (js/console.error "Unexpected error on uploading font" cause)))))))
 
         on-blur-name
@@ -179,19 +206,14 @@
         (mf/use-fn
          (mf/deps font-vals)
          (fn [_]
-           (->> (rx/from font-vals)
-                (rx/tap #(swap! uploading* conj (:id %)))
-                (rx/mapcat (fn [{:keys [id] :as item}]
-                             (->> (handle-font-upload item)
-                                  (rx/catch (fn [cause]
-                                              (st/emit! (ntf/error (tr "errors.bad-font" (first (:names item)))))
-                                              (js/console.error "Unexpected error on uploading font" cause)
-                                              (rx/of [id nil]))))))
-
+           (swap! uploading* into (map :id) font-vals)
+           (->> (upload-fonts font-vals)
                 (rx/subs! (fn [[previous-id font]]
-                            (swap! fonts* dissoc previous-id)
                             (swap! uploading* disj previous-id)
+                            ;; A failed font stays in the list, as with a
+                            ;; single upload, so its name can be fixed
                             (when font
+                              (swap! fonts* dissoc previous-id)
                               (st/emit! (df/add-font font))))))))
 
         on-dismis-all

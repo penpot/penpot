@@ -15,6 +15,7 @@
    [app.util.webapi :as wa]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
+   [cuerdas.core :as str]
    [frontend-tests.helpers.async :as async]
    [frontend-tests.helpers.mock :as mock]
    [potok.v2.core :as ptk]))
@@ -271,6 +272,11 @@
                "fontSubfamily" variant}]
     #js {:getEnglishName (fn [k] (get names k))
          :tables #js {:hhea hhea :os2 os2}}))
+
+(t/deftest custom-font-css-escapes-the-family-name
+  (let [css (fonts/generate-custom-font-variant-css "Suisse Int'l \\ x"
+                                                    {:style "normal" :weight "400"})]
+    (t/is (str/includes? css "font-family: 'Suisse Int\\'l \\\\ x';"))))
 
 (t/deftest parse-font-mtype-detects-font-signatures
   (t/is (= "font/ttf" (#'df/parse-font-mtype (bytes->buffer [0 1 0 0]))))
