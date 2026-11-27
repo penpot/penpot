@@ -1523,6 +1523,67 @@ test.describe("Gradient type select", () => {
   });
 });
 
+test.describe("Font variant select", () => {
+  test("Shows the font variant select closed, open and mixed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-text-variants.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "434b0541-fa2f-802f-8006-6a827d964a9b",
+      pageId: "434b0541-fa2f-802f-8006-6a827d964a9c",
+    });
+    await workspace.selectLayer("Text multiple selection one");
+
+    const variantSelect = workspace.rightSidebar.locator(
+      "[class*='font-variant-options']",
+    );
+    await expect(variantSelect).toContainText("400");
+    const sidebarBox = await workspace.rightSidebar.boundingBox();
+    const selectBox = await variantSelect.boundingBox();
+    // The font row and the variant row, with room below for the list.
+    const clip = {
+      x: Math.floor(sidebarBox.x),
+      y: Math.floor(selectBox.y) - 48,
+      width: Math.ceil(sidebarBox.width),
+      height: 220,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.click();
+    const bold = variantSelect.getByText("700", { exact: true });
+    await expect(bold).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await bold.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+    await page.keyboard.press("Escape");
+
+    // Two texts with different variants show "--".
+    await workspace.selectLayer("Text multiple selection two", {
+      modifiers: ["Shift"],
+    });
+    await expect(variantSelect).toContainText("--");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await variantSelect.click();
+    await expect(variantSelect.getByText("700", { exact: true })).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+  });
+});
+
 test.describe("Shortcuts panel", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
