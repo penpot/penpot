@@ -6,6 +6,7 @@
 
 (ns backend-tests.http-sse-test
   (:require
+   [app.common.json :as json]
    [app.common.transit :as tr]
    [app.config :as cf]
    [app.http.middleware :as mw]
@@ -59,7 +60,7 @@
 (def ^:private test-file-id #uuid "00000000-0000-0000-0000-000000000001")
 
 (def ^:private progress-json
-  (str "{\"fileId\":\"" test-file-id "\",\"index\":1,\"total\":2}"))
+  {"fileId" (str test-file-id) "index" 1 "total" 2})
 
 (defn- make-handler
   []
@@ -108,18 +109,18 @@
   (let [stream (run-sse {:headers {"accept" "application/json"}})
         [progress end] (data-events stream)]
     (t/is (= "progress" (:event progress)))
-    (t/is (= progress-json (:data progress)))
+    (t/is (= progress-json (json/decode (:data progress))))
     (t/is (= "end" (:event end)))
-    (t/is (= "{\"status\":\"ok\"}" (:data end)))))
+    (t/is (= {"status" "ok"} (json/decode (:data end))))))
 
 (t/deftest fmt-json-query-param-uses-json
   (let [[progress] (data-events (run-sse {:query-params {:_fmt "json"}}))]
-    (t/is (= progress-json (:data progress)))))
+    (t/is (= progress-json (json/decode (:data progress))))))
 
 (t/deftest fmt-json-query-param-precedence-over-accept
   (let [[progress] (data-events (run-sse {:query-params {:_fmt "json"}
                                           :headers {"accept" "application/transit+json"}}))]
-    (t/is (= progress-json (:data progress)))))
+    (t/is (= progress-json (json/decode (:data progress))))))
 
 (t/deftest wildcard-accept-defaults-to-transit
   (let [[progress] (data-events (run-sse {:headers {"accept" "*/*"}}))]
@@ -137,8 +138,8 @@
     (yres/write-body-to-stream (::yres/body response) response output)
     (let [[error] (data-events (.toString output "UTF-8"))]
       (t/is (= "error" (:event error)))
-      (t/is (= "{\"type\":\"validation\",\"code\":\"generic\",\"hint\":\"boom\"}"
-               (:data error))))))
+      (t/is (= {"type" "validation" "code" "generic" "hint" "boom"}
+               (json/decode (:data error)))))))
 
 (t/deftest content-type-is-event-stream-on-both-formats
   (let [check (fn [request]

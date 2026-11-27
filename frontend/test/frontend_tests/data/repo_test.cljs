@@ -6,11 +6,13 @@
 
 (ns frontend-tests.data.repo-test
   (:require
+   [app.common.transit :as transit]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.repo :as repo]
    [app.util.globals :as globals]
+   [app.util.sse :as sse]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [cuerdas.core :as str]
@@ -59,6 +61,43 @@
                  (when (#{:upload-chunk :create-file-thumbnail} command)
                    (t/is (instance? js/FormData (.-body options)))
                    (t/is (not (.has headers "content-type"))))))))))
+
+(t/deftest ^:async streaming-requests-use-transit-and-preserve-headers
+  (let [command ::sse/export-binfile
+        payload {:type :progress :id #uuid "c4ed5d5a-37d6-4ddf-8ef3-afc1ce315715"}
+        encoded (transit/encode-str payload {:type :json-verbose})]
+    (doseq [options [{:stream? true} {:stream? true :response-format :json}]]
+      (await (mock/with-mocks*
+               {(.-origin ^js globals/location) "https://alias.example"
+                cf/external-session-id (fn [] "external-session")
+                repo/default-options (assoc repo/default-options command options)}
+               (let [request (volatile! nil)
+                     events  (atom [])
+                     original (http-mock/install-fetch-mock!
+                               (fn [url ^js opts]
+                                 (vreset! request [url opts])
+                                 (js/Promise.resolve
+                                  (js/Response.
+                                   (str "event: progress\ndata: " encoded "\n\n")
+                                   #js {:status 200
+                                        :headers #js {"content-type" "text/event-stream"}}))))]
+                 (try
+                   (await (async/observe
+                           (repo/cmd! command (with-meta {} {::ev/origin "test"}))
+                           :on-next #(swap! events conj %)))
+                   (let [[_ ^js opts] @request
+                         headers (js/Headers. (.-headers opts))
+                         event   (first @events)]
+                     (t/is (= "application/transit+json,text/event-stream,*/*" (.get headers "accept")))
+                     (t/is (= "https://alias.example" (.get headers "x-penpot-origin")))
+                     (t/is (= "external-session" (.get headers "x-external-session-id")))
+                     (t/is (= "test" (.get headers "x-event-origin")))
+                     (t/is (= (str cf/session-id) (.get headers "x-session-id")))
+                     (t/is (= 1 (count @events)))
+                     (t/is (= "progress" (sse/get-type event)))
+                     (t/is (= payload (sse/get-payload event))))
+                   (finally
+                     (http-mock/restore-fetch! original)))))))))
 
 (t/deftest ^:async exporter-requests-do-not-send-the-page-origin
   (await (mock/with-mocks*

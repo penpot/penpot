@@ -65,14 +65,14 @@
   protocol behavior. The options map will be used as-as for the
   initial data of the `ws` data structure.
 
-  The returned map has the resolved options attached in its
-  metadata under the `::options` key; it is intended for testing
-  and introspection purposes only."
+  The returned map has the resolved codec functions attached in its
+  metadata under the `::options` key for introspection."
   [request & {:keys [::on-rcv-message
                      ::on-snd-message
                      ::on-connect
                      ::encode-fn
                      ::decode-fn
+                     ::prepare-fn
                      ::input-buff-size
                      ::output-buff-size
                      ::idle-timeout]
@@ -83,7 +83,8 @@
                    on-snd-message identity-3
                    on-rcv-message identity-3
                    encode-fn default-encode-fn
-                   decode-fn default-decode-fn}
+                   decode-fn default-decode-fn
+                   prepare-fn (fn [message] {:message message})}
               :as options}]
 
   (assert (fn? on-rcv-message) "'on-rcv-message' should be a function")
@@ -112,7 +113,8 @@
                        (assoc ::remote-addr ip-addr)
                        (assoc ::user-agent uagent)
                        (assoc ::encode-fn encode-fn)
-                       (assoc ::decode-fn decode-fn))]
+                       (assoc ::decode-fn decode-fn)
+                       (assoc ::prepare-fn prepare-fn))]
 
     (with-meta
       {:on-open
@@ -147,7 +149,7 @@
        :on-pong
        (fn on-pong [_channel data]
          (sp/put! hbeat-ch data))}
-      {::options options})))
+      {::options (select-keys options [::encode-fn ::decode-fn])})))
 
 (defn- handle-ping!
   [{:keys [::id ::beats ::channel] :as wsp} beat-id]
@@ -159,7 +161,7 @@
 (defn- start-io-loop!
   [{:keys [::id ::close-ch ::input-ch ::output-ch ::heartbeat-ch
            ::channel ::handler ::beats ::on-rcv-message ::on-snd-message
-           ::encode-fn ::decode-fn]
+           ::encode-fn ::decode-fn ::prepare-fn]
     :as wsp}]
   (try
     (handler wsp {:type :open})
@@ -185,14 +187,12 @@
               (recur i))
 
             (identical? p input-ch)
-            (let [message (decode-fn msg)
-                  message (on-rcv-message message)
-                  {:keys [request-id] :as response} (handler wsp message)]
+            (let [{:keys [message error]} (prepare-fn (decode-fn msg))
+                  response (if error
+                             error
+                             (handler wsp (on-rcv-message message)))]
               (when (map? response)
-                (sp/put! output-ch
-                         (cond-> response
-                           (some? request-id)
-                           (assoc :request-id request-id))))
+                (sp/put! output-ch response))
               (recur i))
 
             (identical? p output-ch)

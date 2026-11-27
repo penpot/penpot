@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
-   [app.common.transit :as t]
    [app.http.content-negotiation :as cnegot]
    [app.http.errors :as errors]
    [app.util.events :as events]
@@ -39,13 +38,6 @@
              :cause cause)
       nil)))
 
-(defn- resolve-encoder
-  [format]
-  (case format
-    :transit #(t/encode-str % {:type :json-verbose})
-    :json    cnegot/json-encode-str
-    #(t/encode-str % {:type :json-verbose})))
-
 ;; ---- PUBLIC API
 
 (def default-headers
@@ -61,7 +53,7 @@
   transit being the default."
   [handler & {:keys [buf] :or {buf 32} :as opts}]
   (fn [request]
-    (let [encode-fn (resolve-encoder (cnegot/negotiate-format request))]
+    (let [encode-fn (cnegot/resolve-encoder (cnegot/negotiate-format request))]
       {::yres/headers default-headers
        ::yres/status 200
        ::yres/body (yres/stream-body

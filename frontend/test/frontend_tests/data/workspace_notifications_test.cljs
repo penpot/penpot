@@ -6,7 +6,10 @@
 
 (ns frontend-tests.data.workspace-notifications-test
   (:require
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as gpr]
    [app.common.time :as ct]
+   [app.common.transit :as transit]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.modal :as modal]
@@ -16,6 +19,8 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.notifications :as dwntf]
    [app.util.i18n :as i18n]
+   [app.util.mouse :as mse]
+   [app.util.websocket :as websocket]
    [beicon.v2.core :as rx]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.async :as async]
@@ -204,6 +209,58 @@
          (finally
            (rx/dispose! store)))))
     @result))
+
+(t/deftest ^:async workspace-producers-send-typed-transit-messages
+  (let [team-id   (uuid/next)
+        file-id   (uuid/next)
+        page-id   (uuid/next)
+        position  (gpt/point 42 23)
+        viewport  (gpr/make-rect 0 0 800 600)
+        frames    (atom [])
+        errors    (atom [])
+        previous  @dws/ws-conn
+        socket    (reify websocket/IWebSocket
+                    (-stream [_] nil)
+                    (-send [_ frame] (swap! frames conj frame))
+                    (-close [_] nil)
+                    (-open? [_] true))
+        store     (ptk/store {:state {:profile-id (uuid/next)
+                                      :session-id (uuid/next)
+                                      :current-page-id page-id
+                                      :workspace-local {:zoom 1
+                                                        :zoom-inverse 1
+                                                        :vbox viewport
+                                                        :vport viewport}
+                                      :teams {team-id {:id team-id}}}
+                              :on-error #(swap! errors conj %)})]
+    (try
+      (vreset! dws/ws-conn socket)
+      (ptk/emit! store (dwntf/initialize team-id file-id))
+      (await (async/wait-for #(>= (count @frames) 2) "initial subscriptions"))
+      (ptk/emit! store (mse/->PointerEvent :viewport position false false false false nil))
+      (await (async/wait-for #(>= (count @frames) 3) "pointer update"))
+      (ptk/emit! store (dwntf/finalize file-id))
+      (await (async/wait-for #(>= (count @frames) 4) "file unsubscribe"))
+      (let [messages (mapv transit/decode-str @frames)
+            by-type  (group-by :type messages)
+            pointer  (first (get by-type :pointer-update))
+            file-sub (first (get by-type :subscribe-file))
+            team-sub (first (get by-type :subscribe-team))
+            file-end (first (get by-type :unsubscribe-file))]
+        (t/is (empty? @errors))
+        (t/is (= file-id (:file-id file-sub) (:file-id file-end) (:file-id pointer)))
+        (t/is (= team-id (:team-id team-sub)))
+        (t/is (= page-id (:page-id pointer)))
+        (t/is (every? uuid? [(:file-id file-sub) (:team-id team-sub)
+                             (:file-id file-end) (:file-id pointer) (:page-id pointer)]))
+        (t/is (= position (:position pointer)))
+        (t/is (gpt/point? (:position pointer)))
+        (t/is (= viewport (:vbox pointer) (:vport pointer)))
+        (t/is (and (gpr/rect? (:vbox pointer)) (gpr/rect? (:vport pointer))))
+        (t/is (= 1 (:zoom pointer) (:zoom-inverse pointer))))
+      (finally
+        (rx/dispose! store)
+        (vreset! dws/ws-conn previous)))))
 
 ;; Scenario: the open file reloads three times (a peer's restore, the
 ;; restorer's own version reload, the rollback fallback), each starting a

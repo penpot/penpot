@@ -13,6 +13,7 @@
   is not affected."
   (:require
    [app.common.json :as json]
+   [app.common.transit :as t]
    [app.util.pointer-map :as pmap]
    [cuerdas.core :as str]
    [yetti.request :as yreq]))
@@ -56,3 +57,10 @@
   instants serialized as plain JSON scalars."
   [v]
   (json/encode v :key-fn json/write-camel-key :value-fn write-json-value))
+
+(defn resolve-encoder
+  "Resolve the payload encoder, defaulting to transit for unknown formats."
+  [format]
+  (case format
+    :json json-encode-str
+    #(t/encode-str % {:type :json-verbose})))

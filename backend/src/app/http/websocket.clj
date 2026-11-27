@@ -300,10 +300,7 @@
   "Resolve the outbound message encoder for the negotiated format.
   The transit encoding is the default for unexpected format values."
   [format]
-  (case format
-    :transit #(t/encode-str % {:type :json-verbose})
-    :json    cnegot/json-encode-str
-    #(t/encode-str % {:type :json-verbose})))
+  (cnegot/resolve-encoder format))
 
 (defn resolve-decoder
   "Resolve the inbound message decoder for the negotiated format.
@@ -314,20 +311,54 @@
     :json    #(json/decode % {:key-fn json/read-kebab-key})
     t/decode-str))
 
-(defn normalize-message
-  "Normalize the inbound message into the same shape produced by the
-  transit decoding: the `:type` value is a keyword and the entity ids
-  are UUID objects. This is a no-op for transit decoded messages."
-  [message]
-  (cond-> message
-    (string? (:type message))
-    (assoc :type (keyword (:type message)))
+(def ^:private message-schemas
+  {:subscribe-team (sm/validator [:map [:type [:= :subscribe-team]] [:team-id :uuid]])
+   :subscribe-file (sm/validator [:map [:type [:= :subscribe-file]] [:file-id :uuid]
+                                  [:version {:optional true} [:maybe :string]]])
+   :unsubscribe-file (sm/validator [:map [:type [:= :unsubscribe-file]] [:file-id :uuid]])
+   :keepalive (sm/validator [:map [:type [:= :keepalive]]])
+   :broadcast (sm/validator [:map [:type [:= :broadcast]]])
+   :pointer-update (sm/validator [:map [:type [:= :pointer-update]]
+                                  [:file-id :uuid] [:page-id :uuid]
+                                  [:zoom {:optional true} [:maybe number?]]
+                                  [:zoom-inverse {:optional true} [:maybe number?]]
+                                  [:vbox {:optional true} [:maybe :map]]
+                                  [:vport {:optional true} [:maybe :map]]
+                                  [:position [:map [:x number?] [:y number?]]]])})
 
-    (string? (:team-id message))
-    (assoc :team-id (uuid/parse* (:team-id message)))
+(def ^:private json-message-types
+  (into {} (map (fn [k] [(name k) k])) (keys message-schemas)))
 
-    (string? (:file-id message))
-    (assoc :file-id (uuid/parse* (:file-id message)))))
+(defn- safe-request-id?
+  [id]
+  (or (uuid? id)
+      (and (integer? id) (<= -9007199254740991 id 9007199254740991))
+      (and (string? id) (<= (count id) 128))))
+
+(defn prepare-message
+  "Validate a decoded client message, coercing only known JSON fields."
+  [format message]
+  (let [message (if (and (= format :json) (map? message))
+                  (let [type (get json-message-types (:type message))
+                        id-keys (case type
+                                  :subscribe-team [:team-id]
+                                  (:subscribe-file :unsubscribe-file) [:file-id]
+                                  :pointer-update [:file-id :page-id]
+                                  [])]
+                    (reduce (fn [m k]
+                              (if (string? (get m k))
+                                (update m k uuid/parse*)
+                                m))
+                            (assoc message :type type)
+                            id-keys))
+                  message)
+        validator (when (map? message) (get message-schemas (:type message)))]
+    (if (and validator (validator message))
+      {:message message}
+      {:error (cond-> {:type :error
+                       :error {:type :validation :code :invalid-websocket-message}}
+                (safe-request-id? (:request-id message))
+                (assoc :request-id (:request-id message)))})))
 
 (defmulti handle-message
   (fn [_ _ message]
@@ -633,8 +664,7 @@
             :id :websocket-messages-total
             :labels recv-labels
             :inc 1)
-  (let [message (normalize-message message)]
-    (assoc message :profile-id profile-id :session-id session-id)))
+  (assoc message :profile-id profile-id :session-id session-id))
 
 (defn- on-snd-message
   [{:keys [::mtx/metrics]} message]
@@ -683,6 +713,7 @@
                                      ::ws/handler (partial handle-message cfg)
                                      ::ws/encode-fn (resolve-encoder format)
                                      ::ws/decode-fn (resolve-decoder format)
+                                     ::ws/prepare-fn (partial prepare-message format)
                                      ::profile-id profile-id
                                      ::session-id session-id)}))))
 
