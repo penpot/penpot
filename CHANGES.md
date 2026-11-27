@@ -123,6 +123,7 @@ If you upgrade a large instance without preparing it, the boot migration can fai
 - Fix color swatch not shown when editing an alias token after changing the primitive token it references [#12672](https://github.com/penpot/penpot/issues/12672) (PR: [#13038](https://github.com/penpot/penpot/pull/13038))
 - Fix wasm-critical errors not triggering the error screen [#12990](https://github.com/penpot/penpot/issues/12990) (PR: [#13100](https://github.com/penpot/penpot/pull/13100))
 - Fix Penpot MCP not exposing the Penpot instance URL, so agents could not build correct links to files [#13013](https://github.com/penpot/penpot/issues/13013) (PR: [#13018](https://github.com/penpot/penpot/pull/13018))
+- Fix shadows not rotating in PDF export for rotated elements in a flex layout [#13043](https://github.com/penpot/penpot/issues/13043) (PR: [#13375](https://github.com/penpot/penpot/pull/13375))
 - Fix auto-height text in a component copy going back to the main's height after a component sync [#13065](https://github.com/penpot/penpot/issues/13065) (PR: [#12995](https://github.com/penpot/penpot/pull/12995))
 - Fix auto-width and auto-height texts keeping the wrong box size after their characters change [#13095](https://github.com/penpot/penpot/issues/13095) (PR: [#13097](https://github.com/penpot/penpot/pull/13097))
 - Fix export boards dialog listing boards in reverse layer order [#13197](https://github.com/penpot/penpot/issues/13197) (PR: [#13198](https://github.com/penpot/penpot/pull/13198))
@@ -157,6 +158,8 @@ If you upgrade a large instance without preparing it, the boot migration can fai
 - Fix Selected colors saving an invalid text fill when an image is picked [#13312](https://github.com/penpot/penpot/issues/13312) (PR: [#13313](https://github.com/penpot/penpot/pull/13313))
 - Fix workspace saves failing after a path is squashed almost flat far from the origin [#13324](https://github.com/penpot/penpot/issues/13324) (PR: [#13325](https://github.com/penpot/penpot/pull/13325))
 - Fix pasting a component copied from 2.19 failing with an "expected valid shape" error [#13327](https://github.com/penpot/penpot/issues/13327) (PR: [#13334](https://github.com/penpot/penpot/pull/13334))
+- Fix the workspace no longer saving when a main boolean becomes a group and its copy was moved [#13336](https://github.com/penpot/penpot/issues/13336) (PR: [#13337](https://github.com/penpot/penpot/pull/13337))
+- Fix the new render engine wrapping text in component copies whose text box collapsed to 0.01 px width [#13353](https://github.com/penpot/penpot/issues/13353) (PR: [#13358](https://github.com/penpot/penpot/pull/13358))
 
 ## 2.19.5
 
