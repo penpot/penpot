@@ -349,7 +349,6 @@
 (mf/defc team*
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
-        subscription-type     (get-subscription-type subscription)
         team-plan-type        (get-team-plan-type team)
         subscription-is-trial (= "trialing" (:status subscription))
 
