@@ -11,8 +11,10 @@
 (def ^:private font-family-re
   ;; \p{L} (Unicode letter) works in Java regex natively, but in JavaScript it
   ;; requires the "u" flag which ClojureScript regex literals don't support.
-  #?(:clj  #"[\p{L}\d _.-]+"
-     :cljs (js/RegExp. "[\\p{L}\\d _.-]+" "u")))
+  ;; Apostrophes are common in font names ("Suisse Int'l"); the frontend
+  ;; escapes them where it writes the name into a quoted CSS string.
+  #?(:clj  #"[\p{L}\d _.'\u2019-]+"
+     :cljs (js/RegExp. "[\\p{L}\\d _.'\\u2019-]+" "u")))
 
 (def schema:font-family
   [:and

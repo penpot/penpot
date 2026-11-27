@@ -13,8 +13,8 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
@@ -119,8 +119,8 @@
 
         type-options
         (mf/with-memo []
-          [{:value "drop-shadow" :label (tr "workspace.options.shadow-options.drop-shadow")}
-           {:value "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}])
+          [{:id "drop-shadow" :label (tr "workspace.options.shadow-options.drop-shadow")}
+           {:id "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}])
 
         on-open-row
         (mf/use-fn #(st/emit! (dwu/start-undo-transaction :color-row)))
@@ -145,11 +145,12 @@
                           :aria-label "open more options"
                           :disabled hidden?
                           :on-click on-toggle-open}]
-        [:& select {:class (stl/css :shadow-basic-select)
-                    :default-value (d/name shadow-style)
-                    :options type-options
-                    :disabled hidden?
-                    :on-change on-style-change}]]
+        [:> select* {:wrapper-class (stl/css :shadow-basic-select-wrapper)
+                     :class (stl/css :shadow-basic-select)
+                     :default-selected (d/name shadow-style)
+                     :options type-options
+                     :disabled (boolean hidden?)
+                     :on-change on-style-change}]]
 
        [:div {:class (stl/css :shadow-basic-actions)}
         [:> icon-button* {:variant "ghost"

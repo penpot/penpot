@@ -23,14 +23,16 @@
   (t/is (sm/validate ctf/schema:font-family "Soucre Sans Pro 3.0"))
   ;; Unicode letters are allowed
   (t/is (sm/validate ctf/schema:font-family "思源黑体"))
-  (t/is (sm/validate ctf/schema:font-family "العربية")))
+  (t/is (sm/validate ctf/schema:font-family "العربية"))
+  ;; apostrophes are allowed, straight and typographic
+  (t/is (sm/validate ctf/schema:font-family "Suisse Int'l"))
+  (t/is (sm/validate ctf/schema:font-family "Suisse Int’l")))
 
 (t/deftest font-family-schema-invalid
   ;; HTML injection characters
   (t/is (not (sm/validate ctf/schema:font-family "evil<script>")))
   (t/is (not (sm/validate ctf/schema:font-family "<test>name")))
   ;; CSS injection characters
-  (t/is (not (sm/validate ctf/schema:font-family "evil'name")))
   (t/is (not (sm/validate ctf/schema:font-family "evil\"name")))
   (t/is (not (sm/validate ctf/schema:font-family "evil}name")))
   (t/is (not (sm/validate ctf/schema:font-family "evil;name")))

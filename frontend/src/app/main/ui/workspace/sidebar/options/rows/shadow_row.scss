@@ -9,6 +9,9 @@
 @use "ds/_borders.scss" as *;
 @use "ds/_utils.scss" as *;
 @use "ds/mixins.scss" as *;
+
+// Only for %input-element in the offset, blur and spread inputs: they
+// move to the DS with the numeric inputs group.
 @use "refactor/common-refactor.scss" as deprecated;
 @use "../../../sidebar/common/sidebar.scss" as sidebar;
 
@@ -55,8 +58,12 @@
   }
 }
 
-.shadow-basic-select {
+.shadow-basic-select-wrapper {
   flex-grow: 1;
+}
+
+// Joined to the options button on its left.
+.shadow-basic-select {
   border-radius: 0 $br-8 $br-8 0;
 }
 
