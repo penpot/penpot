@@ -511,6 +511,58 @@
            (t/is (= (:r1 frame3') 50))
            (t/is (= (:r1 frame4') 50))))))))
 
+(t/deftest propagation-leaves-shapes-without-tokens-untouched
+  (t/async
+    done
+    (let [;; ==== Setup
+          position-data [{:x 0 :y 0 :width 10 :height 20 :fills [] :text "text"}]
+          file  (-> (setup-file-with-stale-values)
+                    (cthf/switch-to-page :page2)
+                    (cths/add-sample-shape :text1 :type :text)
+                    (cths/update-shape :text1 :position-data position-data)
+                    (cthf/switch-to-page :page1))
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens)]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'   (ths/get-file-from-state new-state)
+               frame4' (cths/get-shape file' :frame4 :page-label :page2)
+               text1'  (cths/get-shape file' :text1 :page-label :page2)]
+
+           ;; ==== Check
+           (t/is (= (:r1 frame4') 50))
+           (t/is (= (:position-data text1') position-data))))))))
+
+(t/deftest propagation-resets-texts-inside-updated-frames
+  (t/async
+    done
+    (let [;; ==== Setup
+          position-data [{:x 0 :y 0 :width 10 :height 20 :fills [] :text "text"}]
+          file  (-> (setup-file-with-stale-values)
+                    (cthf/switch-to-page :page2)
+                    (cths/add-sample-shape :text1 :type :text :parent-label :frame4)
+                    (cths/update-shape :text1 :position-data position-data)
+                    (cthf/switch-to-page :page1))
+          store (ths/setup-store file)
+
+          ;; ==== Action
+          events [(dwtp/propagate-workspace-tokens)]]
+
+      (tohs/run-store-async
+       store done events
+       (fn [new-state]
+         (let [;; ==== Get
+               file'  (ths/get-file-from-state new-state)
+               text1' (cths/get-shape file' :text1 :page-label :page2)]
+
+           ;; ==== Check
+           (t/is (nil? (:position-data text1')))))))))
+
 (defn- setup-file-with-stale-components
   "Adds :component1 (from :frame1) and :component2 (from :frame2), and a
   plain :frame3, all of them with a stored radius that differs from the
