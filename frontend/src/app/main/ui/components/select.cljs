@@ -49,7 +49,7 @@
   (:value (nth options (rotate-index-backward index length))))
 
 (mf/defc select
-  [{:keys [default-value options class dropdown-class is-open? on-change on-pointer-enter-option on-pointer-leave-option disabled data-direction searchable? search-placeholder]}]
+  [{:keys [default-value options class dropdown-class is-open? on-change on-open-change on-pointer-enter-option on-pointer-leave-option disabled data-direction searchable? search-placeholder]}]
   (let [label-index   (mf/with-memo [options]
                         (into {} (map as-key-value) options))
 
@@ -207,6 +207,13 @@
     (mf/with-effect [is-open?]
       (when (and searchable? (not is-open?))
         (reset! search* nil)))
+
+    ;; Tell the owner when the options open and close; closing includes
+    ;; unmounting while open.
+    (mf/with-effect [is-open? on-open-change]
+      (when (and ^boolean is-open? (fn? on-open-change))
+        (on-open-change true)
+        #(on-open-change false)))
 
     (mf/with-effect [is-open?]
       (let [dropdown-element (mf/ref-val node-ref)]

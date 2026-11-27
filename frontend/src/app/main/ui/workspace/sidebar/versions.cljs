@@ -35,6 +35,10 @@
 (def ^:private versions
   (l/derived :workspace-versions st/state))
 
+(def menu-open-ref
+  "True while a menu in the History tab is open."
+  (l/derived #(some? (:menu %)) versions))
+
 (defn- get-versions-stored-days
   [team profile]
   (let [subscription-type (get-subscription-type (:subscription team))
@@ -128,6 +132,15 @@
   [id]
   (st/emit! (dwv/unlock-version id)))
 
+(defn- use-menu-tracking
+  "Record the menu `id` as the open menu of the panel while `open` is
+  true, so the panel leaves the next Escape to it."
+  [id open]
+  (mf/with-effect [id open]
+    (when ^boolean open
+      (st/emit! (dwv/open-menu id))
+      #(st/emit! (dwv/close-menu id)))))
+
 (mf/defc version-entry*
   {::mf/private true}
   [{:keys [entry current-profile on-preview on-restore on-delete on-rename on-lock on-unlock on-edit on-cancel-edit is-editing]}]
@@ -135,6 +148,9 @@
         profiles   (mf/deref refs/profiles)
 
         created-by (get profiles (:profile-id entry))
+
+        entry-ref        (mf/use-ref nil)
+        restore-focus-ref (mf/use-ref false)
 
         on-open-menu
         (mf/use-fn #(reset! show-menu? true))
@@ -199,13 +215,40 @@
          (fn [event]
            (cond
              (kbd/enter? event)
-             (on-name-input-blur event)
+             (do
+               ;; Focus moves to the menu button while this key is
+               ;; still being handled; without this, the rest of the
+               ;; Enter press would activate the button and open the
+               ;; menu again.
+               (dom/prevent-default event)
+               (mf/set-ref-val! restore-focus-ref true)
+               (on-name-input-blur event))
 
              (kbd/esc? event)
              (when (fn? on-cancel-edit)
+               ;; This Escape only cancels the rename; keep it from the
+               ;; History panel, which would close on it.
+               (dom/stop-propagation event)
+               (mf/set-ref-val! restore-focus-ref true)
                (on-cancel-edit (:id entry) event)))))]
 
-    [:li {:class (stl/css :version-entry-wrap)}
+    (use-menu-tracking (:id entry) @show-menu?)
+
+    ;; Ending the rename from the keyboard removes the focused input and
+    ;; leaves focus on the body, outside the History panel, where the
+    ;; next Escape would not reach it. Give focus back to the menu button
+    ;; that started the rename. It runs once the input is gone, so its
+    ;; blur handler cannot rename again.
+    (mf/with-effect [is-editing]
+      (when (and (not ^boolean is-editing)
+                 ^boolean (mf/ref-val restore-focus-ref))
+        (mf/set-ref-val! restore-focus-ref false)
+        (some-> (mf/ref-val entry-ref)
+                (dom/query "button")
+                (dom/focus!))))
+
+    [:li {:ref entry-ref
+          :class (stl/css :version-entry-wrap)}
      [:> milestone* {:label (:label entry)
                      :profile created-by
                      :editing is-editing
@@ -300,6 +343,8 @@
              (swap! open-menu* assoc
                     :snapshot (:id snapshot)
                     :offset offset))))]
+
+    (use-menu-tracking (:snapshot @open-menu*) (some? @open-menu*))
 
     [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
      [:> milestone-group*
@@ -400,6 +445,13 @@
              :else
              (st/emit! (dwv/update-versions-state {:filter filter-value})))))
 
+        on-filter-open-change
+        (mf/use-fn
+         (fn [open]
+           (st/emit! (if ^boolean open
+                       (dwv/open-menu :filter)
+                       (dwv/close-menu :filter)))))
+
         options
         (mf/with-memo [users profile]
           (let [current-profile-id (get profile :id)]
@@ -419,7 +471,8 @@
       {:default-value :all
        :aria-label (tr "workspace.versions.filter.label")
        :options options
-       :on-change on-change-filter}]
+       :on-change on-change-filter
+       :on-open-change on-filter-open-change}]
 
      (cond
        (= status :loading)

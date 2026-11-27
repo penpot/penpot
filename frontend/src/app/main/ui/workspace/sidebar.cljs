@@ -40,7 +40,7 @@
    [app.main.ui.workspace.sidebar.scale :refer [scale-sidebar*]]
    [app.main.ui.workspace.sidebar.shortcuts :refer [shortcuts-container*]]
    [app.main.ui.workspace.sidebar.sitemap :refer [sitemap*]]
-   [app.main.ui.workspace.sidebar.versions :refer [versions-toolbox*]]
+   [app.main.ui.workspace.sidebar.versions :refer [menu-open-ref versions-toolbox*]]
    [app.main.ui.workspace.tokens.sidebar :refer [tokens-sidebar-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -238,6 +238,13 @@
   []
   (st/emit! (dw/remove-layout-flag :document-history)))
 
+(defn- on-history-panel-ref
+  "Focus the panel when it opens, so Escape reaches it whether it was
+  opened from the header, the shortcut or the main menu."
+  [node]
+  (when (some? node)
+    (dom/focus! node)))
+
 (mf/defc history-content*
   {::mf/private true
    ::mf/memo true}
@@ -247,6 +254,20 @@
 
         selected
         (deref selected*)
+
+        menu-open
+        (mf/deref menu-open-ref)
+
+        ;; The open menu closes itself on the keyup of this same Escape,
+        ;; so the panel only has to stay open. The rename box stops its
+        ;; own Escape, so it never reaches the panel.
+        dismiss-nested
+        (mf/use-fn
+         (mf/deps menu-open)
+         (fn [] menu-open))
+
+        on-key-down
+        (hooks/use-escape-to-close on-close-document-history dismiss-nested)
 
         on-change-tab
         (mf/use-fn
@@ -267,21 +288,25 @@
                              :on-click on-close-document-history
                              :icon i/close}]))]
 
-    [:> tab-switcher* {:tabs tabs
-                       :selected selected
-                       :on-change on-change-tab
-                       :class (stl/css :left-sidebar-tabs)
-                       :action-button-position "end"
-                       :action-button button}
+    [:div {:class (stl/css :history-content)
+           :ref on-history-panel-ref
+           :tab-index -1
+           :on-key-down on-key-down}
+     [:> tab-switcher* {:tabs tabs
+                        :selected selected
+                        :on-change on-change-tab
+                        :class (stl/css :left-sidebar-tabs)
+                        :action-button-position "end"
+                        :action-button button}
 
-     (case selected
-       "history"
-       [:article {:class (stl/css :history-tab)}
-        [:> versions-toolbox* {}]]
+      (case selected
+        "history"
+        [:article {:class (stl/css :history-tab)}
+         [:> versions-toolbox* {}]]
 
-       "actions"
-       [:article {:class (stl/css :versions-tab)}
-        [:> history-toolbox*]])]))
+        "actions"
+        [:article {:class (stl/css :versions-tab)}
+         [:> history-toolbox*]])]]))
 
 (mf/defc right-sidebar*
   [{:keys [layout section file-id page-id drawing-tool active-tokens] :as props}]
