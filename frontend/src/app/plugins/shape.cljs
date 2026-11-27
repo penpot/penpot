@@ -1632,9 +1632,9 @@
 
            :resetOverrides
            (fn []
-             (let [shape         (u/locate-shape file-id page-id id)
-                   objects       (u/locate-objects file-id page-id)
-                   [_ component] (u/locate-head-component objects shape)]
+             (let [shape     (u/locate-shape file-id page-id id)
+                   component (when (ctk/instance-head? shape)
+                               (u/locate-library-component (:component-file shape) (:component-id shape)))]
                (cond
                  (not (r/check-permission plugin-id "content:write"))
                  (u/not-valid plugin-id :resetOverrides "Plugin doesn't have 'content:write' permission")
@@ -1644,6 +1644,9 @@
 
                  (not (ctk/in-component-copy? shape))
                  (u/not-valid plugin-id :resetOverrides "The shape is not a component copy instance")
+
+                 (not (ctk/instance-head? shape))
+                 (u/not-valid plugin-id :resetOverrides "The shape is not a component copy head")
 
                  (or (nil? component) (:deleted component))
                  (u/not-valid plugin-id :resetOverrides "The main component does not exist or is deleted")

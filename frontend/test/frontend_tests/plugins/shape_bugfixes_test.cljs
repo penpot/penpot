@@ -591,20 +591,17 @@
     (t/is (re-find #"main component does not exist" (:error result)))
     (t/is (empty? (:events result)))))
 
-(t/deftest ^:async reset-overrides-emits-for-a-copy-of-an-existing-component
+(t/deftest ^:async reset-overrides-resets-the-copy-of-an-existing-component
   (let [setup  (reset-overrides-setup (fn [library file] (assoc library :library-of (:id file))))
-        result (await (reset-overrides-on setup :copy))]
+        result (await (reset-overrides-on setup :copy))
+        event  (first (:events result))]
     (t/is (nil? (:error result)))
-    (t/is (= 1 (count (:events result))))))
+    (t/is (= 1 (count (:events result))))
+    (t/is (= ::dwl/reset-component (ptk/type event)))
+    (t/is (= (thi/id :copy) (.-id event)))))
 
-(t/deftest ^:async reset-overrides-rejects-a-nested-shape-of-a-library-without-data
-  (let [setup  (reset-overrides-setup (fn [library _] (select-keys library [:id :name])))
+(t/deftest ^:async reset-overrides-rejects-a-nested-shape
+  (let [setup  (reset-overrides-setup (fn [library file] (assoc library :library-of (:id file))))
         result (await (reset-overrides-on setup :copy-child))]
-    (t/is (re-find #"main component does not exist" (:error result)))
+    (t/is (re-find #"not a component copy head" (:error result)))
     (t/is (empty? (:events result)))))
-
-(t/deftest ^:async reset-overrides-emits-for-a-nested-shape-of-a-linked-library
-  (let [setup  (reset-overrides-setup (fn [library file] (assoc library :library-of (:id file))))
-        result (await (reset-overrides-on setup :copy-child))]
-    (t/is (nil? (:error result)))
-    (t/is (= 1 (count (:events result))))))
