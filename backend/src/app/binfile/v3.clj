@@ -541,41 +541,42 @@
 
 (defn- size-limiting-stream
   "Wraps an InputStream to enforce a maximum number of decompressed bytes.
-  Raises :validation :max-file-size-reached when the limit is exceeded.
-  `counter` holds the bytes accounted so far: pass a fresh atom for a
-  per-entry cap, or the shared job-wide atom for the cumulative budget.
+  Raises a validation error with `code` when the limit is exceeded.
+  The optional `counter` shares the cumulative budget across entries.
   `entry-name` identifies the entry being read and is included in the
   raised ex-data for triage."
   ^InputStream
-  [^InputStream input ^long max-size counter entry-name]
-  (let [on-read (fn [n]
-                  (when (pos? n)
-                    (when (> (swap! counter + (long n)) max-size)
-                      (ex/raise :type :validation
-                                :code :max-file-size-reached
-                                :hint (str "stream exceeded max size on entry " entry-name ": " max-size)
-                                :path entry-name
-                                :max max-size)))
-                  n)]
-    (proxy [FilterInputStream] [input]
-      (read
-        ([]
-         (let [b (.read input)]
-           (when (pos? b) (on-read 1))
-           b))
-        ([^bytes buf]
-         (on-read (.read input buf 0 (alength buf))))
-        ([^bytes buf off]
-         (on-read (.read input buf (int off) (- (alength buf) (int off)))))
-        ([^bytes buf off len]
-         (on-read (.read input buf (int off) (int len)))))
-      (skip [n]
-        ;; Skipped bytes were already decompressed, so they count against
-        ;; the budget like read bytes do.
-        (let [skipped (.skip input (long n))]
-          (when (pos? skipped)
-            (on-read skipped))
-          skipped)))))
+  ([input max-size code entry-name]
+   (size-limiting-stream input max-size code entry-name (atom 0)))
+  ([^InputStream input max-size code entry-name counter]
+   (let [on-read (fn [n]
+                   (when (pos? n)
+                     (when (> (swap! counter + (long n)) max-size)
+                       (ex/raise :type :validation
+                                 :code code
+                                 :hint (str "stream exceeded max size on entry " entry-name ": " max-size)
+                                 :path entry-name
+                                 :max max-size)))
+                   n)]
+     (proxy [FilterInputStream] [input]
+       (read
+         ([]
+          (let [b (.read input)]
+            (when (not= -1 b) (on-read 1))
+            b))
+         ([^bytes buf]
+          (on-read (.read input buf 0 (alength buf))))
+         ([^bytes buf off]
+          (on-read (.read input buf (int off) (- (alength buf) (int off)))))
+         ([^bytes buf off len]
+          (on-read (.read input buf (int off) (int len)))))
+       (skip [n]
+         ;; Skipped bytes were already decompressed, so they count against
+         ;; the budget like read bytes do.
+         (let [skipped (.skip input (long n))]
+           (when (pos? skipped)
+             (on-read skipped))
+           skipped))))))
 
 (defn- setup-limits
   "Resolve the binfile import limits once per job from cfg, falling back
@@ -605,14 +606,14 @@
         max-size   (::max-text-entry-size cfg)]
     (when (and (not (neg? declared)) (> declared (long max-size)))
       (ex/raise :type :validation
-                :code :max-file-size-reached
+                :code :binfile-text-entry-too-large
                 :hint (str "zip entry exceeds maximum size: " entry-name)
                 :path entry-name
                 :max max-size
                 :found declared))
     (-> (zip-entry-stream input entry)
-        (size-limiting-stream max-size (atom 0) entry-name)
-        (size-limiting-stream (::max-text-total-size cfg) (::accumulated-total-text-size cfg) entry-name)
+        (size-limiting-stream max-size :binfile-text-entry-too-large entry-name)
+        (size-limiting-stream (::max-text-total-size cfg) :binfile-text-total-too-large entry-name (::accumulated-total-text-size cfg))
         (io/reader :encoding "UTF-8"))))
 
 (defn- zip-entry-storage-content
@@ -621,7 +622,7 @@
   [input entry & {:keys [max-size]}]
   (let [stream-fn (fn []
                     (cond-> (zip-entry-stream input entry)
-                      max-size (size-limiting-stream max-size (atom 0) (zip-entry-name entry))))
+                      max-size (size-limiting-stream max-size :binfile-binary-entry-too-large (zip-entry-name entry))))
         hash      (delay (->> (stream-fn)
                               (sto.impl/calculate-hash)))]
     (reify
@@ -1123,7 +1124,7 @@
         (let [max (::max-binary-entry-size cfg)]
           (when (> (sto/get-size content) max)
             (ex/raise :type :validation
-                      :code :max-file-size-reached
+                      :code :binfile-binary-entry-too-large
                       :hint (str "storage object exceeds maximum size: " (sto/get-size content))
                       :path path
                       :max max
@@ -1141,7 +1142,7 @@
         (let [clean   (when (bfc/svg-object? object)
                         (let [limit (::max-binary-entry-size cfg)
                               raw   (with-open [istream (cond-> (zip-entry-stream input (get-zip-entry input path))
-                                                          limit (size-limiting-stream limit (atom 0) path))]
+                                                          limit (size-limiting-stream limit :binfile-binary-entry-too-large path))]
                                       (io/read istream))]
                           (bfc/sanitize-imported-svg object raw)))
               content (if-let [{:keys [bytes hash]} clean]
@@ -1460,9 +1461,9 @@
 (defn get-manifest
   "Reads and validates the manifest of a `.penpot` file at `path`.
   Runs synchronously on the RPC request thread (before the background
-  import job exists). Limits are resolved from `cfg` like in the import
-  job itself, so the read is bounded by the same decompressed-size
-  limits."
+  import job exists). Limits are resolved from `cfg`, falling back to
+  defaults when the import limit keys are absent. Job creation passes its
+  RPC cfg directly and does not add the keys from `bfc/import-cfg`."
   [cfg path]
   (let [cfg (setup-limits cfg)]
     (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]

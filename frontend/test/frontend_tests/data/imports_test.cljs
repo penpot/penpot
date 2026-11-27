@@ -9,6 +9,7 @@
   (:require
    [app.common.json :as json]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.imports :as imp]
    [app.main.data.jobs :as dj]
    [app.main.data.uploads :as uploads]
@@ -507,6 +508,152 @@
                     :error   "Not now"}
                    {:libraries-resolution {}}]
                   @seen)))))))
+
+(defn- limit-rpc-stub
+  "A `rp/cmd!` that fails with the error in `scenario` when its source is
+  `:rpc` (job creation), and creates the job otherwise."
+  [scenario]
+  (mock/stub (fn [_ _]
+               (let [{:keys [source error]} @scenario]
+                 (if (= source :rpc)
+                   (rx/throw (ex-info "server error" error))
+                   (rx/of {:id (uuid/next)}))))))
+
+(defn- limit-job-stub
+  "A `dj/watch-job` whose job fails with the error in `scenario`."
+  [scenario]
+  (mock/stub (fn [_ _]
+               (->> (rx/of {:status "failed" :error (:error @scenario)})
+                    (rx/observe-on :async)))))
+
+(defn- ^:async import-errors
+  "The error messages the entries of an import end with."
+  [targets]
+  (let [seen (atom [])]
+    (await (hva/observe (imp/import-files {:project-id project-id :entries targets})
+                        {:on-next #(swap! seen conj %)}))
+    (->> @seen
+         (filter #(= :error (:status %)))
+         (mapv :error))))
+
+(t/deftest ^:async import-limit-errors-name-the-limit-and-the-administrator
+  (let [scenario (atom nil)
+        targets  [(entry :name "First") (entry :name "Second")]
+        admin    (tr "dashboard.import.limit-admin")
+        cases    [[:binfile-text-entry-too-large 20971520
+                   (tr "dashboard.import.limit-text-entry" "20MB")]
+                  [:binfile-text-total-too-large 524288000
+                   (tr "dashboard.import.limit-text-total" "500MB")]
+                  [:binfile-binary-entry-too-large 104857600
+                   (tr "dashboard.import.limit-binary-entry" "100MB")]
+                  [:too-many-zip-entries 500000
+                   (tr "dashboard.import.limit-entries" (.toLocaleString 500000))]
+                  [:max-file-size-reached nil
+                   (tr "dashboard.import.limit-size")]]]
+    (await
+     (mock/with-mocks*
+       {cf/flags (disj cf/flags :subscriptions)
+        st/state (atom {})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (limit-rpc-stub scenario)
+        dj/watch-job (limit-job-stub scenario)}
+       (doseq [source [:job :rpc]
+               [code limit text] cases]
+         (reset! scenario {:source source
+                           :error  (cond-> {:type :validation :code code
+                                            :hint "technical hint" :path "private/path"}
+                                     limit (assoc :max limit))})
+         (let [errors (await (import-errors targets))]
+           (t/is (= [(str text " " admin) (str text " " admin)] errors)
+                 (str source " " code))))))))
+
+(t/deftest ^:async import-limit-errors-without-a-limit-use-the-generic-message
+  (let [scenario (atom nil)
+        target   (entry)]
+    (await
+     (mock/with-mocks*
+       {cf/flags (disj cf/flags :subscriptions)
+        st/state (atom {})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (limit-rpc-stub scenario)
+        dj/watch-job (limit-job-stub scenario)}
+       (doseq [source [:job :rpc]]
+         (reset! scenario {:source source
+                           :error  {:type :validation :code :binfile-text-entry-too-large
+                                    :hint "technical hint"}})
+         (let [errors (await (import-errors [target]))]
+           (t/is (= [(str (tr "dashboard.import.limit-size") " "
+                          (tr "dashboard.import.limit-admin"))]
+                    errors)
+                 (str source))))))))
+
+(t/deftest ^:async import-limit-errors-on-saas-do-not-mention-an-administrator
+  (let [scenario (atom {:source :job
+                        :error  {:type :validation :code :binfile-binary-entry-too-large
+                                 :hint "technical hint" :max 104857600}})
+        target   (entry)]
+    (await
+     (mock/with-mocks*
+       {cf/flags (conj cf/flags :subscriptions)
+        st/state (atom {})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (limit-rpc-stub scenario)
+        dj/watch-job (limit-job-stub scenario)}
+       (let [errors (await (import-errors [target]))]
+         (t/is (= [(tr "dashboard.import.limit-binary-entry" "100MB")] errors)))))))
+
+(t/deftest ^:async import-limit-errors-are-marked-so-the-wizard-shows-them
+  (let [scenario (atom nil)
+        target   (entry)]
+    (await
+     (mock/with-mocks*
+       {cf/flags (disj cf/flags :subscriptions)
+        st/state (atom {})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (limit-rpc-stub scenario)
+        dj/watch-job (limit-job-stub scenario)}
+       (doseq [source [:job :rpc]
+               [error expected] [[{:type :validation :code :binfile-text-entry-too-large
+                                   :hint "technical hint" :max 1024}
+                                  [:limit]]
+                                 [{:type :validation :code :unknown :hint "technical hint"}
+                                  [nil]]]]
+         (reset! scenario {:source source :error error})
+         (let [seen (atom [])]
+           (await (hva/observe (imp/import-files {:project-id project-id :entries [target]})
+                               {:on-next #(swap! seen conj %)}))
+           (t/is (= expected
+                    (->> @seen
+                         (filter #(= :error (:status %)))
+                         (mapv :error-kind)))
+                 (str source " " (:code error)))))))))
+
+(t/deftest ^:async import-unknown-errors-keep-their-fallbacks
+  (let [scenario (atom nil)
+        target   (entry)]
+    (await
+     (mock/with-mocks*
+       {st/state (atom {})
+        http/send! (slurp-stub ::blob)
+        uploads/upload-blob-chunked (upload-stub (uuid/next))
+        rp/cmd! (mock/stub (fn [_ _]
+                             (case @scenario
+                               :rpc (rx/throw (ex-info "network unavailable" {}))
+                               (rx/of {:id (uuid/next)}))))
+        dj/watch-job (mock/stub (fn [_ _]
+                                  (->> (rx/of {:status "failed" :error {:code :unknown}})
+                                       (rx/observe-on :async))))}
+       (doseq [[source expected] [[:job (tr "labels.error")]
+                                  [:rpc "network unavailable"]]]
+         (reset! scenario source)
+         (let [seen (atom [])]
+           (await (hva/observe (imp/import-files {:project-id project-id :entries [target]})
+                               {:on-next #(swap! seen conj %)}))
+           (t/is (= expected (:error (first (filter #(= :error (:status %)) @seen)))))))))))
 
 (t/deftest ^:async a-job-that-already-ended-does-not-leave-the-entries-spinning
   (let [ws-stream (rx/subject)

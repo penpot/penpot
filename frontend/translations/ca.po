@@ -714,6 +714,30 @@ msgstr[1] "S'han importat %s fitxers correctament."
 msgid "dashboard.import.import-warning"
 msgstr "Alguns fitxers contenen objectes no vàlids que s'han eliminat."
 
+#: src/app/main/data/imports.cljs:78
+msgid "dashboard.import.limit-admin"
+msgstr "La persona administradora del vostre Penpot pot augmentar aquest límit."
+
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.limit-binary-entry"
+msgstr "Una imatge d'aquest fitxer supera el límit d'importació de %s. Substituïu-la per una versió més petita al fitxer original i torneu a exportar i importar el fitxer."
+
+#: src/app/main/data/imports.cljs:62
+msgid "dashboard.import.limit-entries"
+msgstr "Aquest fitxer té més capes i recursos que el límit d'importació de %s. Dividiu-lo en diversos fitxers al Penpot d'origen, exporteu-los i importeu-los un per un."
+
+#: src/app/main/data/imports.cljs:48, src/app/main/data/imports.cljs:53, src/app/main/data/imports.cljs:58, src/app/main/data/imports.cljs:63, src/app/main/data/imports.cljs:66
+msgid "dashboard.import.limit-size"
+msgstr "Aquest fitxer supera un límit d'importació."
+
+#: src/app/main/data/imports.cljs:47
+msgid "dashboard.import.limit-text-entry"
+msgstr "Una part d'aquest fitxer (una capa, un component o els tokens de disseny) supera el límit d'importació de %s. Simplifiqueu-la al fitxer original i torneu a exportar i importar el fitxer."
+
+#: src/app/main/data/imports.cljs:52
+msgid "dashboard.import.limit-text-total"
+msgstr "Aquest fitxer i les biblioteques exportades amb ell contenen més dades de disseny que el límit d'importació de %s. Dividiu-lo en diversos fitxers al Penpot d'origen, exporteu-los i importeu-los un per un."
+
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "No teniu permís per importar en aquest equip"

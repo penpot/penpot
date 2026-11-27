@@ -25,6 +25,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
+   [app.http.errors :as http-errors]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.binfile :as binfile]
    [app.storage :as sto]
@@ -35,7 +36,8 @@
    [clojure.test :as t]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io])
+   [datoteka.io :as io]
+   [yetti.response :as yres])
   (:import
    java.io.ByteArrayInputStream
    java.io.ByteArrayOutputStream
@@ -2701,7 +2703,7 @@
                   (let [d (or (ex-data e) (some-> (ex-cause e) ex-data))]
                     d)))]
       (t/is (= :validation (:type out)))
-      (t/is (= :max-file-size-reached (:code out))))))
+      (t/is (= :binfile-binary-entry-too-large (:code out))))))
 
 ;; --- GHSA-qcw7-v626-g6cf: decompression-bomb guards on JSON/text entries
 
@@ -2759,7 +2761,7 @@
 
 (t/deftest import-rejects-oversized-json-entry
   ;; GHSA-qcw7-v626-g6cf: a single files/<id>.json entry expanding beyond
-  ;; the per-entry text limit must be rejected with :max-file-size-reached
+  ;; the per-entry text limit must be rejected with its specific code
   ;; instead of exhausting the heap. The manifest comes from a real export
   ;; so it is valid; only the file entry is replaced by the bomb.
   (let [profile  (th/create-profile* 1)
@@ -2784,7 +2786,7 @@
                     (assoc ::bfc/input bombed))
             out (try-import-files! cfg)]
         (t/is (= :validation (:type out)))
-        (t/is (= :max-file-size-reached (:code out)))))))
+        (t/is (= :binfile-text-entry-too-large (:code out)))))))
 
 (t/deftest get-manifest-rejects-oversized-manifest
   ;; GHSA-qcw7-v626-g6cf: the synchronous manifest read on the RPC thread
@@ -2801,7 +2803,32 @@
                 (catch Throwable e
                   (or (ex-data e) (some-> (ex-cause e) ex-data))))]
       (t/is (= :validation (:type out)))
-      (t/is (= :max-file-size-reached (:code out))))))
+      (t/is (= :binfile-text-entry-too-large (:code out))))))
+
+(t/deftest manifest-limit-errors-reach-http
+  (let [path    (tmp/tempfile :suffix ".zip")
+        payload (.getBytes "{\"type\":\"penpot/export-files\",\"version\":1,\"files\":[]}" "UTF-8")]
+    (with-open [out (io/output-stream path)
+                zip (ZipOutputStream. out)]
+      (.putNextEntry zip (ZipEntry. "manifest.json"))
+      (.write zip payload)
+      (.closeEntry zip))
+    (doseq [[cfg code] [[{::bfc/import-max-text-entry-size 1
+                          ::bfc/import-max-text-total-size 1000}
+                         :binfile-text-entry-too-large]
+                        [{::bfc/import-max-text-entry-size 1000
+                          ::bfc/import-max-text-total-size 1}
+                         :binfile-text-total-too-large]]]
+      (t/testing (str code)
+        (let [error (try
+                      (v3/get-manifest cfg path)
+                      nil
+                      (catch clojure.lang.ExceptionInfo cause cause))
+              response (when error (http-errors/handle-error error nil nil))]
+          (t/is (some? error))
+          (t/is (= code (:code (ex-data error))))
+          (t/is (= 400 (::yres/status response)))
+          (t/is (= code (:code (::yres/body response)))))))))
 
 (t/deftest import-rejects-excessive-total-text-size
   ;; The job-wide cumulative budget must reject an import whose entries,
@@ -2827,7 +2854,7 @@
                   (assoc ::bfc/import-max-text-total-size 100))
           out (try-import-files! cfg)]
       (t/is (= :validation (:type out)))
-      (t/is (= :max-file-size-reached (:code out))))))
+      (t/is (= :binfile-text-total-too-large (:code out))))))
 
 (t/deftest default-text-total-budget-fits-giant-legit-files
   ;; A real-world giant export held ~437 MiB of JSON across ~178k
@@ -2882,7 +2909,7 @@
                     (assoc ::bfc/import-max-text-total-size budget))
             out (try-import-files! cfg)]
         (t/is (= :validation (:type out)))
-        (t/is (= :max-file-size-reached (:code out)))
+        (t/is (= :binfile-text-total-too-large (:code out)))
         (t/is (some? (:path out)))))))
 
 (t/deftest size-limiting-stream-counts-skip
@@ -2891,7 +2918,7 @@
   (let [payload   (.getBytes "abcdefghijklmnopqrstuvwxyz" "UTF-8")
         mk-stream (fn [cap]
                     (@#'v3/size-limiting-stream
-                     (ByteArrayInputStream. payload) cap (atom 0) "test-entry"))]
+                     (ByteArrayInputStream. payload) cap :binfile-text-entry-too-large "test-entry"))]
     ;; Skipping past the cap trips the guard.
     (let [out (try
                 (with-open [s (mk-stream 10)]
@@ -2900,7 +2927,7 @@
                 (catch clojure.lang.ExceptionInfo e
                   (ex-data e)))]
       (t/is (= :validation (:type out)))
-      (t/is (= :max-file-size-reached (:code out)))
+      (t/is (= :binfile-text-entry-too-large (:code out)))
       (t/is (= "test-entry" (:path out))))
     ;; Skipping under the cap leaves the remainder accounted: 6 skipped
     ;; plus 10 read over a cap of 10 trips the guard.
@@ -2912,7 +2939,77 @@
                 (catch clojure.lang.ExceptionInfo e
                   (ex-data e)))]
       (t/is (= :validation (:type out)))
-      (t/is (= :max-file-size-reached (:code out))))))
+      (t/is (= :binfile-text-entry-too-large (:code out))))))
+
+(t/deftest size-limiting-stream-counts-zero-bytes
+  (let [input (ByteArrayInputStream. (byte-array [0 0]))
+        stream (@#'v3/size-limiting-stream input 1 :binfile-text-entry-too-large "entry")]
+    (with-open [stream stream]
+      (t/is (= 0 (.read ^java.io.InputStream stream)))
+      (let [error (try
+                    (.read ^java.io.InputStream stream)
+                    nil
+                    (catch clojure.lang.ExceptionInfo cause
+                      (ex-data cause)))]
+        (t/is (= :binfile-text-entry-too-large (:code error)))
+        (t/is (= "entry" (:path error)))
+        (t/is (= 1 (:max error)))))))
+
+(t/deftest size-limiting-stream-shares-total-counter
+  (let [counter (atom 0)
+        first-stream (@#'v3/size-limiting-stream
+                      (ByteArrayInputStream. (byte-array [1 2]))
+                      3 :binfile-text-total-too-large "first" counter)
+        second-stream (@#'v3/size-limiting-stream
+                       (ByteArrayInputStream. (byte-array [3 4]))
+                       3 :binfile-text-total-too-large "second" counter)]
+    (with-open [first-stream first-stream
+                second-stream second-stream]
+      (t/is (= 2 (.read ^java.io.InputStream first-stream (byte-array 2))))
+      (t/is (= 3 (.read ^java.io.InputStream second-stream)))
+      (let [error (try
+                    (.read ^java.io.InputStream second-stream)
+                    nil
+                    (catch clojure.lang.ExceptionInfo cause
+                      (ex-data cause)))]
+        (t/is (= :binfile-text-total-too-large (:code error)))
+        (t/is (= "second" (:path error)))))))
+
+(t/deftest size-limiting-stream-allows-exact-limit-and-eof
+  (let [counter (atom 0)
+        stream (@#'v3/size-limiting-stream
+                (ByteArrayInputStream. (byte-array [0 1 2]))
+                3 :binfile-binary-entry-too-large "object" counter)
+        buffer (byte-array 2)]
+    (with-open [stream stream]
+      (t/is (= 2 (.read ^java.io.InputStream stream buffer)))
+      (t/is (= 2 (.read ^java.io.InputStream stream)))
+      (t/is (= -1 (.read ^java.io.InputStream stream)))
+      (t/is (= -1 (.read ^java.io.InputStream stream buffer)))
+      (t/is (= 0 (.skip ^java.io.InputStream stream 1)))
+      (t/is (= 3 @counter)))))
+
+(t/deftest oversized-binary-stream-reports-limit-during-hash-and-read
+  (let [path (tmp/tempfile :suffix ".zip")]
+    (with-open [out (io/output-stream path)
+                zip (ZipOutputStream. out)]
+      (.putNextEntry zip (ZipEntry. "objects/test.svg"))
+      (.write zip (.getBytes "test" "UTF-8"))
+      (.closeEntry zip))
+    (with-open [zip (ZipFile. (fs/file path))]
+      (let [entry (.getEntry zip "objects/test.svg")
+            content (@#'v3/zip-entry-storage-content zip entry :max-size 1)]
+        (doseq [read-content [(fn [] (sto/get-hash content))
+                              (fn []
+                                (with-open [input (io/input-stream content)]
+                                  (io/read input)))]]
+          (let [error (try
+                        (read-content)
+                        nil
+                        (catch clojure.lang.ExceptionInfo cause
+                          (ex-data cause)))]
+            (t/is (= :binfile-binary-entry-too-large (:code error)))
+            (t/is (= "objects/test.svg" (:path error)))))))))
 
 (def ^:private sql:current-idle-timeout
   "SELECT current_setting('idle_in_transaction_session_timeout')::interval

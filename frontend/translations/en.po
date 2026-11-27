@@ -753,6 +753,30 @@ msgid_plural "dashboard.import.importing.title"
 msgstr[0] "Importing 1 file"
 msgstr[1] "Importing %s files"
 
+#: src/app/main/data/imports.cljs:78
+msgid "dashboard.import.limit-admin"
+msgstr "Your Penpot administrator can raise this limit."
+
+#: src/app/main/data/imports.cljs:57
+msgid "dashboard.import.limit-binary-entry"
+msgstr "An image in this file is larger than the import limit of %s. Replace it with a smaller version in the original file, then export and import the file again."
+
+#: src/app/main/data/imports.cljs:62
+msgid "dashboard.import.limit-entries"
+msgstr "This file has more layers and assets than the import limit of %s. Split it into several files in the original Penpot, export them and import them one by one."
+
+#: src/app/main/data/imports.cljs:48, src/app/main/data/imports.cljs:53, src/app/main/data/imports.cljs:58, src/app/main/data/imports.cljs:63, src/app/main/data/imports.cljs:66
+msgid "dashboard.import.limit-size"
+msgstr "This file is larger than an import limit."
+
+#: src/app/main/data/imports.cljs:47
+msgid "dashboard.import.limit-text-entry"
+msgstr "Part of this file (a layer, a component or the design tokens) is larger than the import limit of %s. Simplify it in the original file, then export and import the file again."
+
+#: src/app/main/data/imports.cljs:52
+msgid "dashboard.import.limit-text-total"
+msgstr "This file and the libraries exported with it hold more design data than the import limit of %s. Split it into several files in the original Penpot, export them and import them one by one."
+
 #: src/app/main/ui/dashboard/import.cljs:815
 msgid "dashboard.import.next-file"
 msgstr "Next file"

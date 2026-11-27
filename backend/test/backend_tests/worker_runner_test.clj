@@ -373,6 +373,29 @@
                 :hint    "fatal"
                 :ex-type "ex-info"} (:error row))))))
 
+(t/deftest runner-failure-keeps-the-limit-of-the-error
+  (let [scheduled-at (ct/truncate (ct/now) :millisecond)
+        job-id       (mk-job {:scheduled-at scheduled-at :max-retries 0})
+        defs         {:echo-runner
+                      (assoc (echo-job-def)
+                             ::jobs/handler
+                             (fn [_context _params]
+                               (throw (ex-info "limit"
+                                               {:type :validation
+                                                :code :binfile-text-entry-too-large
+                                                :hint "zip entry exceeds maximum size"
+                                                :path "files/a.json"
+                                                :max  20971520}))))}]
+    (push-payload job-id scheduled-at)
+    (run-one (mk-cfg {:defs defs}))
+    (let [row (get-row job-id)]
+      (t/is (= "failed" (:status row)))
+      (t/is (= {:type    :validation
+                :code    :binfile-text-entry-too-large
+                :hint    "zip entry exceeds maximum size"
+                :max     20971520
+                :ex-type "validation"} (:error row))))))
+
 (t/deftest runner-terminal-write-does-not-overwrite-orphan-failure
   (let [scheduled-at (ct/truncate (ct/now) :millisecond)
         job-id       (mk-job {:scheduled-at scheduled-at})

@@ -38,6 +38,17 @@
   max-block-size: px2rem(800);
 }
 
+// The header and the notices of the import stay in place; only
+// `.modal-content` (the files) scrolls inside it.
+.modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-l);
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
 .modal-content {
   flex: 1;
   overflow: hidden auto;
@@ -396,25 +407,34 @@
 }
 
 .import-error-disclaimer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
   color: var(--color-foreground-secondary);
 }
 
 .import-error-list {
-  padding: 0 var(--sp-l);
-  list-style: disc;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
 
-.import-error-list-enry {
-  padding: var(--sp-xs) 0;
+.import-error-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  padding-block: var(--sp-s);
+  border-block-end: $b-1 solid var(--color-background-quaternary);
+}
+
+.import-error-name {
+  color: var(--color-foreground-primary);
+  overflow-wrap: anywhere;
 }
 
 .import-error-detail {
-  // TODO: Typography does not match any existing DS typography token.
-  font-family: "worksans", "vazirmatn", sans-serif;
-  font-size: px2rem(12);
-  font-weight: 400;
-  line-height: 1.4;
-  margin-block-start: var(--sp-xs);
   color: var(--color-foreground-secondary);
   white-space: pre-wrap;
   overflow-wrap: anywhere;

@@ -937,6 +937,36 @@ The Docker image also includes a `policy.xml` that acts as a hard ceiling — th
 cannot exceed the limits set in `policy.xml`. The policy also blocks dangerous coders (PS,
 EPS, PDF, XPS) that invoke Ghostscript.
 
+### Import limits
+
+Penpot checks every `.penpot` file it imports against a set of limits, so that a single import cannot exhaust the server's memory or disk. When a file exceeds one, the import fails and the import dialog names the limit and its value.
+
+The browser uploads each file in 25 MiB chunks. The backend accepts a set number of chunks per upload, which caps the size of a single `.penpot` file:
+
+```bash
+# Backend
+PENPOT_QUOTES_UPLOAD_CHUNKS_PER_SESSION: 20   # 20 x 25 MiB = 500 MiB per file
+```
+
+Once the file is uploaded, the backend checks its content. Sizes are in bytes and count the uncompressed content:
+
+```bash
+# Backend
+PENPOT_BINFILE_IMPORT_MAX_TEXT_ENTRY_SIZE: 20971520     # 20 MiB
+PENPOT_BINFILE_IMPORT_MAX_TEXT_TOTAL_SIZE: 524288000    # 500 MiB
+PENPOT_BINFILE_IMPORT_MAX_BINARY_ENTRY_SIZE: 104857600  # 100 MiB
+PENPOT_BINFILE_IMPORT_MAX_ZIP_ENTRIES: 500000
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PENPOT_BINFILE_IMPORT_MAX_TEXT_ENTRY_SIZE` | `20971520` (20 MiB) | Max size of one design data entry: a shape, page, component, color, typography or the token set |
+| `PENPOT_BINFILE_IMPORT_MAX_TEXT_TOTAL_SIZE` | `524288000` (500 MiB) | Max size of all the design data in one `.penpot` file, including the libraries exported with it |
+| `PENPOT_BINFILE_IMPORT_MAX_BINARY_ENTRY_SIZE` | `104857600` (100 MiB) | Max size of one image or other media object |
+| `PENPOT_BINFILE_IMPORT_MAX_ZIP_ENTRIES` | `500000` | Max number of entries in the `.penpot` archive. Each shape is one entry, so this is close to a limit on layers |
+
+Raise a limit only as far as your server's memory allows: the import reads each design data entry into memory. These limits apply to the current `.penpot` format. Files in the deprecated v1 format keep a fixed 100 MiB limit per media object.
+
 ## Frontend
 
 In comparison with backend, frontend only has a small number of runtime configuration

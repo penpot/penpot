@@ -226,6 +226,36 @@
       (t/testing "and the job no longer points at it"
         (t/is (nil? (:resource-id row)))))))
 
+(t/deftest the-import-job-preserves-a-limit-error-through-get-job
+  (let [profile    (th/create-profile* 1)
+        project-id (:default-project-id profile)]
+    (doseq [[key code] [[:binfile-import-max-text-entry-size :binfile-text-entry-too-large]
+                        [:binfile-import-max-text-total-size :binfile-text-total-too-large]
+                        [:binfile-import-max-binary-entry-size :binfile-binary-entry-too-large]
+                        [:binfile-import-max-zip-entries :too-many-zip-entries]]]
+      (t/testing (str key)
+        (let [out    (create-import-binfile-job profile project-id)
+              job-id (:id (:result out))]
+          (t/is (th/success? out))
+          (wdisp/run-batch (dispatcher-cfg))
+          (t/is (= "scheduled" (:status (jobs/get-job th/*system* job-id))))
+
+          ;; Job creation reads the manifest with its own defaults.
+          (binding [cf/config (assoc cf/config key 1)]
+            (run-one (runner-cfg "binfile")))
+
+          (let [out (th/command! {::th/type        :get-job
+                                  ::rpc/profile-id (:id profile)
+                                  :id              job-id})
+                job (:result out)]
+            (t/is (th/success? out))
+            (t/is (= "failed" (:status job)))
+            (t/is (= :validation (get-in job [:error :type])))
+            (t/is (= code (get-in job [:error :code])))
+            (t/is (not (contains? (:error job) :max)))
+            (t/is (not (contains? (:error job) :path)))
+            (t/is (empty? (project-files project-id)))))))))
+
 (t/deftest the-adapter-reports-progress-through-heartbeat
   (let [profile (th/create-profile* 1)
         file-id (first (:file-ids (import-fixture! profile)))
