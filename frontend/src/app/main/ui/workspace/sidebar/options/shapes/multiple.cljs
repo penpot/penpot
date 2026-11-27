@@ -363,7 +363,12 @@
                                     :else (select-keys shape editable-attrs)))
                     shape-values (cond-> shape-values
                                    (= attr-group :layer)
-                                   (update :hidden #(if (nil? %) false %)))
+                                   (update :hidden #(if (nil? %) false %))
+
+                                   ;; A shape without sizing behaves as fixed size
+                                   (= attr-group :layout-item)
+                                   (-> (update :layout-item-h-sizing d/nilv :fix)
+                                       (update :layout-item-v-sizing d/nilv :fix)))
                     new-token-acc (merge-token-values token-acc (type->token-attrs type) applied-tokens)]
                 [(conj ids id)
                  (merge-attrs values shape-values)

@@ -421,7 +421,7 @@
   "Returns the sizing button to show as selected for the `sizing` value
   of a shape. A shape without sizing behaves as fixed size."
   [sizing]
-  (d/name (or sizing :fix)))
+  (d/name (d/nilv sizing :fix)))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
