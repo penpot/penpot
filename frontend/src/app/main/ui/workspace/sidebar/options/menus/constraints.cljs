@@ -14,12 +14,11 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def constraint-attrs [:constraints-h
@@ -136,7 +135,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (when-not (str/empty? value)
+           (when-not (= value "multiple")
              (st/emit! (dwsh/update-shapes
                         ids
                         #(assoc % :constraints-h (keyword value)))))))
@@ -145,7 +144,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value]
-           (when-not (str/empty? value)
+           (when-not (= value "multiple")
              (st/emit! (dwsh/update-shapes
                         ids
                         #(assoc % :constraints-v (keyword value)))))))
@@ -160,23 +159,23 @@
         (mf/with-memo [constraints-h]
           (d/concat-vec
            (when (= constraints-h :multiple)
-             [{:value "" :label (tr "settings.multiple")}])
-           [{:value "left" :label (tr "workspace.options.constraints.left")}
-            {:value "right" :label (tr "workspace.options.constraints.right")}
-            {:value "leftright" :label (tr "workspace.options.constraints.leftright")}
-            {:value "center" :label (tr "workspace.options.constraints.center")}
-            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))
+             [{:id "multiple" :label (tr "settings.multiple")}])
+           [{:id "left" :label (tr "workspace.options.constraints.left")}
+            {:id "right" :label (tr "workspace.options.constraints.right")}
+            {:id "leftright" :label (tr "workspace.options.constraints.leftright")}
+            {:id "center" :label (tr "workspace.options.constraints.center")}
+            {:id "scale" :label (tr "workspace.options.constraints.scale")}]))
 
         options-v
         (mf/with-memo [constraints-v]
           (d/concat-vec
            (when (= constraints-v :multiple)
-             [{:value "" :label (tr "settings.multiple")}])
-           [{:value "top" :label (tr "workspace.options.constraints.top")}
-            {:value "bottom" :label (tr "workspace.options.constraints.bottom")}
-            {:value "topbottom" :label (tr "workspace.options.constraints.topbottom")}
-            {:value "center" :label (tr "workspace.options.constraints.center")}
-            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))]
+             [{:id "multiple" :label (tr "settings.multiple")}])
+           [{:id "top" :label (tr "workspace.options.constraints.top")}
+            {:id "bottom" :label (tr "workspace.options.constraints.bottom")}
+            {:id "topbottom" :label (tr "workspace.options.constraints.topbottom")}
+            {:id "center" :label (tr "workspace.options.constraints.center")}
+            {:id "scale" :label (tr "workspace.options.constraints.scale")}]))]
 
 
     ;; CONSTRAINTS
@@ -234,15 +233,13 @@
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :constraints-selects)}
            [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
-            [:& select
-             {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
-              :options options-h
-              :on-change on-constraint-h-select-changed}]]
+            [:> select* {:default-selected (if (= constraints-h :multiple) "multiple" (d/nilv (d/name constraints-h) "scale"))
+                         :options options-h
+                         :on-change on-constraint-h-select-changed}]]
            [:div {:class (stl/css :vertical-select) :data-testid "constraint-v-select"}
-            [:& select
-             {:default-value (if (not= constraints-v :multiple) (d/nilv (d/name constraints-v) "scale") "")
-              :options options-v
-              :on-change on-constraint-v-select-changed}]]
+            [:> select* {:default-selected (if (= constraints-v :multiple) "multiple" (d/nilv (d/name constraints-v) "scale"))
+                         :options options-v
+                         :on-change on-constraint-v-select-changed}]]
            (when first-level?
              [:div {:class (stl/css :checkbox)}
 

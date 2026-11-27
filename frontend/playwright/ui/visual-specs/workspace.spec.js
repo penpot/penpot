@@ -1584,6 +1584,81 @@ test.describe("Font variant select", () => {
   });
 });
 
+test.describe("Constraints selects", () => {
+  test("Shows the constraint selects closed, open, changed and mixed", async ({
+    page,
+  }) => {
+    const shot = { maxDiffPixelRatio: 0, threshold: 0 };
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
+    await workspace.mockRPC(
+      /get\-file\?/,
+      "design/get-file-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "get-file-object-thumbnails?file-id=*",
+      "design/get-file-object-thumbnails-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "get-file-fragment?file-id=*",
+      "design/get-file-fragment-multiple-constraints.json",
+    );
+    await workspace.mockRPC(
+      "update-file?id=*",
+      "workspace/update-file-empty.json",
+    );
+    await workspace.goToWorkspace({
+      fileId: "03bff843-920f-81a1-8004-756365e1eb6a",
+      pageId: "03bff843-920f-81a1-8004-756365e1eb6b",
+    });
+    await workspace.clickToggableLayer("Board");
+    await workspace.clickLeafLayer("Ellipse");
+
+    const hSelect = page.getByTestId("constraint-h-select");
+    const vSelect = page.getByTestId("constraint-v-select");
+    await expect(hSelect).toBeVisible();
+    const sidebarBox = await workspace.rightSidebar.boundingBox();
+    const hBox = await hSelect.boundingBox();
+    // The two selects, with room below them for an open list.
+    const clip = {
+      x: Math.floor(sidebarBox.x),
+      y: Math.floor(hBox.y) - 8,
+      width: Math.ceil(sidebarBox.width),
+      height: 240,
+    };
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await hSelect.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await hSelect.click();
+    const left = hSelect.getByText("Left", { exact: true });
+    await expect(left).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await left.hover();
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await left.click();
+    await expect(hSelect).toContainText("Left");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    // Two shapes with different constraints show "Mixed".
+    await workspace.clickLeafLayer("Rectangle", { modifiers: ["Shift"] });
+    await expect(vSelect).toContainText("Mixed");
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+
+    await vSelect.click();
+    await expect(vSelect.getByText("Top", { exact: true })).toBeVisible();
+    await page.mouse.move(0, 0);
+    await expect(page).toHaveScreenshot({ clip, ...shot });
+  });
+});
+
 test.describe("Shortcuts panel", () => {
   const shot = { maxDiffPixelRatio: 0, threshold: 0 };
 
