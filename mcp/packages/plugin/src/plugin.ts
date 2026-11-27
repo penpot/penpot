@@ -27,6 +27,23 @@ const pluginConsole = console;
 let uiInitialized = false;
 
 /**
+ * the ID of the task this tab is running, if any.
+ * A tab runs one task at a time: its tasks share one execution state (the `storage` object,
+ * the console log, the rollbacks), so concurrent tasks would interfere with each other.
+ */
+let runningTaskId: string | undefined;
+
+/**
+ * the error sent for a task received while another task is running
+ */
+const BUSY_TAB_ERROR =
+    "Request denied, it did not run: this Penpot tab is already running another MCP request. " +
+    "A tab serves one agent at a time, because its requests share one execution state " +
+    "(the `storage` object, logs and rollbacks). Using one tab from several agents is not supported: " +
+    "open a separate Penpot tab for each agent. If this agent sent the request, wait for its " +
+    "previous request to finish before sending the next one.";
+
+/**
  * Registry of all available task handlers.
  */
 const taskHandlers: TaskHandler[] = [new ExecuteCodeTaskHandler()];
@@ -173,10 +190,31 @@ function isPluginClosed(): boolean {
 
 /**
  * Handles plugin task requests received from the MCP server via WebSocket.
+ * A request received while another task is running is denied without running.
  *
  * @param request - The task request containing ID, task type and parameters
  */
 async function handlePluginTaskRequest(request: { id: string; task: string; params: any }): Promise<void> {
+    if (runningTaskId !== undefined) {
+        // the rollbacks belong to the running task's response, so this one does not carry them
+        console.warn(`Denying plugin task ${request.id}: task ${runningTaskId} is still running.`);
+        new Task(request.id, request.task, request.params).sendError(BUSY_TAB_ERROR);
+        return;
+    }
+    runningTaskId = request.id;
+    try {
+        await runPluginTask(request);
+    } finally {
+        runningTaskId = undefined;
+    }
+}
+
+/**
+ * Runs a plugin task with its handler and sends its response.
+ *
+ * @param request - The task request containing ID, task type and parameters
+ */
+async function runPluginTask(request: { id: string; task: string; params: any }): Promise<void> {
     console.log("Executing plugin task:", request.task, request.params);
     const task = new Task(request.id, request.task, request.params, rollbackLog);
 
