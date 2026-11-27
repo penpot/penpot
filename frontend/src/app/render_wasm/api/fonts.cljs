@@ -481,6 +481,17 @@
               (conj result font-ref)))
           #{}))))
 
+(defn content-has-failed-font?
+  "True when any face used by `content` failed to load. Ready still holds for
+  those faces (`font-ready?`), but a measured size must not be saved: WASM
+  lays them out with a fallback font."
+  [content]
+  (->> (get-content-fonts content)
+       (map make-font-data)
+       (map font-data-key)
+       (some font-failed?)
+       boolean))
+
 (defn store-fonts
   [fonts]
   (keep (fn [font] (store-font font)) fonts))

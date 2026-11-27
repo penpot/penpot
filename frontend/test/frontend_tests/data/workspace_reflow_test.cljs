@@ -267,7 +267,7 @@
       (-> (pwrf/wait-for-layout-update [id] 100)
           (.then (fn []
                    (t/is (= 1 (count @events))
-                         "font failure dispatches one fallback resize")
+                         "font failure still dispatches a resize attempt so pending drains")
                    (t/is (wasm.fonts/font-ready? font-key)
                          "the resize gate accepts the failed face's fallback")
                    (done)))

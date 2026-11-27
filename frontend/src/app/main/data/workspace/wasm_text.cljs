@@ -39,7 +39,13 @@
    ;; Skip when the WASM context is not ready (e.g. switching renderer while a
    ;; text shape is being edited): there is no design state to query, and
    ;; returning nil makes callers skip the WASM resize/modifier path.
-   (when (and id (wasm.api/initialized?))
+   ;; Also skip when any content face failed to load: WASM lays it out with a
+   ;; fallback font, and that size must not be saved (same rule as the
+   ;; page-open heal). `font-ready?` stays true for failed faces so waiters
+   ;; still drain.
+   (when (and id
+              (wasm.api/initialized?)
+              (not (wasm.fonts/content-has-failed-font? content)))
      (wselect/use-shape id)
      ;; While the WASM text editor is actively editing it already holds the live
      ;; content and layout. Re-pushing the content here calls `_clear_shape_text`
