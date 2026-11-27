@@ -80,7 +80,7 @@
                   (p/resolved nil))))))
 
 (defn wait-for-images
-  "Wait until HTML and SVG images currently present in the page are loadable."
+  "Best-effort wait for non-data images present at the time of the page scan."
   ([page] (wait-for-images page nil))
   ([page {:keys [timeout] :or {timeout 15000}}]
    (-> (.evaluate ^js page
@@ -96,16 +96,21 @@
     .filter((href) => href && !href.startsWith('data:'));
   return Promise.all(urls.map((url) => new Promise((resolve) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
     img.onload = () => resolve(true);
     img.onerror = () => resolve(false);
     img.src = url;
-  }))).then(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-}"))
-       (p/timeout timeout)
-       (p/catch (fn [cause]
-                  (l/warn :hint "wait-for-images timed out; continuing anyway"
-                          :cause (ex-message cause))
+  }))).then((results) => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve(results.every(Boolean))))));
+ }"))
+       (p/timeout timeout ::timeout)
+       (p/then (fn [result]
+                 (cond
+                   (= result ::timeout)
+                   (l/warn :hint "wait-for-images timed out; continuing anyway")
+
+                   (false? result)
+                   (l/warn :hint "wait-for-images failed to load an image; continuing anyway"))))
+       (p/catch (fn [_]
+                  (l/warn :hint "wait-for-images evaluation failed; continuing anyway")
                   (p/resolved nil))))))
 
 (defn wait-for

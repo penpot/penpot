@@ -32,6 +32,7 @@
             (p/let [path (sh/tempfile :prefix "penpot.tmp.bitmap." :suffix (mime/get-extension type))
                     node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
+              (bw/wait-for-images page)
               (case type
                 :png  (bw/screenshot node {:omit-background? true :type type :path path})
                 :jpeg (bw/screenshot node {:omit-background? false :type type :path path})
@@ -48,7 +49,6 @@
               (bw/nav! page (str uri))
               (bw/sleep page 1000) ; the good old fix with sleep
               (bw/wait-for-fonts page)
-              (bw/wait-for-images page)
               (bw/eval! page (js* "() => document.body.style.background = 'transparent'"))
 
               ;; take the screnshot of requested objects, one by one

@@ -147,10 +147,8 @@
                 ;; We add this shape to add a padding so the pattern won't repeat
                 ;; Issue: https://tree.taiga.io/project/penpot/issue/5583
                 ;;
-                ;; This padding image only applies to legacy/top-level shape images.
-                ;; Nested fill images already render inside the fill loop above; emitting
-                ;; an extra <image> without a href can break SVG pattern rasterization
-                ;; during bitmap export.
+                ;; Nested image fills need the enlarged pattern, but only a
+                ;; legacy/top-level image needs this additional padding image.
                 [:rect {:x 0
                         :y 0
                         :width (* width no-repeat-padding)

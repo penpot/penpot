@@ -151,9 +151,9 @@
                              (if-not embed?
                                (rx/of #(assoc % :objects objects))
 
-                               ;; Populate the images cache before rendering so
-                               ;; data-uri substitutions are instantly available
-                               ;; on the first paint.
+                               ;; Populate the cache before rendering. The
+                               ;; embedding hook may apply data URIs on a later
+                               ;; render after its asynchronous lookup completes.
                                (rx/concat
                                 (->> (render/populate-images-cache objects)
                                      (rx/ignore))
@@ -350,6 +350,3 @@
 (defn ^:dev/after-load after-load
   []
   (reinit))
-
-
-
