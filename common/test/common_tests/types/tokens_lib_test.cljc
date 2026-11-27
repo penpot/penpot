@@ -1913,6 +1913,130 @@
     (t/testing "references are kept"
       (t/is (= "{shadow.sm}" (ctob/convert-dtcg-shadow-composite "{shadow.sm}"))))))
 
+(t/deftest convert-dtcg-gradient-composite
+  (let [stops [{:color "{color.brand}" :position "0"}
+               {:color "#0000ff" :position "0.5"}]]
+    (t/testing "an object with a kind"
+      (t/is (= {:kind "linear" :angle "90" :stops stops}
+               (ctob/convert-dtcg-gradient-composite
+                {"kind" "linear"
+                 "angle" 90
+                 "stops" [{"color" "{color.brand}" "position" 0}
+                          {"color" "#0000ff" "position" 0.5}]}))))
+
+    (t/testing "a list of stops is a linear gradient"
+      (t/is (= {:kind "linear" :stops stops}
+               (ctob/convert-dtcg-gradient-composite
+                [{"color" "{color.brand}" "position" 0}
+                 {"color" "#0000ff" "position" 0.5}]))))
+
+    (t/testing "fields penpot can not draw are dropped"
+      (t/is (= {:kind "radial" :stops stops}
+               (ctob/convert-dtcg-gradient-composite
+                {"kind" "radial"
+                 "center" {"x" 0.5 "y" 0.5}
+                 "radius" 0.7
+                 "interpolation" "oklch"
+                 "stops" [{"color" "{color.brand}" "position" 0 "midpoint" 0.3}
+                          {"color" "#0000ff" "position" 0.5}]}))))
+
+    (t/testing "a value already in penpot's format is kept"
+      (let [gradient {:kind "linear" :angle "90" :stops stops}]
+        (t/is (= gradient (ctob/convert-dtcg-gradient-composite gradient)))))
+
+    (t/testing "references are kept"
+      (t/is (= "{gradient.brand}" (ctob/convert-dtcg-gradient-composite "{gradient.brand}"))))))
+
+(t/deftest gradient-token-round-trip
+  (let [css-gradient "linear-gradient(90deg, {color.brand} 0%, #0000ff80 100%)"
+        gradient     {:kind "linear"
+                      :angle "45"
+                      :stops [{:color "{color.brand}" :position "0"}
+                              {:color "rgba(0, 0, 255, 0.5)" :position "1"}]}
+        original-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set
+                          (ctob/make-token-set
+                           :name "test-set"
+                           :tokens {"gradient.brand"
+                                    (ctob/make-token
+                                     {:name "gradient.brand"
+                                      :type :gradient
+                                      :value gradient
+                                      :description "Brand gradient"})
+                                    "gradient.ref"
+                                    (ctob/make-token
+                                     {:name "gradient.ref"
+                                      :type :gradient
+                                      :value "{gradient.brand}"})
+                                    "gradient.css"
+                                    (ctob/make-token
+                                     {:name "gradient.css"
+                                      :type :gradient
+                                      :value css-gradient})})))
+        exported     (ctob/export-dtcg-json original-lib)
+        imported-lib (ctob/parse-decoded-json exported "")]
+
+    (t/testing "export writes the gradient type, string keys and the values as given"
+      (let [token (get-in exported ["test-set" "gradient" "brand"])]
+        (t/is (= "gradient" (get token "$type")))
+        (t/is (= {"kind" "linear"
+                  "angle" "45"
+                  "stops" [{"color" "{color.brand}" "position" "0"}
+                           {"color" "rgba(0, 0, 255, 0.5)" "position" "1"}]}
+                 (get token "$value")))
+        (t/is (= "{gradient.brand}"
+                 (get-in exported ["test-set" "gradient" "ref" "$value"])))
+        (t/is (= css-gradient
+                 (get-in exported ["test-set" "gradient" "css" "$value"])))))
+
+    (t/testing "round trip preserves gradient tokens"
+      (let [imported (ctob/get-token-by-name imported-lib "test-set" "gradient.brand")]
+        (t/is (= :gradient (:type imported)))
+        (t/is (= gradient (:value imported)))
+        (t/is (= "Brand gradient" (:description imported))))
+      (let [imported (ctob/get-token-by-name imported-lib "test-set" "gradient.ref")]
+        (t/is (= :gradient (:type imported)))
+        (t/is (= "{gradient.brand}" (:value imported))))
+      (let [imported (ctob/get-token-by-name imported-lib "test-set" "gradient.css")]
+        (t/is (= :gradient (:type imported)))
+        (t/is (= css-gradient (:value imported)))))))
+
+(t/deftest gradient-token-dtcg-export-of-form-values
+  (let [gradient     {:kind "linear"
+                      :angle "45deg"
+                      :stops [{:color "#ff0000" :position "0%"}
+                              {:color "#00ff00" :position "12.5%"}
+                              {:color "#ffff00" :position "10.1%"}
+                              {:color "#00ffff" :position "66.67%"}
+                              {:color "#0000ff" :position "{position.end}"}]}
+        original-lib (-> (ctob/make-tokens-lib)
+                         (ctob/add-set
+                          (ctob/make-token-set
+                           :name "test-set"
+                           :tokens {"gradient.form"
+                                    (ctob/make-token
+                                     {:name "gradient.form"
+                                      :type :gradient
+                                      :value gradient})})))
+        exported     (ctob/export-dtcg-json original-lib (ctos/make-tokens-status) {:profile :dtcg})
+        imported-lib (ctob/parse-decoded-json exported "")]
+
+    (t/testing "the angle in degrees is a number, a percentage a fraction, a reference kept"
+      (let [value (get-in exported ["test-set" "gradient" "form" "$value"])]
+        (t/is (= 45 (get value "angle")))
+        (t/is (= [0 0.125 0.101 0.6667 "{position.end}"]
+                 (map #(get % "position") (get value "stops"))))))
+
+    (t/testing "the imported gradient has the same stops"
+      (t/is (= {:kind "linear"
+                :angle "45"
+                :stops [{:color "#ff0000" :position "0"}
+                        {:color "#00ff00" :position "0.125"}
+                        {:color "#ffff00" :position "0.101"}
+                        {:color "#00ffff" :position "0.6667"}
+                        {:color "#0000ff" :position "{position.end}"}]}
+               (:value (ctob/get-token-by-name imported-lib "test-set" "gradient.form")))))))
+
 (t/deftest import-warnings-for-dropped-data
   (let [json {"core" {"color" {"$type" "color"
                                "$description" "Colors"

@@ -1540,6 +1540,34 @@
                       (mapv shadow-with-dtcg-keys value)
                       (shadow-with-dtcg-keys value)))))
 
+(defn- gradient-field
+  "Converts a gradient field for the token forms. Numbers become strings."
+  [value]
+  (cond-> value (number? value) str))
+
+(defn convert-dtcg-gradient-composite
+  "Converts a gradient token value from the DTCG format to the internal
+  format. It keeps the kind, the angle and the color stops, which the
+  token forms edit. It drops the fields that penpot cannot draw (points,
+  radius, midpoints, ...). The tokenscript package reads what a gradient
+  is in a file, such as a list of stops as a linear gradient."
+  [value]
+  (let [value (tsd/read-gradient value)]
+    (if (map? value)
+      (let [{:keys [kind angle stops]} (walk/keywordize-keys value)]
+        (d/without-nils
+         {:kind  kind
+          :angle (gradient-field angle)
+          :stops (if (sequential? stops)
+                   (mapv (fn [stop]
+                           (if (map? stop)
+                             (-> (select-keys stop [:color :position])
+                                 (d/update-vals gradient-field))
+                             stop))
+                         stops)
+                   stops)}))
+      value)))
+
 (defn- file-value->token-value
   "The token value of a value read from a file. The reader has already
   read shadows with `read-shadow`, so only their keys change."
@@ -1548,6 +1576,7 @@
     :font-family (convert-dtcg-font-family value)
     :typography  (convert-dtcg-typography-composite value)
     :shadow      (shadows-with-penpot-keys value)
+    :gradient    (convert-dtcg-gradient-composite value)
     value))
 
 (defn- document-token
@@ -1752,11 +1781,20 @@
           value)
     value))
 
+(defn- gradient-token->dtcg-token
+  "Converts a gradient token value from the internal format to the DTCG
+  format, with string keys. For the `:dtcg` profile, the tokenscript
+  writer writes its angle and stop positions as numbers."
+  [value]
+  (cond-> value
+    (map? value) walk/stringify-keys))
+
 (defn- token->document-token
   [token]
   {:value (cond-> (:value token)
             (= :typography (:type token)) typography-token->dtcg-token
-            (= :shadow (:type token)) shadow-token->dtcg-token)
+            (= :shadow (:type token)) shadow-token->dtcg-token
+            (= :gradient (:type token)) gradient-token->dtcg-token)
    :type (cto/token-type->dtcg-token-type (:type token))
    :description (:description token)})
 

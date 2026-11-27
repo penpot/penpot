@@ -9,6 +9,7 @@
   (:require
    [app.common.files.tokens :as cfo]
    [app.common.schema :as sm]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
    [app.main.constants :refer [max-input-length]]
@@ -48,6 +49,18 @@
          (dom/scroll-into-view! section-node #js {:block "center"
                                                   :behavior "smooth"}))))))
 
+(defn- initial-tab
+  "Picks the tab that a token form opens on. The form opens on the
+  reference tab when the token references another token. A composite
+  token with a string value also opens there. The string is a reference,
+  or tokenscript that resolves to the value."
+  [token value-type]
+  (if (or (cfo/is-reference? token)
+          (and (= :composite value-type)
+               (cto/composite-token-reference? (:value token))))
+    :reference
+    :composite))
+
 (defn get-value-for-validator
   [active-tab value value-subfield value-type]
 
@@ -85,7 +98,7 @@
         input-component (or input-component token.controls/input*)
         validate-token  (or validator default-validate-token)
 
-        active-tab*     (mf/use-state #(if (cfo/is-reference? token) :reference :composite))
+        active-tab*     (mf/use-state #(initial-tab token value-type))
         active-tab      (deref active-tab*)
 
         token

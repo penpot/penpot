@@ -28,6 +28,7 @@
    [app.main.data.workspace.colors :as wdc]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.transforms :as dwtr]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -166,6 +167,14 @@
           opacity (tinycolor/alpha tc)]
       {:color hex :opacity opacity})))
 
+(defn value->paint
+  "Converts a color or a gradient token value into penpot color data."
+  [value]
+  (if (map? value)
+    (when-let [gradient (wtg/value->gradient value)]
+      {:gradient gradient :opacity 1})
+    (value->color value)))
+
 (defn update-fill
   ([value shape-ids attributes]
    (update-fill value shape-ids attributes nil))
@@ -173,7 +182,7 @@
    (ptk/reify ::update-fill
      ptk/WatchEvent
      (watch [_ state _]
-       (when-let [color (value->color value)]
+       (when-let [color (value->paint value)]
          (let [update-fn #(wdc/assoc-shape-fill %1 0 %2)]
            (wdc/transform-fill state shape-ids color update-fn {:ignore-touched true
                                                                 :page-id page-id})))))))
@@ -184,7 +193,7 @@
 
   ;; The attributes param is needed to have the same arity that other update functions
   ([value shape-ids _attributes page-id]
-   (when-let [color (value->color value)]
+   (when-let [color (value->paint value)]
      (dwsh/update-shapes shape-ids
                          #(wdc/update-shape-stroke-color % 0 color)
                          {:page-id page-id
@@ -972,6 +981,14 @@
     :on-update-shape update-fill-stroke
     :modal {:key :tokens/color
             :fields [{:label "Color" :key :color}]}}
+
+   :gradient
+   {:title "Gradient"
+    :attributes #{:fill}
+    :all-attributes ctt/color-keys
+    :on-update-shape update-fill-stroke
+    :modal {:key :tokens/gradient
+            :fields [{:label "Gradient" :key :gradient}]}}
 
    :font-size
    {:title "Font Size"

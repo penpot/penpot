@@ -191,7 +191,7 @@
          selected-shapes)))
 
 (def token-types-with-status-icon
-  #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
+  #{:color :gradient :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
 
 (defn- pill-state
   "Works out whether the token is applied to the selection, partially
@@ -273,9 +273,13 @@
           (pill-state token active-theme-tokens selected-shapes is-selected-inside-layout))
 
         color
-        (when (cfo/color-token? token)
+        (cond
+          (cfo/color-token? token)
           (or (dwtc/resolved-token-bullet-color resolved-token)
-              (dwtc/resolved-token-bullet-color token)))
+              (dwtc/resolved-token-bullet-color token))
+
+          (= :gradient type)
+          (dwta/value->paint (:resolved-value resolved-token)))
 
         status-icon? (contains? token-types-with-status-icon type)
 

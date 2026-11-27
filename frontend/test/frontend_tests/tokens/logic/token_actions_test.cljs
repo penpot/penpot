@@ -11,13 +11,18 @@
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.test-helpers.tokens :as ctht]
+   [app.common.types.color :as ctc]
+   [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.tokens-status :as ctos]
+   [app.config :as cf]
    [app.main.data.notifications :as ntf]
+   [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.wasm-text :as dwwt]
@@ -315,6 +320,122 @@
                (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-opacity]) 0.5))))))))))
+
+(defn- setup-file-with-gradient-tokens
+  []
+  (-> (setup-file-with-tokens)
+      (update-in [:data :tokens-lib]
+                 #(-> %
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token {:name "color.primary"
+                                                        :value "red"
+                                                        :type :color}))
+                      (ctob/add-token (cthi/id :set-a)
+                                      (ctob/make-token {:name "gradient.brand"
+                                                        :value {:kind "linear"
+                                                                :angle "90"
+                                                                :stops [{:color "{color.primary}" :position "0"}
+                                                                        {:color "rgba(0, 0, 255, 0.2)" :position "1"}]}
+                                                        :type :gradient}))))))
+
+;; Tokenscript resolves a color to hex, so the opacity of the second
+;; stop is one a hex color holds exactly.
+(def ^:private brand-gradient
+  {:type :linear
+   :start-x 0
+   :start-y 0.5
+   :end-x 1
+   :end-y 0.5
+   :width 1
+   :stops [{:color "#ff0000" :opacity 1 :offset 0}
+           {:color "#0000ff" :opacity 0.2 :offset 1}]})
+
+(defn- ^:async run-with-tokenscript
+  "Runs `events` on `store` with the tokenscript flag on, so that
+  gradient tokens resolve. Resolves with the state after the events.
+  Restores the flag also when the run fails."
+  [store events]
+  (let [state (atom nil)]
+    (await (mock/with-mocks* {cf/flags (conj cf/flags :tokenscript)}
+             (await (js/Promise.
+                     (fn [resolve _]
+                       (tohs/run-store-async store resolve events #(reset! state %)))))))
+    @state))
+
+(t/deftest ^:async test-apply-gradient
+  (let [file   (setup-file-with-gradient-tokens)
+        store  (ths/setup-store file)
+        rect-1 (cths/get-shape file :rect-1)
+        token  (toht/get-token file "gradient.brand")
+        events [(dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                    :token token})
+                (dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                    :attrs #{:stroke-color}
+                                    :token token})]
+        state  (await (run-with-tokenscript store events))
+        rect-1' (cths/get-shape (ths/get-file-from-state state) :rect-1)]
+    (t/testing "applies gradient token and updates the shape fill and stroke-color"
+      (t/is (= "gradient.brand" (:fill (:applied-tokens rect-1'))))
+      (t/is (= brand-gradient (-> rect-1' :fills (nth 0) :fill-color-gradient)))
+      (t/is (nil? (-> rect-1' :fills (nth 0) :fill-color)))
+      (t/is (= "gradient.brand" (:stroke-color (:applied-tokens rect-1'))))
+      (t/is (= brand-gradient (get-in rect-1' [:strokes 0 :stroke-color-gradient]))))
+
+    (t/testing "the tokenscript flag is back as it was"
+      (t/is (not (contains? cf/flags :tokenscript))))))
+
+(t/deftest ^:async test-apply-color-over-gradient
+  (let [file     (setup-file-with-gradient-tokens)
+        store    (ths/setup-store file)
+        rect-1   (cths/get-shape file :rect-1)
+        gradient (toht/get-token file "gradient.brand")
+        color    (toht/get-token file "color.primary")
+        events   [(dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                      :attrs #{:fill :stroke-color}
+                                      :token gradient})
+                  (dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                      :attrs #{:fill :stroke-color}
+                                      :token color})]
+        state    (await (run-with-tokenscript store events))
+        rect-1'  (cths/get-shape (ths/get-file-from-state state) :rect-1)]
+    (t/testing "a color token replaces the gradient of a gradient token"
+      (t/is (= {:fill "color.primary" :stroke-color "color.primary"}
+               (select-keys (:applied-tokens rect-1') [:fill :stroke-color])))
+      (t/is (= "#ff0000" (-> rect-1' :fills (nth 0) :fill-color)))
+      (t/is (nil? (-> rect-1' :fills (nth 0) :fill-color-gradient)))
+      (t/is (= "#ff0000" (get-in rect-1' [:strokes 0 :stroke-color])))
+      (t/is (nil? (get-in rect-1' [:strokes 0 :stroke-color-gradient]))))))
+
+(t/deftest ^:async test-gradient-follows-a-referenced-color
+  (let [file         (setup-file-with-gradient-tokens)
+        store        (ths/setup-store file)
+        rect-1       (cths/get-shape file :rect-1)
+        gradient     (toht/get-token file "gradient.brand")
+        color        (toht/get-token file "color.primary")
+        apply-events [(dwta/toggle-token {:shape-ids [(:id rect-1)]
+                                          :attrs #{:fill :stroke-color}
+                                          :token gradient})]
+        edit-events  [(dwtl/update-token (cthi/id :set-a) (:id color) {:value "#00ff00"})
+                      (dwtp/propagate-workspace-tokens)]
+        _            (await (run-with-tokenscript store apply-events))
+        state        (await (run-with-tokenscript store edit-events))
+        file'        (ths/get-file-from-state state)
+        rect-1'      (cths/get-shape file' :rect-1)
+        resolved     (-> (ts/resolve-tokens {(:name color) (toht/get-token file' "color.primary")
+                                             "gradient.brand" (toht/get-token file' "gradient.brand")})
+                         (get-in ["gradient.brand" :resolved-value]))]
+    (t/testing "the gradient token stays applied"
+      (t/is (= {:fill "gradient.brand" :stroke-color "gradient.brand"}
+               (select-keys (:applied-tokens rect-1') [:fill :stroke-color]))))
+
+    (t/testing "the fill and stroke gradients take the new color of the first stop"
+      (t/is (= "#00ff00" (get-in rect-1' [:fills 0 :fill-color-gradient :stops 0 :color])))
+      (t/is (= "#00ff00" (get-in rect-1' [:strokes 0 :stroke-color-gradient :stops 0 :color])))
+      (t/is (= "#0000ff" (get-in rect-1' [:fills 0 :fill-color-gradient :stops 1 :color]))))
+
+    (t/testing "Inspect finds the gradient token on the fill and the stroke"
+      (t/is (wtg/paints? resolved (types.fills/fill->color (get-in rect-1' [:fills 0]))))
+      (t/is (wtg/paints? resolved (ctc/stroke->color (get-in rect-1' [:strokes 0])))))))
 
 (t/deftest test-switch-set-updates-canvas-color
   (t/testing "switching the active set updates a canvas background linked to a color token"

@@ -321,7 +321,10 @@
 
 
 (mf/defc indexed-color-input*
-  [{:keys [name tokens token index value-subfield] :rest props}]
+  [{:keys [name tokens token index value-subfield
+           is-ramp-open ramp-container on-swatch-click
+           is-resolved-hint-hidden]
+    :rest props}]
 
   (let [form       (mf/use-ctx fc/context)
         input-name name
@@ -380,17 +383,24 @@
         (mf/use-state {})
 
         hint
-        (deref hint*)
+        (csu/visible-hint (deref hint*) is-resolved-hint-hidden)
 
+        ;; The color ramp opens below the input on a click on the swatch.
+        ;; A form that shows one ramp for several inputs decides instead
+        ;; which input has it open (`is-ramp-open`), is told about the
+        ;; clicks (`on-swatch-click`) and says where it goes
+        ;; (`ramp-container`).
         color-ramp-open* (mf/use-state false)
-        color-ramp-open? (deref color-ramp-open*)
+        color-ramp-open? (csu/ramp-open? is-ramp-open (deref color-ramp-open*))
 
         on-click-swatch
         (mf/use-fn
-         (mf/deps color-ramp-open?)
+         (mf/deps color-ramp-open? on-swatch-click)
          (fn []
-           (let [open? (not color-ramp-open?)]
-             (reset! color-ramp-open* open?))))
+           (if (some? on-swatch-click)
+             (on-swatch-click)
+             (let [open? (not color-ramp-open?)]
+               (reset! color-ramp-open* open?)))))
 
         swatch
         (mf/html
@@ -497,4 +507,9 @@
      [:> ds/input* props]
 
      (when color-ramp-open?
-       [:> ramp* {:color value :on-change on-change-value}])]))
+       ;; A reference shows the color it resolves to
+       (let [color (csu/ramp-color value color-resolved)
+             ramp  (mf/html [:> ramp* {:color color :on-change on-change-value}])]
+         (if (some? ramp-container)
+           (mf/portal ramp ramp-container)
+           ramp)))]))

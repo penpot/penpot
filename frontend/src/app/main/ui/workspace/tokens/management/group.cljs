@@ -45,6 +45,7 @@
     :text-case i/text-mixed
     :text-decoration i/text-underlined
     :font-weight i/text-font-weight
+    :gradient i/swatches
     :typography i/text-typography
     :opacity i/percentage
     :number i/number

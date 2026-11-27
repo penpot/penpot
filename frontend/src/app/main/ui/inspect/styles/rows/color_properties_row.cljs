@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as cc]
    [app.config :as cfg]
+   [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
@@ -103,7 +104,8 @@
                                    [:div {:class (stl/css :tooltip-token-title)}
                                     (tr "inspect.tabs.styles.token-resolved-value")]
                                    [:div {:class (stl/css :tooltip-token-value)}
-                                    (:resolved-value token)]])}
+                                    ;; A gradient resolves to a map
+                                    (dwtf/format-token-value (:resolved-value token))]])}
           [:> property-detail-copiable* {:color color
                                          :token token
                                          :ref row-ref

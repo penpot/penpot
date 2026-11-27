@@ -142,8 +142,12 @@
    [frontend-tests.svg-filters-test]
    [frontend-tests.text-editor-paste-guard-test]
    [frontend-tests.tokens.context-menu-test]
+   [frontend-tests.tokens.controls-utils-test]
    [frontend-tests.tokens.copy-paste-props-test]
    [frontend-tests.tokens.export-modal-test]
+   [frontend-tests.tokens.generic-form-test]
+   [frontend-tests.tokens.gradient-form-test]
+   [frontend-tests.tokens.gradient-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
    [frontend-tests.tokens.logic.token-data-test]
@@ -185,6 +189,7 @@
    [frontend-tests.ui.gradient-handlers-test]
    [frontend-tests.ui.history-test]
    [frontend-tests.ui.inspect-geometry-test]
+   [frontend-tests.ui.inspect-gradient-tokens-test]
    [frontend-tests.ui.inspect-stroke-tokens-test]
    [frontend-tests.ui.inspect-text-list-test]
    [frontend-tests.ui.jobs-progress-test]
@@ -388,7 +393,11 @@
    'frontend-tests.svg-filters-test
    'frontend-tests.tokens.copy-paste-props-test
    'frontend-tests.tokens.context-menu-test
+   'frontend-tests.tokens.controls-utils-test
    'frontend-tests.tokens.export-modal-test
+   'frontend-tests.tokens.generic-form-test
+   'frontend-tests.tokens.gradient-form-test
+   'frontend-tests.tokens.gradient-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test
    'frontend-tests.tokens.logic.token-data-test
@@ -430,6 +439,7 @@
    'frontend-tests.ui.gradient-handlers-test
    'frontend-tests.ui.history-test
    'frontend-tests.ui.inspect-geometry-test
+   'frontend-tests.ui.inspect-gradient-tokens-test
    'frontend-tests.ui.inspect-stroke-tokens-test
    'frontend-tests.ui.inspect-text-list-test
    'frontend-tests.ui.jobs-progress-test

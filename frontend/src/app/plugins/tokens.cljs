@@ -17,6 +17,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.tokenscript :as ts]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.store :as st]
    [app.plugins.register :as r]
@@ -146,7 +147,17 @@
     :font-family (ctob/convert-dtcg-font-family value)
     :typography (ctob/convert-dtcg-typography-composite value)
     :shadow (ctob/convert-dtcg-shadow-composite value)
+    :gradient (ctob/convert-dtcg-gradient-composite value)
     value))
+
+(def gradient-tokens-disabled-message
+  "Gradient tokens need the token-gradient and tokenscript flags.")
+
+(defn token-type-disabled?
+  "Checks whether a plugin cannot add, edit or apply tokens of `type`.
+  Gradient tokens need flags."
+  [type]
+  (and (= :gradient type) (not (wtg/enabled?))))
 
 (defn- resolved-without-errors?
   [resolved]
@@ -211,6 +222,9 @@
         (nil? token)
         (u/not-valid plugin-id code id)
 
+        (token-type-disabled? (:type token))
+        (u/not-valid plugin-id code gradient-tokens-disabled-message)
+
         (not (valid-token-resolution? file-id set-id id))
         (u/not-valid plugin-id code (:value token))
 
@@ -269,6 +283,18 @@
   (when (some? entries)
     (into-array (map shadow-entry->js entries))))
 
+(defn- gradient-resolved-value->js
+  "Converts a resolved gradient into the `TokenGradientValue` of the
+  plugin API. It has the kind, the angle in degrees of a linear
+  gradient, and the stops. Each stop has a hex color and a position from
+  0 to 1. A linear gradient without an angle gets the angle that penpot
+  draws it with. A radial gradient has no angle."
+  [{:keys [kind angle stops] :as value}]
+  (when (map? value)
+    (clj->js (cond-> {:kind kind
+                      :stops (mapv #(select-keys % [:color :position]) stops)}
+               (= "linear" kind) (assoc :angle (or angle wtg/default-angle))))))
+
 (defn- get-resolved-value
   [token sets]
   (let [resolved-tokens (ts/resolve-sets sets)
@@ -289,6 +315,11 @@
       ;; A shadow token resolves to a list of composites; expose them as the
       ;; documented `TokenShadowValue[]`.
       (shadow-resolved-value->js resolved-value)
+
+      (= :gradient (:type token))
+      ;; A gradient token resolves to a map; expose it as the documented
+      ;; `TokenGradientValue`.
+      (gradient-resolved-value->js resolved-value)
 
       :else
       resolved-value)))
@@ -364,8 +395,14 @@
            (u/check-editable-tokens file-id)
            (let [token (u/locate-token file-id set-id id)
                  value (normalize-token-value token value)]
-             (if (valid-token-candidate? file-id set-id token {:value value})
+             (cond
+               (token-type-disabled? (:type token))
+               (u/not-valid plugin-id :value gradient-tokens-disabled-message)
+
+               (valid-token-candidate? file-id set-id token {:value value})
                (st/emit! (dwtl/update-token set-id id {:value value}))
+
+               :else
                (u/not-valid plugin-id :value value))))))}
 
     :resolvedValue
@@ -596,6 +633,9 @@
             (cond
               (not (r/check-permission plugin-id "content:write"))
               (u/not-valid plugin-id :addToken "Plugin doesn't have 'content:write' permission")
+
+              (token-type-disabled? (:type attrs))
+              (u/not-valid plugin-id :addToken gradient-tokens-disabled-message)
 
               :else
               (do

@@ -1,0 +1,114 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS SUBSIDIARY SL
+
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+
+// The gradient editor of the color picker brings its own inline padding;
+// its list of stops has none at its end.
+.gradient-editor {
+  margin-inline-start: calc(-1 * var(--sp-m));
+}
+
+// The fields of a stop, in a row of the gradient editor
+.stop-fields {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.position-input-wrapper {
+  flex-shrink: 0;
+  inline-size: 5.75rem;
+}
+
+.color-input-wrapper {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.icon-text {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-secondary);
+}
+
+.opacity-element-wrapper {
+  @include t.use-typography("body-small");
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  flex-shrink: 0;
+  inline-size: 3.75rem;
+  block-size: 100%;
+  padding-inline-start: var(--sp-s);
+  border-inline-start: $b-1 solid var(--color-background-primary);
+}
+
+.opacity-input {
+  @include t.use-typography("body-small");
+
+  align-self: center;
+  block-size: $sz-28;
+  inline-size: 100%;
+  min-inline-size: 0;
+  border: none;
+  background: none;
+  outline: none;
+  margin: 0;
+  padding: 0;
+  color: var(--color-foreground-primary);
+
+  &[disabled] {
+    opacity: 0.5;
+  }
+}
+
+.input-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.input-row-reference {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
+}
+
+// The reference input, with the button that edits its gradient next to it
+.reference-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-xs);
+}
+
+.reference-input {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.title-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-xs);
+}
+
+.title {
+  @include t.use-typography("body-small");
+
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
+}

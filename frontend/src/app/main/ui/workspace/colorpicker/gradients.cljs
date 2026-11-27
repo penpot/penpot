@@ -18,6 +18,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
@@ -43,6 +44,7 @@
 
 (defn- gradient->string [stops]
   (->> stops
+       (filter :offset)
        (sort-by :offset)
        (map (fn [{:keys [color opacity offset]}]
               (let [[r g b] (cc/hex->rgb color)]
@@ -59,6 +61,7 @@
   {::mf/private true}
   [{:keys [stop
            index
+           fields
            is-selected
            on-select-stop
            on-change-stop
@@ -71,19 +74,19 @@
   (let [offset (get stop :offset)
 
         handle-change-stop-color
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change-stop stop)
          (fn [value]
            (on-change-stop stop (merge stop value))))
 
         handle-change-offset
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-change-stop stop)
          (fn [value]
            (on-change-stop stop (assoc stop :offset (mth/precision (/ value 100) 2)))))
 
         handle-remove-stop
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-remove-stop index)
          (fn []
            (when on-remove-stop
@@ -145,48 +148,52 @@
 
      [:> reorder-handler* {:ref dref}]
 
-     [:div {:class (stl/css :offset-input-wrapper)}
-      [:span {:class (stl/css :icon-text)} "%"]
-      [:> deprecated-input/numeric-input*
-       {:value (-> offset offset->string)
-        :on-change handle-change-offset
-        :default 100
-        :min 0
-        :max 100
-        :on-focus handle-focus-stop-offset
-        :on-blur handle-blur-stop-offset}]]
+     (if (some? fields)
+       [:> fields {:stop stop
+                   :index index
+                   :is-selected is-selected
+                   :on-select-stop on-select-stop
+                   :on-remove-stop on-remove-stop}]
+       [:*
+        [:div {:class (stl/css :offset-input-wrapper)}
+         [:span {:class (stl/css :icon-text)} "%"]
+         [:> deprecated-input/numeric-input*
+          {:value (-> offset offset->string)
+           :on-change handle-change-offset
+           :default 100
+           :min 0
+           :max 100
+           :on-focus handle-focus-stop-offset
+           :on-blur handle-blur-stop-offset}]]
 
-     [:> color-row*
-      {:disable-gradient true
-       :disable-picker true
-       :color (stop->hex-color stop)
-       :index index
-       :origin :gradient
-       :on-change handle-change-stop-color
-       :on-remove handle-remove-stop
-       :on-focus handle-focus-stop-color
-       :on-blur handle-blur-stop-color}]]))
+        [:> color-row*
+         {:disable-gradient true
+          :disable-picker true
+          :color (stop->hex-color stop)
+          :index index
+          :origin :gradient
+          :on-change handle-change-stop-color
+          :on-remove handle-remove-stop
+          :on-focus handle-focus-stop-color
+          :on-blur handle-blur-stop-color}]])]))
 
 (def ^:private gradient-type-options
   [{:id "linear-gradient" :label "Linear"}
    {:id "radial-gradient" :label "Radial"}])
 
-(mf/defc gradients*
-  [{:keys [type
-           stops
+(mf/defc gradient-preview*
+  "Shows the stops of a gradient on a strip. The user drags a stop along
+  the strip to move it, and clicks the strip to add a stop there. A stop
+  that has no position yet is not on the strip. A stop with references
+  shows what it resolves to when the pointer is on it."
+  [{:keys [stops
            editing-stop
+           is-add-disabled
            on-select-stop
-           on-change-type
            on-change-stop
            on-add-stop-preview
-           on-add-stop-auto
-           on-remove-stop
            on-stop-edit-start
-           on-stop-edit-finish
-           on-reverse-stops
-           on-rotate-stops
-           on-reorder-stops]}]
-
+           on-stop-edit-finish]}]
   (let [preview-state  (mf/use-state #(do {:hover? false :offset 0.5}))
         dragging-ref   (mf/use-ref false)
         start-ref      (mf/use-ref nil)
@@ -194,26 +201,12 @@
         background-ref (mf/use-ref nil)
 
         handle-select-stop
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps on-select-stop)
          (fn [event]
            (when on-select-stop
              (let [index (-> event dom/get-current-target (dom/get-data "index") d/read-string)]
                (on-select-stop index)))))
-
-        handle-change-type
-        (mf/use-callback
-         (mf/deps on-change-type)
-         (fn [type-id]
-           (when on-change-type
-             (on-change-type (keyword type-id)))))
-
-        handle-add-stop
-        (mf/use-callback
-         (mf/deps on-add-stop-auto)
-         (fn []
-           (when on-add-stop-auto
-             (on-add-stop-auto))))
 
         handle-preview-enter
         (mf/use-fn
@@ -282,7 +275,89 @@
            (dom/release-pointer event)
            (mf/set-ref-val! dragging-ref false)
            (mf/set-ref-val! start-ref nil)
-           (on-stop-edit-finish)))
+           (on-stop-edit-finish)))]
+
+    [:div {:class (stl/css :gradient-preview)}
+     [:div {:class (stl/css :gradient-background)
+            :ref background-ref
+            :style {:background (gradient->string stops)}
+            :on-pointer-enter handle-preview-enter
+            :on-pointer-leave handle-preview-leave
+            :on-pointer-move handle-preview-move
+            :on-pointer-down handle-preview-down}
+      (when (not is-add-disabled)
+        [:div {:class (stl/css :gradient-preview-stop-preview)
+               :style {:display (if (:hover? @preview-state) "block" "none")
+                       "--preview-position" (dm/str (* 100 (:offset @preview-state)) "%")}}])]
+
+     [:div {:class (stl/css :gradient-preview-stop-wrapper)}
+      (for [[index {:keys [color offset r g b alpha title]}] (d/enumerate stops)
+            :when (some? offset)]
+        [:* {:key (dm/str "preview-stop-" index)}
+         [:div
+          {:class (stl/css-case :gradient-preview-stop true
+                                :is-selected (= editing-stop index))
+           :style {"--color-solid" color
+                   "--color-alpha" (str/ffmt "rgba(%1, %2, %3, %4)" r g b alpha)
+                   "--position" (dm/str (* offset 100) "%")}
+           :data-index index
+
+           :on-pointer-down handle-stop-marker-pointer-down
+           :on-pointer-move handle-stop-marker-pointer-move
+           :on-lost-pointer-capture handle-stop-marker-lost-pointer-capture}
+          (if (some? title)
+            ;; The tooltip covers the stop, so it carries its index for
+            ;; the pointer events it is the target of.
+            [:> tooltip* {:content title
+                          :class (stl/css :gradient-preview-stop-tooltip)
+                          :data-index index}
+             [:div {:class (stl/css :gradient-preview-stop-color)
+                    :style {:pointer-events "none"}}]
+             [:div {:class (stl/css :gradient-preview-stop-alpha)
+                    :style {:pointer-events "none"}}]]
+            [:*
+             [:div {:class (stl/css :gradient-preview-stop-color)
+                    :style {:pointer-events "none"}}]
+             [:div {:class (stl/css :gradient-preview-stop-alpha)
+                    :style {:pointer-events "none"}}]])]
+         [:div {:class (stl/css :gradient-preview-stop-decoration)
+                :style {"--position" (dm/str (* offset 100) "%")}}]])]]))
+
+(mf/defc gradients*
+  "Shows the gradient editor of the color picker: the stops of a gradient
+  on a strip, its type and the list of its stops. A form can put its own
+  fields in the rows of the stops. A form can also disable the rotate
+  button."
+  [{:keys [type
+           stops
+           editing-stop
+           stop-fields
+           is-rotate-disabled
+           on-select-stop
+           on-change-type
+           on-change-stop
+           on-add-stop-preview
+           on-add-stop-auto
+           on-remove-stop
+           on-stop-edit-start
+           on-stop-edit-finish
+           on-reverse-stops
+           on-rotate-stops
+           on-reorder-stops]}]
+
+  (let [handle-change-type
+        (mf/use-fn
+         (mf/deps on-change-type)
+         (fn [type-id]
+           (when on-change-type
+             (on-change-type (keyword type-id)))))
+
+        handle-add-stop
+        (mf/use-fn
+         (mf/deps on-add-stop-auto)
+         (fn []
+           (when on-add-stop-auto
+             (on-add-stop-auto))))
 
         handle-rotate-gradient
         (mf/use-fn
@@ -305,39 +380,14 @@
         (when cap-stops? (>= (count stops) types.fills/MAX-GRADIENT-STOPS))]
 
     [:div {:class (stl/css :gradient-panel)}
-     [:div {:class (stl/css :gradient-preview)}
-      [:div {:class (stl/css :gradient-background)
-             :ref background-ref
-             :style {:background (gradient->string stops)}
-             :on-pointer-enter handle-preview-enter
-             :on-pointer-leave handle-preview-leave
-             :on-pointer-move handle-preview-move
-             :on-pointer-down handle-preview-down}
-       (when (not add-stop-disabled?)
-         [:div {:class (stl/css :gradient-preview-stop-preview)
-                :style {:display (if (:hover? @preview-state) "block" "none")
-                        "--preview-position" (dm/str (* 100 (:offset @preview-state)) "%")}}])]
-
-      [:div {:class (stl/css :gradient-preview-stop-wrapper)}
-       (for [[index {:keys [color offset r g b alpha]}] (d/enumerate stops)]
-         [:* {:key (dm/str "preview-stop-" index)}
-          [:div
-           {:class (stl/css-case :gradient-preview-stop true
-                                 :is-selected (= editing-stop index))
-            :style {"--color-solid" color
-                    "--color-alpha" (str/ffmt "rgba(%1, %2, %3, %4)" r g b alpha)
-                    "--position" (dm/str (* offset 100) "%")}
-            :data-index index
-
-            :on-pointer-down handle-stop-marker-pointer-down
-            :on-pointer-move handle-stop-marker-pointer-move
-            :on-lost-pointer-capture handle-stop-marker-lost-pointer-capture}
-           [:div {:class (stl/css :gradient-preview-stop-color)
-                  :style {:pointer-events "none"}}]
-           [:div {:class (stl/css :gradient-preview-stop-alpha)
-                  :style {:pointer-events "none"}}]]
-          [:div {:class (stl/css :gradient-preview-stop-decoration)
-                 :style {"--position" (dm/str (* offset 100) "%")}}]])]]
+     [:> gradient-preview* {:stops stops
+                            :editing-stop editing-stop
+                            :is-add-disabled add-stop-disabled?
+                            :on-select-stop on-select-stop
+                            :on-change-stop on-change-stop
+                            :on-add-stop-preview on-add-stop-preview
+                            :on-stop-edit-start on-stop-edit-start
+                            :on-stop-edit-finish on-stop-edit-finish}]
 
      [:div {:class (stl/css :gradient-options)}
       [:> select* {:default-selected (d/name (d/nilv type :linear-gradient))
@@ -348,6 +398,7 @@
       [:div {:class (stl/css :gradient-options-buttons)}
        [:> icon-button* {:variant "ghost"
                          :aria-label "Rotate gradient"
+                         :disabled is-rotate-disabled
                          :on-click handle-rotate-gradient
                          :icon-class (stl/css :rotate-icon)
                          :icon i/reload}]
@@ -365,9 +416,10 @@
       [:> h/sortable-container* {}
        (for [[index stop] (d/enumerate stops)]
          [:> stop-input-row*
-          {:key index
+          {:key (:id stop index)
            :stop stop
            :index index
+           :fields stop-fields
            :is-selected (= editing-stop index)
            :on-select-stop on-select-stop
            :on-change-stop on-change-stop

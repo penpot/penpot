@@ -11,6 +11,7 @@
    [app.main.data.helpers :as dh]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.remapping :as remap]
@@ -38,8 +39,10 @@
   tokens exist for that type. Sort each group alphabetically (by their type)."
   [tokens-by-type]
   (let [token-shadow? (contains? cf/flags :token-shadow)
+        token-gradient? (wtg/enabled?)
         all-types (cond-> dwta/token-properties
-                    (not token-shadow?) (dissoc :shadow))
+                    (not token-shadow?) (dissoc :shadow)
+                    (not token-gradient?) (dissoc :gradient))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []

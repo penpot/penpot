@@ -5,9 +5,11 @@
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
+   [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
+   [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -207,3 +209,50 @@
           (if (string? value)
             (recur value (conj visited name))
             value))))))
+
+(defn visible-hint
+  "Gives the hint of a field. A form that shows the resolved values in a
+  different place hides the hint with the resolved value
+  (`is-resolved-hint-hidden`). An error hint always shows."
+  [hint is-resolved-hint-hidden]
+  (if (and is-resolved-hint-hidden (= "hint" (:type hint)))
+    {}
+    hint))
+
+(defn ramp-open?
+  "Checks whether the color ramp of a color input is open. A form that
+  shows one ramp for several inputs decides this for each input.
+  Otherwise, the ramp opens after a click on the swatch."
+  [is-ramp-open is-opened-by-swatch]
+  (if (some? is-ramp-open)
+    is-ramp-open
+    is-opened-by-swatch))
+
+(defn ramp-color
+  "Gives the color that the ramp of a color input shows. This is the
+  color of the input or, for a reference, the color that the reference
+  resolves to."
+  [value resolved-color]
+  (if (tinycolor/valid-color value)
+    value
+    resolved-color))
+
+(defn pasted-text
+  "Gives the text of a field after `pasted` replaces the selected text,
+  from `start` to `end`."
+  [text start end pasted]
+  (str (subs text 0 start) pasted (subs text end)))
+
+(defn converted-paste-value
+  "Gives the value that `input` has after the paste `event` when
+  `convert-paste` converts the pasted text: the converted text replaces
+  the selection. Gives nil when `convert-paste` is nil or gives nil, and
+  the paste goes in as it is."
+  [convert-paste input ^js event]
+  (when-let [text (and (some? convert-paste)
+                       (some-> (.-clipboardData event) (.getData "text")))]
+    (when-let [converted (convert-paste text)]
+      (pasted-text (dom/get-value input)
+                   (dom/selection-start input)
+                   (dom/selection-end input)
+                   converted))))

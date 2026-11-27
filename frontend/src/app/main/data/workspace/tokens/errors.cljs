@@ -147,6 +147,14 @@
    {:error/code :error.style-dictionary/invalid-token-value-shadow
     :error/fn #(tr "errors.tokens.invalid-token-value-shadow" %)}
 
+   :error.style-dictionary/invalid-token-value-gradient
+   {:error/code :error.style-dictionary/invalid-token-value-gradient
+    :error/fn #(tr "errors.tokens.invalid-token-value-gradient")}
+
+   :error.style-dictionary/invalid-token-value-gradient-angle
+   {:error/code :error.style-dictionary/invalid-token-value-gradient-angle
+    :error/fn #(tr "errors.tokens.invalid-token-value-gradient-angle")}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})

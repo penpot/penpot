@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
    [app.config :as cfg]
+   [app.main.data.workspace.tokens.gradient :as wtg]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
@@ -88,9 +89,10 @@
   (= 0 idx))
 
 (defn- has-color-token?
-  "Returns true if the resolved token matches the color and is the first stroke (idx = 0)."
+  "Returns true if the resolved token (a color or a gradient) matches the
+  stroke and is the first stroke (idx = 0)."
   [resolved-token stroke-type idx]
-  (and (= (:resolved-value resolved-token) (:color stroke-type))
+  (and (wtg/paints? (:resolved-value resolved-token) stroke-type)
        (is-first-element? idx)))
 
 (defn- generate-stroke-shorthand

@@ -6,8 +6,10 @@
 
 (ns frontend-tests.ui.colorpicker-token-set-order-test
   (:require
-   [app.main.ui.workspace.colorpicker :refer [group-sets]]
-   [cljs.test :as t :include-macros true]))
+   [app.config :as cf]
+   [app.main.ui.workspace.colorpicker :as colorpicker :refer [group-sets]]
+   [cljs.test :as t :include-macros true]
+   [frontend-tests.helpers.mock :as mock]))
 
 ;; https://github.com/penpot/penpot/issues/10552
 ;; The Color tokens picker shows sets in reverse of their definition order
@@ -63,3 +65,27 @@
              (set entries)))
     (t/is (= [["brand/subgroup" "two"] ["brand/subgroup" "one"]]
              (filter #(= (first %) "brand/subgroup") entries)))))
+
+(def ^:private filter-non-empty-sets @#'colorpicker/filter-non-empty-sets)
+
+(def ^:private fill-token-sets
+  [{:set "colors"    :tokens [{:name "red" :type :color}]}
+   {:set "gradients" :tokens [{:name "brand" :type :gradient}]}
+   {:set "spacing"   :tokens [{:name "sm" :type :spacing}]}
+   {:set "empty"     :tokens []}])
+
+(t/deftest ^:async sets-with-tokens-a-shape-can-be-filled-with
+  (await (mock/with-mocks* {cf/flags (conj cf/flags :token-gradient :tokenscript)}
+           (t/testing "color and gradient tokens are listed, other tokens are not"
+             (t/is (= ["colors" "gradients"]
+                      (map :set (filter-non-empty-sets fill-token-sets)))))))
+
+  (await (mock/with-mocks* {cf/flags (-> cf/flags (disj :tokenscript) (conj :token-gradient))}
+           (t/testing "gradient tokens are left out without tokenscript"
+             (t/is (= ["colors"]
+                      (map :set (filter-non-empty-sets fill-token-sets)))))))
+
+  (await (mock/with-mocks* {cf/flags (-> cf/flags (disj :token-gradient) (conj :tokenscript))}
+           (t/testing "gradient tokens are left out without the token-gradient flag"
+             (t/is (= ["colors"]
+                      (map :set (filter-non-empty-sets fill-token-sets))))))))
