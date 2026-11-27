@@ -5291,6 +5291,10 @@ msgstr "Personalízalos"
 msgid "shortcuts.escape"
 msgstr "Cancelar"
 
+#: src/app/main/data/workspace/shortcuts.cljs:631
+msgid "shortcuts.export-selection"
+msgstr "Exportar selección con la configuración guardada"
+
 #: src/app/main/data/workspace/shortcuts.cljs:608
 msgid "shortcuts.export-shapes"
 msgstr "Exportar elementos"
@@ -6807,13 +6811,29 @@ msgstr "Eliminar guía"
 msgid "workspace.debug.title"
 msgstr "Herramientas de depuración"
 
-#: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
+#: src/app/main/ui/workspace/main_menu.cljs:741
+msgid "workspace.export-selection"
+msgstr "Exportar selección"
+
+#: src/app/main/data/exports/assets.cljs:666
+msgid "workspace.export-selection.busy"
+msgstr "Ya hay una exportación en curso."
+
+#: src/app/main/data/exports/assets.cljs:664
+msgid "workspace.export-selection.empty"
+msgstr "Selecciona un objeto para exportar."
+
+#: src/app/main/data/exports/assets.cljs:665
+msgid "workspace.export-selection.no-settings"
+msgstr "Añade una configuración de exportación en la barra lateral derecha."
+
+#: src/app/main/data/exports/assets.cljs:395, src/app/main/data/exports/assets.cljs:572
 msgid "workspace.export.unsaved-changes"
 msgstr ""
 "Algunos de tus últimos cambios aún no se han guardado, así que puede que "
 "esta exportación no los incluya."
 
-#: src/app/main/data/exports/assets.cljs:370, src/app/main/data/exports/assets.cljs:612
+#: src/app/main/data/exports/assets.cljs:375, src/app/main/data/exports/assets.cljs:620
 msgid "workspace.export.unsaved-changes-included"
 msgstr ""
 "Algunos de tus últimos cambios aún no se han guardado. Esta exportación los "

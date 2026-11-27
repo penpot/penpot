@@ -129,11 +129,12 @@
    :suffix suffix})
 
 (defn local-export-filename
-  "A single export's `:name` already carries the suffix (added by the UI)."
+  "Use the requested download name; legacy single entries already include the suffix."
   [kind entry export-name]
   (case kind
     :pdf-frames (str (or export-name "export") ".pdf")
-    :single     (wasm.exports/sanitize-filename (dissoc entry :suffix) #{})
+    :single     (wasm.exports/sanitize-filename {:name (or export-name (:name entry))
+                                                 :type (:type entry)} #{})
     (str (or export-name "export") ".zip")))
 
 (defn- run-local-export
