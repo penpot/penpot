@@ -17,6 +17,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dc]
    [app.main.data.event :as ev]
@@ -371,6 +372,27 @@
           (rx/of (dch/commit-changes changes))
           (rx/empty))))))
 
+(defn fix-hug-parents-sizing
+  "Turns each flex parent in `parent-ids` to fix on the axes where its
+  remaining children would collapse because of the hug, so it stops hugging
+  at its current size. `page-id` nil means the open page."
+  [parent-ids page-id]
+  (ptk/reify ::fix-hug-parents-sizing
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page-id (or page-id (:current-page-id state))
+            objects (dsh/lookup-page-objects state page-id)
+            fix     (fn [{:keys [id shapes] :as parent}]
+                      (if (seq (remove (partial ctl/position-absolute? objects) shapes))
+                        (cond-> parent
+                          (ctl/change-h-sizing? id objects shapes)
+                          (assoc :layout-item-h-sizing :fix)
+
+                          (ctl/change-v-sizing? id objects shapes)
+                          (assoc :layout-item-v-sizing :fix))
+                        parent))]
+        (rx/of (update-shapes (filter objects parent-ids) fix {:page-id page-id}))))))
+
 (declare update-shape-flags)
 
 (defn delete-shapes
@@ -402,6 +424,7 @@
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
                 (dch/commit-changes changes)
+                (fix-hug-parents-sizing all-parents page-id)
                 (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
                 (dwu/commit-undo-transaction undo-id)))))))
 
@@ -536,15 +559,28 @@
               ids     (if (boolean? blocked)
                         (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                         ids)]
-          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group})))))))
+          (if (boolean? hidden)
+            (let [undo-id    (js/Symbol)
+                  parent-ids (into #{} (keep #(cfh/get-parent-id objects %)) ids)]
+              (rx/of (dwu/start-undo-transaction undo-id)
+                     (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group})
+                     (fix-hug-parents-sizing parent-ids nil)
+                     (dwu/commit-undo-transaction undo-id)))
+            (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group}))))))))
 
 (defn toggle-visibility-selected
   []
   (ptk/reify ::toggle-visibility-selected
     ptk/WatchEvent
     (watch [_ state _]
-      (let [selected (dsh/lookup-selected state)]
-        (rx/of (update-shapes selected #(update % :hidden not)))))))
+      (let [selected   (dsh/lookup-selected state)
+            objects    (dsh/lookup-page-objects state)
+            parent-ids (into #{} (keep #(cfh/get-parent-id objects %)) selected)
+            undo-id    (js/Symbol)]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (update-shapes selected #(update % :hidden not))
+               (fix-hug-parents-sizing parent-ids nil)
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn toggle-lock-selected
   []

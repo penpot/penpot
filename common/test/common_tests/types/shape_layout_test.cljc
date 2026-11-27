@@ -835,6 +835,120 @@
       (t/is (= :auto (:layout-item-v-sizing result))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; fix-child-sizing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn- sizing-objects
+  "Builds an objects map with a parent and children given as
+  `[h-sizing v-sizing]` pairs or attr maps. Returns `[objects parent children]`."
+  [parent-attrs children-attrs]
+  (let [parent-id (uuid/next)
+        children  (mapv (fn [attrs]
+                          (let [attrs (if (vector? attrs)
+                                        {:layout-item-h-sizing (first attrs)
+                                         :layout-item-v-sizing (second attrs)}
+                                        attrs)]
+                            (assoc attrs :id (uuid/next) :parent-id parent-id)))
+                        children-attrs)
+        parent    (assoc parent-attrs
+                         :id parent-id
+                         :shapes (mapv :id children))]
+    [(into {parent-id parent} (map (juxt :id identity)) children)
+     parent
+     children]))
+
+(defn- fixed-sizing
+  "Returns `[h v]` of the first child after `fix-child-sizing`."
+  [parent-attrs children-attrs & [changes]]
+  (let [[objects _ children] (sizing-objects parent-attrs children-attrs)
+        result (layout/fix-child-sizing objects changes (first children))]
+    [(:layout-item-h-sizing result) (:layout-item-v-sizing result)]))
+
+(t/deftest fix-child-sizing-test
+  (t/testing "row, hug width: a fill-width child becomes fix"
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :row :layout-item-h-sizing :auto}
+                           [[:fill :fix]])))
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :row :layout-item-h-sizing :auto}
+                           [[:fill :fix] [:fix :fix]]))))
+
+  (t/testing "row, hug height: fix only when all children are fill-height"
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :row :layout-item-v-sizing :auto}
+                           [[:fix :fill] [:fix :fill]])))
+    (t/is (= [:fix :fill]
+             (fixed-sizing {:layout-flex-dir :row :layout-item-v-sizing :auto}
+                           [[:fix :fill] [:fix :fix]]))))
+
+  (t/testing "column, hug width: fix only when all children are fill-width"
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :column :layout-item-h-sizing :auto}
+                           [[:fill :fix] [:fill :fix]])))
+    (t/is (= [:fill :fix]
+             (fixed-sizing {:layout-flex-dir :column :layout-item-h-sizing :auto}
+                           [[:fill :fix] [:fix :fix]]))))
+
+  (t/testing "column, hug height: a fill-height child becomes fix"
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :column :layout-item-v-sizing :auto}
+                           [[:fix :fill] [:fix :fix]]))))
+
+  (t/testing "a fixed parent leaves the child alone"
+    (t/is (= [:fill :fill]
+             (fixed-sizing {:layout-flex-dir :row
+                            :layout-item-h-sizing :fix
+                            :layout-item-v-sizing :fix}
+                           [[:fill :fill]]))))
+
+  (t/testing "absolute and hidden children are ignored by the all-children check"
+    (t/is (= [:fix :fix]
+             (fixed-sizing {:layout-flex-dir :row :layout-item-v-sizing :auto}
+                           [[:fix :fill]
+                            {:layout-item-absolute true :layout-item-v-sizing :fix}
+                            {:hidden true :layout-item-v-sizing :fix}]))))
+
+  (t/testing "parent-changes can supply the hug"
+    (t/is (= [:fill :fill]
+             (fixed-sizing {:layout-flex-dir :row
+                            :layout-item-h-sizing :fix
+                            :layout-item-v-sizing :fix}
+                           [[:fill :fill] [:fix :fix]])))
+    (t/is (= [:fix :fill]
+             (fixed-sizing {:layout-flex-dir :row
+                            :layout-item-h-sizing :fix
+                            :layout-item-v-sizing :fix}
+                           [[:fill :fill] [:fix :fix]]
+                           {:layout-item-h-sizing :auto}))))
+
+  (t/testing "grid, hug width: a fill-width child becomes fix"
+    (t/is (= [:fix :fill]
+             (fixed-sizing {:type :frame :layout :grid :layout-item-h-sizing :auto}
+                           [[:fill :fill] [:fix :fix]]))))
+
+  (t/testing "grid, hug height: a fill-height child becomes fix"
+    (t/is (= [:fill :fix]
+             (fixed-sizing {:type :frame :layout :grid :layout-item-v-sizing :auto}
+                           [[:fill :fill] [:fix :fix]]))))
+
+  (t/testing "grid, fixed: the child is left alone"
+    (t/is (= [:fill :fill]
+             (fixed-sizing {:type :frame
+                            :layout :grid
+                            :layout-item-h-sizing :fix
+                            :layout-item-v-sizing :fix}
+                           [[:fill :fill]]))))
+
+  (t/testing "grid, parent-changes can supply the hug"
+    (t/is (= [:fix :fill]
+             (fixed-sizing {:type :frame
+                            :layout :grid
+                            :layout-item-h-sizing :fix
+                            :layout-item-v-sizing :fix}
+                           [[:fill :fill]]
+                           {:layout-item-h-sizing :auto})))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Grid track defaults
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1450,7 +1564,48 @@
                                  :layout-item-v-sizing :fix)
           child-1 (make-shape :layout-item-v-sizing :fill)
           objects {(:id frame) frame (:id child-1) child-1}]
-      (t/is (not (layout/change-v-sizing? (:id frame) objects [(:id child-1)]))))))
+      (t/is (not (layout/change-v-sizing? (:id frame) objects [(:id child-1)])))))
+
+  (t/testing "change-v-sizing? ignores absolute and hidden children"
+    (let [frame   (make-flex-frame :layout-flex-dir :row
+                                   :layout-item-v-sizing :auto)
+          child-1 (make-shape :layout-item-v-sizing :fill)
+          child-2 (make-shape :layout-item-v-sizing :fix
+                              :layout-item-absolute true)
+          child-3 (make-shape :layout-item-v-sizing :fix
+                              :hidden true)
+          objects {(:id frame) frame
+                   (:id child-1) child-1
+                   (:id child-2) child-2
+                   (:id child-3) child-3}]
+      (t/is (layout/change-v-sizing? (:id frame) objects
+                                     [(:id child-1) (:id child-2) (:id child-3)])))))
+
+(t/deftest grid-change-sizing-tests
+  (t/testing "a hug grid stops hugging when any visible child fills an axis"
+    (let [frame   (make-grid-frame :layout-item-h-sizing :auto
+                                   :layout-item-v-sizing :auto)
+          filled  (make-shape :layout-item-h-sizing :fill
+                              :layout-item-v-sizing :fill)
+          fixed   (make-shape :layout-item-h-sizing :fix
+                              :layout-item-v-sizing :fix)
+          objects {(:id frame) frame
+                   (:id filled) filled
+                   (:id fixed) fixed}
+          children [(:id filled) (:id fixed)]]
+      (t/is (layout/change-h-sizing? (:id frame) objects children))
+      (t/is (layout/change-v-sizing? (:id frame) objects children))))
+
+  (t/testing "hidden fill children do not stop a hug grid from hugging"
+    (let [frame  (make-grid-frame :layout-item-h-sizing :auto
+                                  :layout-item-v-sizing :auto)
+          hidden (make-shape :layout-item-h-sizing :fill
+                             :layout-item-v-sizing :fill
+                             :hidden true)
+          objects {(:id frame) frame
+                   (:id hidden) hidden}]
+      (t/is (not (layout/change-h-sizing? (:id frame) objects [(:id hidden)])))
+      (t/is (not (layout/change-v-sizing? (:id frame) objects [(:id hidden)]))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; get-cell-by-position

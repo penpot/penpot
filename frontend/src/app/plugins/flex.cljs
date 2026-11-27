@@ -385,7 +385,7 @@
            (u/not-valid plugin-id :horizontalSizing "Cannot modify a page that is not currently active")
 
            :else
-           (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+           (st/emit! (dwsl/update-layout-child #{id} {:layout-item-h-sizing value})))))}
 
     :verticalSizing
     {:this true
@@ -404,7 +404,7 @@
            (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
 
            :else
-           (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}))
+           (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}))
 
 (defn layout-child-proxy? [p]
   (obj/type-of? p "LayoutChildProxy"))
@@ -433,7 +433,7 @@
          (u/not-valid plugin-id :absolute "Cannot modify a page that is not currently active")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-item-absolute value}))))}
+         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-absolute value}))))}
 
     :zIndex
     {:this true

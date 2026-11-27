@@ -21,6 +21,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gsht]
    [app.common.logging :as l]
+   [app.common.logic.collapsed-layout :as clc]
    [app.common.math :as mth]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
@@ -2500,6 +2501,21 @@
             (concat (map :objects (vals (:pages-index data)))
                     (map :objects (vals (:components data)))))))
 
+;; Layout children saved at the 0.01 px minimum (issue 13353) get back an
+;; exact size: the sizing of their main, the stored layout of a text, or a
+;; hug board whose content got one of those. The layout then sizes them.
+;; Every other shape stays as it is.
+(defmethod migrate-data "0040-repair-collapsed-layout-children"
+  [data _]
+  (let [file {:id (:id data) :data data}
+        libs (some-> (:libs data) deref)]
+    (update data :pages-index
+            d/update-vals
+            (fn [page]
+              (let [{:keys [objects ids]} (clc/repair-page file page libs)]
+                (cond-> page
+                  (seq ids) (assoc :objects objects)))))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -2594,4 +2610,5 @@
          "0036-clear-nil-keys-in-objects"
          "0037-fix-shape-svg-attrs-and-defs"
          "0038-sanitize-variant-property-text"
-         "0039-align-variant-component-names"]))
+         "0039-align-variant-component-names"
+         "0040-repair-collapsed-layout-children"]))

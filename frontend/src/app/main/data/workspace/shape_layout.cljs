@@ -587,50 +587,14 @@
                (ptk/data-event :layout/update {:ids ids})
                (dwu/commit-undo-transaction undo-id))))))
 
-(defn fix-child-sizing
-  [objects parent-changes shape]
-
-  (let [parent (-> (cfh/get-parent objects (:id shape))
-                   (d/deep-merge parent-changes))
-
-        auto-width? (ctl/auto-width? parent)
-        auto-height? (ctl/auto-height? parent)
-        col? (ctl/col? parent)
-        row? (ctl/row? parent)
-
-        all-children (->> parent
-                          :shapes
-                          (map (d/getf objects))
-                          (remove ctl/position-absolute?))]
-
-    (cond-> shape
-      ;; If the parent is hug width and the direction column
-      ;; change to fixed when ALL children are fill
-      (and col? auto-width? (every? ctl/fill-width? all-children))
-      (assoc :layout-item-h-sizing :fix)
-
-      ;; If the parent is hug height and the direction is column
-      ;; change to fixed when ANY children is fill
-      (and col? auto-height? (ctl/fill-height? shape))
-      (assoc :layout-item-v-sizing :fix)
-
-      ;; If the parent is hug width and the direction row
-      ;; change to fixed when ANY children is fill
-      (and row? auto-width? (ctl/fill-width? shape))
-      (assoc :layout-item-h-sizing :fix)
-
-      ;; If the parent is hug height and the direction row
-      ;; change to fixed when ALL children are fill
-      (and row? auto-height? (every? ctl/fill-height? all-children))
-      (assoc :layout-item-v-sizing :fix))))
-
 (defn fix-parent-sizing
   [parent objects ids-set changes]
 
   (let [auto-width? (ctl/auto-width? parent)
         auto-height? (ctl/auto-height? parent)
-        col? (ctl/col? parent)
-        row? (ctl/row? parent)
+        grid? (ctl/grid-layout? parent)
+        col? (and (not grid?) (ctl/col? parent))
+        row? (and (not grid?) (ctl/row? parent))
 
         all-children
         (->> parent :shapes
@@ -638,9 +602,18 @@
              (map (fn [shape]
                     (if (contains? ids-set (:id shape))
                       (d/deep-merge shape changes)
-                      shape))))]
+                      shape)))
+             (remove ctl/position-absolute?))]
 
     (cond-> parent
+      ;; Grid layout and parent is hug if any children is fill on that axis
+      ;; change parent to fixed
+      (and grid? auto-width? (some ctl/fill-width? all-children))
+      (assoc :layout-item-h-sizing :fix)
+
+      (and grid? auto-height? (some ctl/fill-height? all-children))
+      (assoc :layout-item-v-sizing :fix)
+
       ;; Col layout and parent is hug-width if all children are fill-width
       ;; change parent to fixed
       (and col? auto-width? (every? ctl/fill-width? all-children))
@@ -669,7 +642,7 @@
        (let [page-id      (or (get options :page-id)
                               (get state :current-page-id))
              objects      (dsh/lookup-page-objects state page-id)
-             children-ids (->> ids (mapcat #(cfh/get-children-ids objects %)))
+             children-ids (->> ids (mapcat #(get-in objects [% :shapes])))
              parent-ids   (->> ids (map #(cfh/get-parent-id objects %)))
              undo-id      (js/Symbol)
              margin-attrs (-> (get attrs :layout-item-margin)
@@ -680,7 +653,7 @@
                                     (cond-> options
                                       (seq margin-attrs)
                                       (assoc :changed-sub-attr margin-attrs)))
-                (dwsh/update-shapes children-ids (partial fix-child-sizing objects attrs) options)
+                (dwsh/update-shapes children-ids (partial ctl/fix-child-sizing objects attrs) options)
                 (dwsh/update-shapes
                  parent-ids
                  (fn [parent objects]

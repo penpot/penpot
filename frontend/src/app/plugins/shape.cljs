@@ -436,7 +436,7 @@
 
                 :else
                 (let [id (obj/get self "$id")]
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden value))))))}
+                  (st/emit! (dwsh/update-shape-flags [id] {:hidden value})))))}
 
            :visible
            {:this true
@@ -455,7 +455,7 @@
 
                 :else
                 (let [id (obj/get self "$id")]
-                  (st/emit! (dwsh/update-shapes [id] #(assoc % :hidden (not value)))))))}
+                  (st/emit! (dwsh/update-shape-flags [id] {:hidden (not value)})))))}
 
            :proportionLock
            {:this true
@@ -2071,7 +2071,7 @@
                        (u/not-valid plugin-id :horizontalSizing "Cannot modify a page that is not currently active")
 
                        :else
-                       (st/emit! (dwsl/update-layout #{id} {:layout-item-h-sizing value})))))}
+                       (st/emit! (dwsl/update-layout-child #{id} {:layout-item-h-sizing value})))))}
 
                 {:name "verticalSizing"
                  :get #(-> % u/proxy->shape :layout-item-v-sizing (d/nilv :fix) d/name)
@@ -2090,7 +2090,7 @@
                        (u/not-valid plugin-id :verticalSizing "Cannot modify a page that is not currently active")
 
                        :else
-                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
+                       (st/emit! (dwsl/update-layout-child #{id} {:layout-item-v-sizing value})))))}
 
                 {:name "variants"
                  :enumerable false
