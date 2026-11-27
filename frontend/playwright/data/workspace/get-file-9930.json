@@ -1062,8 +1062,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -14067,8 +14067,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -31424,8 +31424,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -42249,7 +42249,7 @@
               "~:name": "svg-path",
               "~:width": null,
               "~:type": "~:path",
-              "~:svg-attrs": { "~:strokeLinejoin": "round" },
+              "~:svg-attrs": { "~:stroke-linejoin": "round" },
               "~:points": [
                 {
                   "~#point": {
@@ -44945,7 +44945,7 @@
               "~:name": "svg-path",
               "~:width": null,
               "~:type": "~:path",
-              "~:svg-attrs": { "~:fill": "none", "~:strokeLinejoin": "round" },
+              "~:svg-attrs": { "~:fill": "none", "~:stroke-linejoin": "round" },
               "~:points": [
                 {
                   "~#point": {
@@ -49598,8 +49598,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -94917,38 +94917,38 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:style": {
-                  "~:strokeOpacity": "1",
+                  "~:stroke-opacity": "1",
                   "~:stroke": "none",
-                  "~:wordSpacing": "normal",
+                  "~:word-spacing": "normal",
                   "~:isolation": "auto",
-                  "~:webkitPrintColorAdjust": "exact",
-                  "~:baselineShift": "baseline",
+                  "~:webkit-print-color-adjust": "exact",
+                  "~:baseline-shift": "baseline",
                   "~:color": "rgb(0, 0, 0)",
-                  "~:fillRule": "nonzero",
-                  "~:textTransform": "none",
+                  "~:fill-rule": "nonzero",
+                  "~:text-transform": "none",
                   "~:overflow": "visible",
-                  "~:imageRendering": "auto",
-                  "~:strokeDashoffset": "0",
-                  "~:textAnchor": "start",
+                  "~:image-rendering": "auto",
+                  "~:stroke-dashoffset": "0",
+                  "~:text-anchor": "start",
                   "~:font": "medium sans-serif",
-                  "~:textIndent": "0px",
-                  "~:writingMode": "lr-tb",
-                  "~:letterSpacing": "normal",
-                  "~:colorRendering": "auto",
-                  "~:strokeLinejoin": "miter",
-                  "~:strokeDasharray": "none",
-                  "~:whiteSpace": "normal",
-                  "~:strokeMiterlimit": "4",
-                  "~:textAlign": "start",
+                  "~:text-indent": "0px",
+                  "~:writing-mode": "lr-tb",
+                  "~:letter-spacing": "normal",
+                  "~:color-rendering": "auto",
+                  "~:stroke-linejoin": "miter",
+                  "~:stroke-dasharray": "none",
+                  "~:white-space": "normal",
+                  "~:stroke-miterlimit": "4",
+                  "~:text-align": "start",
                   "~:display": "inline",
-                  "~:shapeRendering": "auto",
-                  "~:textRendering": "auto",
-                  "~:textDecoration": "none solid",
+                  "~:shape-rendering": "auto",
+                  "~:text-rendering": "auto",
+                  "~:text-decoration": "none solid",
                   "~:visibility": "visible",
                   "~:direction": "ltr",
-                  "~:colorInterpolation": "srgb",
-                  "~:clipRule": "nonzero",
-                  "~:colorInterpolationFilters": "linearrgb"
+                  "~:color-interpolation": "srgb",
+                  "~:clip-rule": "nonzero",
+                  "~:color-interpolation-filters": "linearrgb"
                 }
               },
               "~:points": [
@@ -97359,7 +97359,7 @@
               "~:name": "svg-path",
               "~:width": null,
               "~:type": "~:path",
-              "~:svg-attrs": { "~:strokeLinejoin": "round" },
+              "~:svg-attrs": { "~:stroke-linejoin": "round" },
               "~:points": [
                 {
                   "~#point": {
@@ -108256,38 +108256,38 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:style": {
-                  "~:strokeOpacity": "1",
+                  "~:stroke-opacity": "1",
                   "~:stroke": "none",
-                  "~:wordSpacing": "normal",
+                  "~:word-spacing": "normal",
                   "~:isolation": "auto",
-                  "~:webkitPrintColorAdjust": "exact",
-                  "~:baselineShift": "baseline",
+                  "~:webkit-print-color-adjust": "exact",
+                  "~:baseline-shift": "baseline",
                   "~:color": "rgb(0, 0, 0)",
-                  "~:fillRule": "nonzero",
-                  "~:textTransform": "none",
+                  "~:fill-rule": "nonzero",
+                  "~:text-transform": "none",
                   "~:overflow": "visible",
-                  "~:imageRendering": "auto",
-                  "~:strokeDashoffset": "0",
-                  "~:textAnchor": "start",
+                  "~:image-rendering": "auto",
+                  "~:stroke-dashoffset": "0",
+                  "~:text-anchor": "start",
                   "~:font": "medium sans-serif",
-                  "~:textIndent": "0px",
-                  "~:writingMode": "lr-tb",
-                  "~:letterSpacing": "normal",
-                  "~:colorRendering": "auto",
-                  "~:strokeLinejoin": "miter",
-                  "~:strokeDasharray": "none",
-                  "~:whiteSpace": "normal",
-                  "~:strokeMiterlimit": "4",
-                  "~:textAlign": "start",
+                  "~:text-indent": "0px",
+                  "~:writing-mode": "lr-tb",
+                  "~:letter-spacing": "normal",
+                  "~:color-rendering": "auto",
+                  "~:stroke-linejoin": "miter",
+                  "~:stroke-dasharray": "none",
+                  "~:white-space": "normal",
+                  "~:stroke-miterlimit": "4",
+                  "~:text-align": "start",
                   "~:display": "inline",
-                  "~:shapeRendering": "auto",
-                  "~:textRendering": "auto",
-                  "~:textDecoration": "none solid",
+                  "~:shape-rendering": "auto",
+                  "~:text-rendering": "auto",
+                  "~:text-decoration": "none solid",
                   "~:visibility": "visible",
                   "~:direction": "ltr",
-                  "~:colorInterpolation": "srgb",
-                  "~:clipRule": "nonzero",
-                  "~:colorInterpolationFilters": "linearrgb"
+                  "~:color-interpolation": "srgb",
+                  "~:clip-rule": "nonzero",
+                  "~:color-interpolation-filters": "linearrgb"
                 }
               },
               "~:points": [
@@ -130835,38 +130835,38 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:style": {
-                  "~:strokeOpacity": "1",
+                  "~:stroke-opacity": "1",
                   "~:stroke": "none",
-                  "~:wordSpacing": "normal",
+                  "~:word-spacing": "normal",
                   "~:isolation": "auto",
-                  "~:webkitPrintColorAdjust": "exact",
-                  "~:baselineShift": "baseline",
+                  "~:webkit-print-color-adjust": "exact",
+                  "~:baseline-shift": "baseline",
                   "~:color": "rgb(0, 0, 0)",
-                  "~:fillRule": "nonzero",
-                  "~:textTransform": "none",
+                  "~:fill-rule": "nonzero",
+                  "~:text-transform": "none",
                   "~:overflow": "visible",
-                  "~:imageRendering": "auto",
-                  "~:strokeDashoffset": "0",
-                  "~:textAnchor": "start",
+                  "~:image-rendering": "auto",
+                  "~:stroke-dashoffset": "0",
+                  "~:text-anchor": "start",
                   "~:font": "medium sans-serif",
-                  "~:textIndent": "0px",
-                  "~:writingMode": "lr-tb",
-                  "~:letterSpacing": "normal",
-                  "~:colorRendering": "auto",
-                  "~:strokeLinejoin": "miter",
-                  "~:strokeDasharray": "none",
-                  "~:whiteSpace": "normal",
-                  "~:strokeMiterlimit": "4",
-                  "~:textAlign": "start",
+                  "~:text-indent": "0px",
+                  "~:writing-mode": "lr-tb",
+                  "~:letter-spacing": "normal",
+                  "~:color-rendering": "auto",
+                  "~:stroke-linejoin": "miter",
+                  "~:stroke-dasharray": "none",
+                  "~:white-space": "normal",
+                  "~:stroke-miterlimit": "4",
+                  "~:text-align": "start",
                   "~:display": "inline",
-                  "~:shapeRendering": "auto",
-                  "~:textRendering": "auto",
-                  "~:textDecoration": "none solid",
+                  "~:shape-rendering": "auto",
+                  "~:text-rendering": "auto",
+                  "~:text-decoration": "none solid",
                   "~:visibility": "visible",
                   "~:direction": "ltr",
-                  "~:colorInterpolation": "srgb",
-                  "~:clipRule": "nonzero",
-                  "~:colorInterpolationFilters": "linearrgb"
+                  "~:color-interpolation": "srgb",
+                  "~:clip-rule": "nonzero",
+                  "~:color-interpolation-filters": "linearrgb"
                 }
               },
               "~:points": [
@@ -140961,38 +140961,38 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:style": {
-                  "~:strokeOpacity": "1",
+                  "~:stroke-opacity": "1",
                   "~:stroke": "none",
-                  "~:wordSpacing": "normal",
+                  "~:word-spacing": "normal",
                   "~:isolation": "auto",
-                  "~:webkitPrintColorAdjust": "exact",
-                  "~:baselineShift": "baseline",
+                  "~:webkit-print-color-adjust": "exact",
+                  "~:baseline-shift": "baseline",
                   "~:color": "rgb(0, 0, 0)",
-                  "~:fillRule": "nonzero",
-                  "~:textTransform": "none",
+                  "~:fill-rule": "nonzero",
+                  "~:text-transform": "none",
                   "~:overflow": "visible",
-                  "~:imageRendering": "auto",
-                  "~:strokeDashoffset": "0",
-                  "~:textAnchor": "start",
+                  "~:image-rendering": "auto",
+                  "~:stroke-dashoffset": "0",
+                  "~:text-anchor": "start",
                   "~:font": "medium sans-serif",
-                  "~:textIndent": "0px",
-                  "~:writingMode": "lr-tb",
-                  "~:letterSpacing": "normal",
-                  "~:colorRendering": "auto",
-                  "~:strokeLinejoin": "miter",
-                  "~:strokeDasharray": "none",
-                  "~:whiteSpace": "normal",
-                  "~:strokeMiterlimit": "4",
-                  "~:textAlign": "start",
+                  "~:text-indent": "0px",
+                  "~:writing-mode": "lr-tb",
+                  "~:letter-spacing": "normal",
+                  "~:color-rendering": "auto",
+                  "~:stroke-linejoin": "miter",
+                  "~:stroke-dasharray": "none",
+                  "~:white-space": "normal",
+                  "~:stroke-miterlimit": "4",
+                  "~:text-align": "start",
                   "~:display": "inline",
-                  "~:shapeRendering": "auto",
-                  "~:textRendering": "auto",
-                  "~:textDecoration": "none solid",
+                  "~:shape-rendering": "auto",
+                  "~:text-rendering": "auto",
+                  "~:text-decoration": "none solid",
                   "~:visibility": "visible",
                   "~:direction": "ltr",
-                  "~:colorInterpolation": "srgb",
-                  "~:clipRule": "nonzero",
-                  "~:colorInterpolationFilters": "linearrgb"
+                  "~:color-interpolation": "srgb",
+                  "~:clip-rule": "nonzero",
+                  "~:color-interpolation-filters": "linearrgb"
                 }
               },
               "~:points": [
@@ -157037,7 +157037,7 @@
               "~:name": "svg-path",
               "~:width": null,
               "~:type": "~:path",
-              "~:svg-attrs": { "~:strokeLinejoin": "round" },
+              "~:svg-attrs": { "~:stroke-linejoin": "round" },
               "~:points": [
                 {
                   "~#point": {
@@ -203956,7 +203956,7 @@
               "~:name": "svg-path",
               "~:width": null,
               "~:type": "~:path",
-              "~:svg-attrs": { "~:strokeLinejoin": "round" },
+              "~:svg-attrs": { "~:stroke-linejoin": "round" },
               "~:points": [
                 {
                   "~#point": {
