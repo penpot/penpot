@@ -30,6 +30,7 @@ function compiledModule(name: string, context: Context) {
 function pluginWithPendingTask(outcome: "success" | "failure") {
     const responses: any[] = [];
     const errors: unknown[][] = [];
+    const pendingRollbacks = [{ id: "rollback-1" }];
     let release!: () => void;
     const released = new Promise<void>((resolve) => {
         release = resolve;
@@ -88,9 +89,11 @@ function pluginWithPendingTask(outcome: "success" | "failure") {
                 RollbackLog: class {
                     listen() {}
                     pending() {
-                        return [];
+                        return [...pendingRollbacks];
                     }
-                    acknowledge() {}
+                    acknowledge(count: number) {
+                        pendingRollbacks.splice(0, count);
+                    }
                 },
             };
         }
@@ -101,7 +104,7 @@ function pluginWithPendingTask(outcome: "success" | "failure") {
     return {
         responses,
         errors,
-        start: () => onMessage({ id: "task-1", task: "executeCode", params: { code: "" } }),
+        start: (id = "task-1") => onMessage({ id, task: "executeCode", params: { code: "" } }),
         close: () => {
             for (const name of ["console", "penpot", "penpotMgmt", "mcp"]) {
                 context[name] = undefined;
@@ -150,3 +153,47 @@ test("a task failing while the plugin is open sends an error response", async ()
     assert.equal(plugin.responses[0].success, false);
     assert.match(plugin.responses[0].error, /code failed/);
 });
+
+/** Lets the follow-up work of the tasks run. */
+function settle() {
+    return new Promise((resolve) => setTimeout(resolve, 20));
+}
+
+test("a task received while another task runs is denied without running", async () => {
+    const plugin = pluginWithPendingTask("success");
+    plugin.start("task-1");
+    plugin.start("task-2");
+    assert.equal(plugin.responses.length, 1);
+    assert.equal(plugin.responses[0].id, "task-2");
+    assert.equal(plugin.responses[0].success, false);
+    assert.match(plugin.responses[0].error, /did not run/);
+    assert.match(plugin.responses[0].error, /separate Penpot tab for each agent/);
+    // the rollbacks stay with the running task
+    assert.equal(plugin.responses[0].rollbacks, undefined);
+
+    plugin.release();
+    await settle();
+    assert.equal(plugin.responses.length, 2);
+    assert.equal(plugin.responses[1].id, "task-1");
+    assert.equal(plugin.responses[1].success, true);
+    assert.deepEqual(plugin.responses[1].rollbacks, [{ id: "rollback-1" }]);
+});
+
+for (const outcome of ["success", "failure"] as const) {
+    test(`a task ending in ${outcome} frees the tab for the next task`, async () => {
+        const plugin = pluginWithPendingTask(outcome);
+        plugin.start("task-1");
+        plugin.release();
+        await settle();
+        plugin.start("task-2");
+        await settle();
+        assert.deepEqual(
+            plugin.responses.map((response) => [response.id, response.success]),
+            [
+                ["task-1", outcome === "success"],
+                ["task-2", outcome === "success"],
+            ]
+        );
+        assert.doesNotMatch(plugin.responses[1].error ?? "", /did not run/);
+    });
+}
