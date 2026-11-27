@@ -236,3 +236,39 @@ test("BUG 13755 - Fix problem with text change modiifers", async ({ page }) => {
   // WASM auto-width includes the HTML paragraph-set 1px right margin.
   await expect(widthInput).toHaveValue("24");
 });
+
+test("BUG 13231 - Fix selection jumps to another shape after a move drag", async ({
+  page,
+}) => {
+  const workspacePage = new WasmWorkspacePage(page);
+  await workspacePage.setupEmptyFile();
+  await workspacePage.mockGetFile("workspace/get-file-13231.json");
+
+  await workspacePage.goToWorkspace({
+    fileId: "828adbc1-6e7e-80e7-8008-f95064858ff7",
+    pageId: "828adbc1-6e7e-80e7-8008-f95064858ff8",
+  });
+
+  await workspacePage.clickToggableLayer("Board");
+
+  const selrect = page.locator("rect.viewport-selrect");
+
+  await workspacePage.layers.getByText("C", { exact: true }).click();
+  await workspacePage.expectSelectedLayer("C");
+  const c = await selrect.boundingBox();
+
+  await workspacePage.layers.getByText("A", { exact: true }).click();
+  await workspacePage.expectSelectedLayer("A");
+  const a = await selrect.boundingBox();
+
+  // deselect so the drag starts on an unselected shape
+  await page.keyboard.press("Escape");
+
+  // drag A past B and release where C was before the drag
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2, { steps: 20 });
+  await page.mouse.up();
+
+  await workspacePage.expectSelectedLayer("A");
+});
