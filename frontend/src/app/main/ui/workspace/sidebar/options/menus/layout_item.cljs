@@ -417,6 +417,12 @@
                        :icon i/margin
                        :on-click on-type-change'}]]))
 
+(defn sizing-option
+  "Returns the sizing button to show as selected for the `sizing` value
+  of a shape. A shape without sizing behaves as fixed size."
+  [sizing]
+  (d/name (d/nilv sizing :fix)))
+
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
    ::mf/private true}
@@ -427,7 +433,7 @@
                  :two-element (or has-fill is-auto)
                  :three-element (and has-fill is-auto))}
    [:& radio-buttons
-    {:selected  (d/name value)
+    {:selected  (sizing-option value)
      :decode-fn keyword
      :on-change on-change
      :name      "flex-behaviour-h"}
@@ -461,7 +467,7 @@
                  :two-element (or has-fill is-auto)
                  :three-element (and has-fill is-auto))}
    [:& radio-buttons
-    {:selected  (d/name value)
+    {:selected  (sizing-option value)
      :decode-fn keyword
      :on-change on-change
      :name      "flex-behaviour-v"}
