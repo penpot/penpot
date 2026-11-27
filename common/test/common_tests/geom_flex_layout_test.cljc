@@ -135,3 +135,112 @@
                                     :y -2.1457672119140625E-6
                                     :width 100 :height 100}))]
     (t/is (every? #(not (neg? %)) (vals padding)))))
+
+;; ---- calculate-params direction ----
+;;
+;; Adding a flex layout derives the direction from how the shapes are
+;; placed. It used to come from the vector between the centres alone, so
+;; a wide box over a narrow one, with the same left edge, read as a row
+;; with no gap (#13041).
+
+(defn- stack-params
+  "The direction and gaps `calculate-params` picks for rectangles given
+  as [x y width height], bottom layer first (the order of the parent)."
+  [rects]
+  (let [parent  (cts/setup-shape {:type :frame :x 0 :y 0 :width 1000 :height 1000})
+        shapes  (mapv (fn [[x y width height]]
+                        (cts/setup-shape {:type :rect :parent-id (:id parent) :frame-id (:id parent)
+                                          :x x :y y :width width :height height}))
+                      rects)
+        parent  (assoc parent :shapes (mapv :id shapes))
+        objects (into {(:id parent) parent} (map (juxt :id identity)) shapes)
+        params  (flparams/calculate-params objects shapes parent)]
+    {:direction  (:layout-flex-dir params)
+     :row-gap    (get-in params [:layout-gap :row-gap])
+     :column-gap (get-in params [:layout-gap :column-gap])}))
+
+(defn- column [direction gap] {:direction direction :row-gap gap :column-gap 0})
+(defn- row [direction gap] {:direction direction :row-gap 0 :column-gap gap})
+
+(t/deftest calculate-params-wide-box-over-narrow-box-is-a-column
+  ;; The case of the report: 10 px between a 300 and a 50 wide box
+  (t/is (= (column :column-reverse 10)
+           (stack-params [[0 0 300 40] [0 50 50 40]])))
+  (t/is (= (column :column 10)
+           (stack-params [[0 50 50 40] [0 0 300 40]]))))
+
+(t/deftest calculate-params-equal-boxes-stacked-keep-their-gap
+  (t/is (= (column :column-reverse 20)
+           (stack-params [[0 0 100 40] [0 60 100 40]])))
+  (t/is (= (column :column 20)
+           (stack-params [[0 60 100 40] [0 0 100 40]]))))
+
+(t/deftest calculate-params-direction-does-not-depend-on-the-widest-box-layer
+  ;; Three left aligned boxes, 10 px apart, whichever one is created last
+  (t/is (= (column :column-reverse 10)
+           (stack-params [[0 0 300 20] [0 30 120 20] [0 60 200 20]])))
+  (t/is (= (column :column 10)
+           (stack-params [[0 60 200 20] [0 30 120 20] [0 0 300 20]]))))
+
+(t/deftest calculate-params-tall-box-beside-short-box-is-a-row
+  (t/is (= (row :row-reverse 10)
+           (stack-params [[0 0 40 300] [50 0 40 50]])))
+  (t/is (= (row :row 10)
+           (stack-params [[50 0 40 50] [0 0 40 300]]))))
+
+(t/deftest calculate-params-staggered-chain-is-a-column
+  (t/is (= (column :column-reverse 20)
+           (stack-params [[0 0 100 40] [30 60 100 40] [60 120 100 40]]))))
+
+(t/deftest calculate-params-touching-boxes-have-no-gap
+  (t/is (= (column :column-reverse 0)
+           (stack-params [[0 0 100 40] [0 40 100 40]]))))
+
+(t/deftest calculate-params-without-a-clear-axis-follows-the-centres
+  ;; A grid is laid out along both axes, a diagonal pair and boxes that
+  ;; cover each other along neither: the vector between the centres
+  ;; decides, as it did before
+  (t/testing "grid"
+    (t/is (= {:direction :row-reverse :row-gap 0 :column-gap 0}
+             (stack-params [[0 0 100 40] [120 0 100 40] [0 60 100 40] [120 60 100 40]]))))
+  (t/testing "diagonal"
+    (t/is (= (row :row-reverse 50)
+             (stack-params [[0 0 100 40] [150 100 100 40]])))
+    (t/is (= (row :row 50)
+             (stack-params [[150 100 100 40] [0 0 100 40]]))))
+  (t/testing "partial overlap"
+    (t/is (= {:direction :column-reverse :row-gap 0 :column-gap 0}
+             (stack-params [[0 0 100 100] [50 50 100 100]])))))
+
+(t/deftest calculate-params-aligned-pair-does-not-decide-for-a-distant-shape
+  ;; Two boxes stacked in a column and a third one far to the right: the
+  ;; column holds for one pair only, so the centres decide for all three
+  (t/is (= (row :row-reverse 490)
+           (stack-params [[0 0 10 10] [0 20 10 10] [1000 100 10 10]])))
+  (t/is (= (row :row 490)
+           (stack-params [[1000 100 10 10] [0 20 10 10] [0 0 10 10]]))))
+
+(t/deftest calculate-params-early-disagreement-follows-the-centres
+  ;; Two boxes side by side over a column of boxes: neither axis holds
+  (t/is (= (column :column-reverse 10)
+           (stack-params (into [[0 0 100 40] [120 0 100 40]]
+                               (map (fn [i] [0 (* 60 (inc i)) 100 40]))
+                               (range 5))))))
+
+(def ^:private large-count
+  "Enough boxes that checking every pair of them would be slow."
+  5000)
+
+(t/deftest calculate-params-large-column
+  (t/is (= (column :column-reverse 10)
+           (stack-params (mapv (fn [i] [0 (* 20 i) 100 10]) (range large-count))))))
+
+(t/deftest calculate-params-boxes-overlapping-on-both-axes-follow-the-centres
+  ;; They cover each other across, so they are not a column even though
+  ;; they also do down
+  (t/is (= {:direction :row-reverse :row-gap 0 :column-gap 0}
+           (stack-params [[0 0 100 100] [60 10 100 100]]))))
+
+(t/deftest calculate-params-single-shape-is-a-row
+  (t/is (= {:direction :row :row-gap 0 :column-gap 0}
+           (stack-params [[0 0 100 100]]))))
