@@ -239,7 +239,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:className": "fills"},
+                            "~:svg-attrs": {"~:class-name": "fills"},
                             "~:points": [
                                 {"~#point": {"~:x": 1112.4849232616168, "~:y": -237.00000381469727}},
                                 {"~#point": {"~:x": 1131.7299204883832, "~:y": -237.00000381469727}},
@@ -272,7 +272,7 @@
                             "~:name": "svg-g",
                             "~:width": 19.244997226766372,
                             "~:type": "~:group",
-                            "~:svg-attrs": {"~:className": "strokes"},
+                            "~:svg-attrs": {"~:class-name": "strokes"},
                             "~:points": [
                                 {"~#point": {"~:x": 1112.4849232616168, "~:y": -237.00000381469727}},
                                 {"~#point": {"~:x": 1131.7299204883832, "~:y": -237.00000381469727}},
@@ -308,7 +308,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:strokeLinecap": "round", "~:strokeMiterlimit": "10", "~:className": "stroke-shape"},
+                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:stroke-linecap": "round", "~:stroke-miterlimit": "10", "~:class-name": "stroke-shape"},
                             "~:points": [
                                 {"~#point": {"~:x": 1112.4849232616168, "~:y": -237.00000381469727}},
                                 {"~#point": {"~:x": 1131.7299204883832, "~:y": -237.00000381469727}},
@@ -344,7 +344,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:className": "fills"},
+                            "~:svg-attrs": {"~:class-name": "fills"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1165.2148778962223, "~:y": -217.33076201036303}},
@@ -377,7 +377,7 @@
                             "~:name": "svg-g",
                             "~:width": 43.10745602122233,
                             "~:type": "~:group",
-                            "~:svg-attrs": {"~:className": "strokes"},
+                            "~:svg-attrs": {"~:class-name": "strokes"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1165.2148778962223, "~:y": -217.33076201036303}},
@@ -413,7 +413,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:strokeLinecap": "round", "~:strokeMiterlimit": "10", "~:className": "stroke-shape"},
+                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:stroke-linecap": "round", "~:stroke-miterlimit": "10", "~:class-name": "stroke-shape"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1165.2148778962223, "~:y": -217.33076201036303}},
@@ -449,7 +449,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:className": "fills"},
+                            "~:svg-attrs": {"~:class-name": "fills"},
                             "~:points": [
                                 {"~#point": {"~:x": 1078.9999658537777, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
@@ -482,7 +482,7 @@
                             "~:name": "svg-g",
                             "~:width": 43.10745602122233,
                             "~:type": "~:group",
-                            "~:svg-attrs": {"~:className": "strokes"},
+                            "~:svg-attrs": {"~:class-name": "strokes"},
                             "~:points": [
                                 {"~#point": {"~:x": 1078.9999658537777, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
@@ -518,7 +518,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:strokeLinecap": "round", "~:strokeMiterlimit": "10", "~:className": "stroke-shape"},
+                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:stroke-linecap": "round", "~:stroke-miterlimit": "10", "~:class-name": "stroke-shape"},
                             "~:points": [
                                 {"~#point": {"~:x": 1078.9999658537777, "~:y": -217.33076201036303}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -217.33076201036303}},
@@ -554,7 +554,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:className": "fills"},
+                            "~:svg-attrs": {"~:class-name": "fills"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1149.9259006903171, "~:y": -231.66937927262296}},
@@ -587,7 +587,7 @@
                             "~:name": "svg-g",
                             "~:width": 27.81847881531712,
                             "~:type": "~:group",
-                            "~:svg-attrs": {"~:className": "strokes"},
+                            "~:svg-attrs": {"~:class-name": "strokes"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1149.9259006903171, "~:y": -231.66937927262296}},
@@ -623,7 +623,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:strokeLinecap": "round", "~:strokeMiterlimit": "10", "~:className": "stroke-shape"},
+                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:stroke-linecap": "round", "~:stroke-miterlimit": "10", "~:class-name": "stroke-shape"},
                             "~:points": [
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1149.9259006903171, "~:y": -231.66937927262296}},
@@ -659,7 +659,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:className": "fills"},
+                            "~:svg-attrs": {"~:class-name": "fills"},
                             "~:points": [
                                 {"~#point": {"~:x": 1094.2889430596829, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},
@@ -692,7 +692,7 @@
                             "~:name": "svg-g",
                             "~:width": 27.81847881531712,
                             "~:type": "~:group",
-                            "~:svg-attrs": {"~:className": "strokes"},
+                            "~:svg-attrs": {"~:class-name": "strokes"},
                             "~:points": [
                                 {"~#point": {"~:x": 1094.2889430596829, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},
@@ -728,7 +728,7 @@
                             "~:name": "svg-path",
                             "~:width": null,
                             "~:type": "~:path",
-                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:strokeLinecap": "round", "~:strokeMiterlimit": "10", "~:className": "stroke-shape"},
+                            "~:svg-attrs": {"~:fill": "none", "~:style": {"~:fill": "none"}, "~:stroke-linecap": "round", "~:stroke-miterlimit": "10", "~:class-name": "stroke-shape"},
                             "~:points": [
                                 {"~#point": {"~:x": 1094.2889430596829, "~:y": -231.66937927262296}},
                                 {"~#point": {"~:x": 1122.107421875, "~:y": -231.66937927262296}},

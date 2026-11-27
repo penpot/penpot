@@ -467,7 +467,7 @@
               "~:width": null,
               "~:type": "~:path",
               "~:svg-attrs": {
-                "~:fillRule": "evenodd"
+                "~:fill-rule": "evenodd"
               },
               "~:points": [
                 {
@@ -1172,8 +1172,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -1380,8 +1380,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -1599,8 +1599,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
@@ -1832,8 +1832,8 @@
               "~:type": "~:path",
               "~:svg-attrs": {
                 "~:fill": "none",
-                "~:strokeLinecap": "round",
-                "~:strokeLinejoin": "round"
+                "~:stroke-linecap": "round",
+                "~:stroke-linejoin": "round"
               },
               "~:points": [
                 {
