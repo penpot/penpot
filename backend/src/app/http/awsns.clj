@@ -11,62 +11,280 @@
    [app.common.logging :as l]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http.client :as http]
    [app.main :as-alias main]
+   [app.redis :as rds]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
+   [app.util.cache :as cache]
    [clojure.data.json :as j]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [yetti.request :as yreq]
-   [yetti.response :as-alias yres]))
+   [yetti.response :as-alias yres])
+  (:import
+   java.net.URI
+   java.nio.charset.StandardCharsets
+   java.security.cert.Certificate
+   java.security.cert.CertificateFactory
+   java.security.Signature
+   java.util.Base64))
 
 (declare parse-json)
 (declare handle-request)
 (declare parse-notification)
 (declare process-report)
 
+(defn- valid-sns-url?
+  "Validates that a URL originates from an SNS endpoint.
+   Only accepts sns.<region>.amazonaws.com hosts.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [url]
+  (when (string? url)
+    (try
+      (let [uri  (URI. url)
+            host (.getHost uri)]
+        (and (= "https" (.getScheme uri))
+             (boolean
+              (re-matches
+               #"(?i)sns\.[a-z0-9-]+\.amazonaws\.com"
+               host))))
+      (catch Exception _
+        false))))
+
+;; AWS SNS Signature Verification Field Sets
+;; See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message-verify-message-signature.html
+;;
+;; V1 and V2 use the SAME field sets (only the hash algorithm differs: SHA1 vs SHA256)
+;; The "Signature" field is NEVER part of the string-to-sign (it's the output, not input)
+;; "SigningCertURL" and "SignatureVersion" are metadata, not signed
+
+;; Notification: Message, MessageId, Subject (if present), Timestamp, TopicArn, Type
+(def ^:private notification-fields
+  ["Message" "MessageId" "Subject" "Timestamp" "TopicArn" "Type"])
+
+;; SubscriptionConfirmation: Message, MessageId, SubscribeURL, Timestamp, Token, TopicArn, Type
+(def ^:private subscription-fields
+  ["Message" "MessageId" "SubscribeURL" "Timestamp" "Token" "TopicArn" "Type"])
+
+(defn- build-string-to-sign
+  "Builds the string-to-sign for AWS SNS signature verification.
+   V1 and V2 use the same field sets (only hash algorithm differs: SHA1 vs SHA256).
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message-verify-message-signature.html"
+  [body]
+  (let [msg-type (get body "Type")
+        fields   (if (= "SubscriptionConfirmation" msg-type)
+                   subscription-fields
+                   notification-fields)]
+    (->> fields
+         (filter #(contains? body %))
+         (map #(str % "\n" (get body %) "\n"))
+         (apply str))))
+
+(defn- fetch-certificate
+  "Fetches and parses the X.509 signing certificate from the given URL.
+   Raises on network errors or non-200 responses.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [cfg cert-url]
+  (let [response (http/req cfg {:uri cert-url :method :get :timeout 10000}
+                           {:sync? true :response-type :input-stream})]
+    (with-open [^java.io.InputStream body (:body response)]
+      (when-not (= 200 (:status response))
+        (ex/raise :type (if (<= 400 (:status response) 499) :validation :internal)
+                  :code :cert-fetch-failed
+                  :hint "failed to fetch SNS signing certificate"
+                  :status (:status response)
+                  :cert-url cert-url))
+      (let [cf (CertificateFactory/getInstance "X.509")]
+        (.generateCertificate cf body)))))
+
+(defn- create-cert-cache
+  "Creates the cache of parsed signing certificates, keyed by URL."
+  []
+  (cache/create :max-size 64 :expire (ct/duration {:hours 24})))
+
+(defn- get-certificate
+  [{:keys [::cert-cache] :as cfg} cert-url]
+  (cache/get cert-cache cert-url (partial fetch-certificate cfg)))
+
+(defn- verify-signature
+  "Verifies the RSA signature of the message. Returns false when the
+   signature does not match or is malformed. Raises when the signing
+   certificate cannot be obtained.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [cfg body]
+  (let [cert-url    (get body "SigningCertURL")
+        signature   (get body "Signature")
+        sig-version (get body "SignatureVersion")
+        algorithm   (case sig-version
+                      "1" "SHA1withRSA"
+                      "2" "SHA256withRSA"
+                      nil)]
+    (when-not algorithm
+      (ex/raise :type :validation
+                :code :unsupported-signature-version
+                :version sig-version))
+    (if (string? signature)
+      (let [^Certificate cert (get-certificate cfg cert-url)]
+        (try
+          (let [sig (Signature/getInstance ^String algorithm)]
+            (.initVerify sig (.getPublicKey cert))
+            (.update sig (.getBytes ^String (build-string-to-sign body) StandardCharsets/UTF_8))
+            (.verify sig (.decode (Base64/getDecoder) ^String signature)))
+          (catch Exception e
+            (l/wrn :hint "SNS signature verification exception"
+                   :action "sns-signature-verification-exception"
+                   :cause e)
+            false)))
+      false)))
+
+(defn- verify-sns-message!
+  "Verifies that the message comes from an allowed topic, that its
+   URLs point to SNS and that its signature is valid. Raises a
+   :validation or :authentication error otherwise.
+   See: https://docs.aws.amazon.com/sns/latest/dg/sns-verify-signature-of-message.html"
+  [cfg body]
+  (let [cert-url      (get body "SigningCertURL")
+        subscribe-url (get body "SubscribeURL")
+        topic-arn     (get body "TopicArn")
+        mtype         (get body "Type")]
+
+    (when-not (contains? (cf/get :aws-sns-topic-arns) topic-arn)
+      (l/wrn :hint "SNS topic not allowed (check PENPOT_AWS_SNS_TOPIC_ARNS)"
+             :action "sns-topic-not-allowed"
+             :message-type mtype
+             :topic-arn topic-arn)
+      (ex/raise :type :validation
+                :code :topic-not-allowed
+                :hint "SNS topic not allowed"))
+
+    (when-not (valid-sns-url? cert-url)
+      (l/wrn :hint "SNS certificate URL not from amazonaws.com"
+             :action "sns-invalid-cert-url"
+             :message-type mtype
+             :signing-cert-url cert-url)
+      (ex/raise :type :validation
+                :code :invalid-signing-cert-url
+                :hint "SigningCertURL must be from amazonaws.com"))
+
+    (when (and (= mtype "SubscriptionConfirmation")
+               (not (valid-sns-url? subscribe-url)))
+      (l/wrn :hint "SNS subscribe URL not from amazonaws.com"
+             :action "sns-invalid-subscribe-url"
+             :message-type mtype
+             :subscribe-url subscribe-url)
+      (ex/raise :type :validation
+                :code :invalid-subscribe-url
+                :hint "SubscribeURL must be from amazonaws.com"))
+
+    (when-not (verify-signature cfg body)
+      (l/wrn :hint "SNS signature verification failed"
+             :action "sns-signature-verification-failed"
+             :message-type mtype
+             :topic-arn topic-arn
+             :signing-cert-url cert-url)
+      (ex/raise :type :authentication
+                :code :invalid-signature
+                :hint "SNS signature verification failed"))))
+
 (defmethod ig/assert-key ::routes
   [_ params]
   (assert (http/client? (::http/client params)) "expect a valid http client")
   (assert (sm/valid? ::setup/props (::setup/props params)) "expected valid setup props")
+  (assert (sm/valid? ::rds/pool (::rds/pool params)) "expect valid redis pool")
   (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  (letfn [(handler [request]
-            (let [data (-> request yreq/body slurp)]
-              (handle-request cfg data)
-              {::yres/status 200}))]
-    ["/sns" {:handler handler
-             :allowed-methods #{:post}}]))
+  (when (empty? (cf/get :aws-sns-topic-arns))
+    (l/wrn :hint "no SNS topics configured; all SNS messages will be rejected"))
+  (let [cfg (assoc cfg ::cert-cache (create-cert-cache))]
+    (letfn [(handler [request]
+              (let [data   (-> request yreq/body slurp)
+                    result (handle-request cfg data)]
+                {::yres/status (or (:status result) 200)}))]
+      ["/sns" {:handler handler
+               :allowed-methods #{:post}}])))
+
+(defn- get-marker-key
+  [topic id]
+  (str "sns:completed:" (count topic) ":" topic ":" id))
+
+(defn- completed?
+  [cfg key]
+  (try
+    (= "1" (rds/run! cfg #(rds/get (::rds/conn %) key)))
+    (catch Exception cause
+      (l/wrn :hint "unable to read SNS completion marker" :cause cause)
+      false)))
+
+(defn- mark-completed
+  [cfg key]
+  (try
+    (rds/run! cfg #(rds/set (::rds/conn %) key "1" {:nx true :ex 86400}))
+    (catch Exception cause
+      (l/wrn :hint "unable to write SNS completion marker" :cause cause))))
 
 (defn handle-request
+  "Handles an SNS message. Returns a map with the HTTP :status: 400 for
+   messages that fail validation (SNS does not retry them) and 500 for
+   unexpected or transient errors (SNS retries them)."
   [cfg data]
   (try
     (let [body  (parse-json data)
           mtype (get body "Type")]
+
+      (when body
+        (verify-sns-message! cfg body))
+
       (cond
         (= mtype "SubscriptionConfirmation")
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
           (l/info :action "subscription received" :topic stopic :url surl)
-          (http/req cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
+          (http/req cfg {:uri surl :method :post :timeout 10000} {:sync? true})
+          {:status 200})
 
         (= mtype "Notification")
-        (when-let [message (parse-json (get body "Message"))]
-          (let [notification (parse-notification cfg message)]
-            (process-report cfg notification)))
+        (let [id (get body "MessageId")]
+          (when-not (and (string? id) (not (str/blank? id)))
+            (ex/raise :type :validation :code :invalid-message-id))
+          (let [key (get-marker-key (get body "TopicArn") id)]
+            (if (completed? cfg key)
+              {:status 200}
+              (if-let [message (parse-json (get body "Message"))]
+                (let [notification (parse-notification cfg message)
+                      result       (process-report cfg notification)]
+                  (when-not (= ::incomplete result)
+                    (mark-completed cfg key))
+                  {:status 200})
+                (do
+                  (l/wrn :hint "notification with missing or unparseable Message field"
+                         :action "sns-missing-message")
+                  {:status 400})))))
 
         :else
-        (l/warn :hint "unexpected data received"
-                :report (pr-str body))))
+        (do
+          (l/warn :hint "unexpected data received"
+                  :report (pr-str body))
+          {:status 400})))
 
     (catch Throwable cause
-      (l/error :hint "unexpected exception on awsns"
-               :cause cause))))
+      (let [data (ex-data cause)]
+        (if (#{:validation :authentication} (:type data))
+          (do
+            (l/wrn :hint "SNS message validation failed"
+                   :action "sns-validation-failed"
+                   :code (:code data))
+            {:status 400})
+          (do
+            (l/error :hint "unexpected exception on awsns"
+                     :cause cause)
+            {:status 500}))))))
 
 (defn- parse-bounce
   [data]
@@ -121,7 +339,7 @@
     (when data
       (let [mail (get message "mail")]
         (when-not mail
-          (ex/raise :type :internal
+          (ex/raise :type :validation
                     :code :incomplete-notification
                     :hint "no email data received, please enable full headers report"))
         (let [headers (extract-headers mail)
@@ -145,77 +363,81 @@
 (defn- register-bounce-for-profile
   [{:keys [::db/pool]} {:keys [type kind profile-id] :as report}]
   (when (= kind "permanent")
-    (try
-      (db/insert! pool :profile-complaint-report
-                  {:profile-id profile-id
-                   :type (name type)
-                   :content (db/tjson report)})
+    (let [complete (try
+                     (db/insert! pool :profile-complaint-report
+                                 {:profile-id profile-id
+                                  :type (name type)
+                                  :content (db/tjson report)})
 
-      (catch Throwable cause
-        (l/warn :hint "unable to persist profile complaint"
-                :cause cause)))
+                     (catch Throwable cause
+                       (l/warn :hint "unable to persist profile complaint"
+                               :cause cause)
+                       false))]
 
-    (doseq [recipient (:recipients report)]
+      (doseq [recipient (:recipients report)]
+        (db/insert! pool :global-complaint-report
+                    {:email (:email recipient)
+                     :type (name type)
+                     :content (db/tjson report)}))
+
+      (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
+        (when (some #(= (:email profile) (:email %)) (:recipients report))
+          ;; If the report matches the profile email, this means that
+          ;; the report is for itself, can be caused when a user
+          ;; registers with an invalid email or the user email is
+          ;; permanently rejecting receiving the email. In this case we
+          ;; have no option to mark the user as muted (and in this case
+          ;; the profile will be also inactive.
+
+          (l/inf :hint "mark profile: muted"
+                 :profile-id (str (:id profile))
+                 :email (:email profile)
+                 :reason "bounce report"
+                 :report-id (:feedback-id report))
+
+          (db/update! pool :profile
+                      {:is-muted true}
+                      {:id profile-id}
+                      {::db/return-keys false})))
+      (when-not complete ::incomplete))))
+
+(defn- register-complaint-for-profile
+  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
+
+  (let [complete (try
+                   (db/insert! pool :profile-complaint-report
+                               {:profile-id profile-id
+                                :type (name type)
+                                :content (db/tjson report)})
+                   (catch Throwable cause
+                     (l/warn :hint "unable to persist profile complaint"
+                             :cause cause)
+                     false))]
+
+    ;; TODO: maybe also try to find profiles by email and if exists
+    ;; register profile reports for them?
+    (doseq [email (:recipients report)]
       (db/insert! pool :global-complaint-report
-                  {:email (:email recipient)
+                  {:email email
                    :type (name type)
                    :content (db/tjson report)}))
 
     (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
-      (when (some #(= (:email profile) (:email %)) (:recipients report))
+      (when (some #(= % (:email profile)) (:recipients report))
         ;; If the report matches the profile email, this means that
-        ;; the report is for itself, can be caused when a user
-        ;; registers with an invalid email or the user email is
-        ;; permanently rejecting receiving the email. In this case we
-        ;; have no option to mark the user as muted (and in this case
-        ;; the profile will be also inactive.
-
+        ;; the report is for itself, rare case but can happen; In this
+        ;; case just mark profile as muted (very rare case).
         (l/inf :hint "mark profile: muted"
                :profile-id (str (:id profile))
                :email (:email profile)
-               :reason "bounce report"
+               :reason "complaint report"
                :report-id (:feedback-id report))
 
         (db/update! pool :profile
                     {:is-muted true}
                     {:id profile-id}
-                    {::db/return-keys false})))))
-
-(defn- register-complaint-for-profile
-  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
-
-  (try
-    (db/insert! pool :profile-complaint-report
-                {:profile-id profile-id
-                 :type (name type)
-                 :content (db/tjson report)})
-    (catch Throwable cause
-      (l/warn :hint "unable to persist profile complaint"
-              :cause cause)))
-
-  ;; TODO: maybe also try to find profiles by email and if exists
-  ;; register profile reports for them?
-  (doseq [email (:recipients report)]
-    (db/insert! pool :global-complaint-report
-                {:email email
-                 :type (name type)
-                 :content (db/tjson report)}))
-
-  (let [profile (db/exec-one! pool (sql/select :profile {:id profile-id}))]
-    (when (some #(= % (:email profile)) (:recipients report))
-      ;; If the report matches the profile email, this means that
-      ;; the report is for itself, rare case but can happen; In this
-      ;; case just mark profile as muted (very rare case).
-      (l/inf :hint "mark profile: muted"
-             :profile-id (str (:id profile))
-             :email (:email profile)
-             :reason "complaint report"
-             :report-id (:feedback-id report))
-
-      (db/update! pool :profile
-                  {:is-muted true}
-                  {:id profile-id}
-                  {::db/return-keys false}))))
+                    {::db/return-keys false})))
+    (when-not complete ::incomplete)))
 
 (defn- process-report
   [cfg {:keys [type profile-id] :as report}]

@@ -582,6 +582,18 @@ If you are not using SMTP configuration and want to log the emails in the consol
 PENPOT_FLAGS: [...] enable-log-emails
 ```
 
+### AWS SNS notifications
+
+If you use AWS SNS to deliver email bounce or complaint notifications, configure `PENPOT_AWS_SNS_TOPIC_ARNS` on the backend with the allowed topic ARNs. Separate multiple ARNs with commas or whitespace:
+
+```bash
+PENPOT_AWS_SNS_TOPIC_ARNS: "arn:aws:sns:us-east-1:123456789012:bounces, arn:aws:sns:us-east-1:123456789012:complaints"
+```
+
+Configure the allow list before deploying this version. If the variable is absent or empty, Penpot starts but rejects notifications from all SNS topics.
+
+Penpot uses Redis for best-effort deduplication of verified SNS notifications. After successful processing, it stores a completion marker for the topic and message ID with a TTL of at most 24 hours. Concurrent deliveries can both be processed, and Redis outages, timeouts, eviction, marker expiry, or a crash before the marker is stored can allow duplicate effects. Deduplication does not guarantee exactly-once processing.
+
 ## Valkey
 
 The Valkey configuration is very simple, just provide a valid redis URI. Valkey is used
