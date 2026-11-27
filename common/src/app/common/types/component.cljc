@@ -7,10 +7,17 @@
 (ns app.common.types.component
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
+   [app.common.geom.shapes :as gsh]
+   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.time :as-alias ct]
    [app.common.types.page :as ctp]
+   [app.common.types.path.segment :as segment]
    [app.common.types.plugins :as ctpg]
    [app.common.types.variant :as ctv]
    [cuerdas.core :as str]))
@@ -417,3 +424,177 @@
    (or (contains? all-touched-groups group)
        (and (swap-slot? group)
             (some? (group->swap-slot group))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYNC ATTRIBUTE COMPARISON
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Attributes that sync updates automatically: all sync attrs except the
+;; flex-child attrs (kept on swap) and the layout-grid-cells property.
+(def updatable-attrs
+  (->> (keys sync-attrs)
+       ;; We don't update the flex-child attrs
+       (remove swap-keep-attrs)
+       ;; We don't do automatic update of the `layout-grid-cells` property.
+       (remove #(= :layout-grid-cells %))))
+
+;; Attrs whose value drifts by float noise when a shape is moved; they
+;; are compared with tolerance during sync. The rest compare exactly.
+(def ^:private drifting-geometry-attrs
+  #{:x :y :width :height :selrect :points})
+
+;; Constraints where nil means "the default for the shape's placement",
+;; so nil and that default are the same value.
+(def ^:private default-constraints-fns
+  {:constraints-h gsh/default-constraints-h
+   :constraints-v gsh/default-constraints-v
+   :fixed-scroll (constantly false)})
+
+(defn- position-data-close?
+  "Compares text position-data entry by entry: numbers with tolerance,
+  every other field (fills, fonts, text) exactly."
+  [a b]
+  (let [a (vec a)
+        b (vec b)]
+    (and (= (count a) (count b))
+         (every? true? (map mth/close-map? a b)))))
+
+(defn- path-shape?
+  [shape]
+  (= :path (:type shape)))
+
+(defn- bool-shape?
+  [shape]
+  (= :bool (:type shape)))
+
+(defn attr-equal?
+  [attr origin-shape dest-shape]
+  (let [origin-val (get origin-shape attr)
+        dest-val   (get dest-shape attr)]
+    (or (= origin-val dest-val)
+        (cond
+          ;; close-attrs? zips :points and would ignore a length mismatch
+          (= :points attr)
+          (and (= (count origin-val) (count dest-val))
+               (gsh/close-attrs? attr origin-val dest-val))
+
+          (contains? drifting-geometry-attrs attr)
+          (gsh/close-attrs? attr origin-val dest-val)
+
+          (and (= :content attr)
+               (or (path-shape? origin-shape) (bool-shape? origin-shape)))
+          (segment/content-close? origin-val dest-val)
+
+          (= :position-data attr)
+          (position-data-close? origin-val dest-val)
+
+          (contains? default-constraints-fns attr)
+          (let [default ((get default-constraints-fns attr) dest-shape)]
+            (= (or origin-val default) (or dest-val default)))
+
+          :else
+          false))))
+
+(defn reposition-shape
+  "Expresses the shape (belonging to the origin-root instance) in the frame of the
+   dest-root instance, making the geometry of both instances directly comparable —
+   and copyable.
+
+   If the dest root's geometry is NOT overridden (touched), the instance follows
+   the origin's transformation verbatim (including rotation and flips), so a
+   translation by the roots' (untransformed) position delta suffices — position is
+   free per-instance placement.
+
+   If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
+   whole), the instance keeps its own placement transform, so the origin shape is
+   additionally transformed by the roots' relative transformation (rotation /
+   flips) around the dest root center — geometric changes then land expressed in
+   the dest instance's own frame instead of wiping its placement."
+  [shape origin-root dest-root]
+  (let [shape-pos        (fn [shape]
+                           (gpt/point (dm/get-in shape [:selrect :x])
+                                      (dm/get-in shape [:selrect :y])))
+
+        origin-root-pos  (shape-pos origin-root)
+        dest-root-pos    (shape-pos dest-root)
+        delta            (gpt/subtract dest-root-pos origin-root-pos)
+
+        shape            (gsh/move shape delta)]
+    (if-not (touched-group? dest-root :geometry-group)
+      shape
+      (let [origin-transform (d/nilv (:transform origin-root) (gmt/matrix))
+            dest-transform   (d/nilv (:transform dest-root) (gmt/matrix))
+            rel-transform    (gmt/multiply dest-transform (gmt/inverse origin-transform))]
+        (if ^boolean (gmt/unit? rel-transform)
+          shape
+          ;; The roots differ in rotation/flips: rotate the whole (already moved)
+          ;; shape around the dest root center by the roots' relative transform.
+          ;; The :rotation attribute delta is fed through the :modifiers path so
+          ;; apply-transform keeps it consistent with the resulting matrix.
+          (let [center       (grc/rect->center (:selrect dest-root))
+                rel-rotation (mod (- (d/nilv (:rotation dest-root) 0)
+                                     (d/nilv (:rotation origin-root) 0))
+                                  360)]
+            (-> shape
+                (assoc-in [:modifiers :rotation] rel-rotation)
+                (gsh/apply-transform (gmt/transform-in center rel-transform))
+                (dissoc :modifiers))))))))
+
+(defn- fills-equal-ignoring-image-ids?
+  "Whether both fills are equal ignoring the :id of their :fill-image. Each
+   copy of a component can reference its own copy of the image media, so the
+   id can differ between a copy and its main without being an override."
+  [fills-main fills-inst]
+  (let [strip-ids (fn [fills]
+                    (mapv (fn [fill]
+                            (if-let [image (:fill-image fill)]
+                              (assoc fill :fill-image (dissoc image :id))
+                              fill))
+                          fills))]
+    (= (strip-ids fills-main)
+       (strip-ids fills-inst))))
+
+(defn- ignore-group-difference?
+  "Whether a difference in `attr` (of sync group `group`) between the copy and
+   its main must not be reported as a missing touched group, because copies
+   can differ from their mains in that attribute by design. This is the place
+   to add special handling for other false positives."
+  [attr group shape-main shape-inst]
+  (or
+   ;; Geometry cannot be analyzed: when a copy is put in a layout or a
+   ;; constrained container it changes size, but that does not mean it's
+   ;; touched. The position data of texts is derived, so it cannot be
+   ;; analyzed either.
+   (= :geometry-group group)
+   (= :position-data attr)
+
+   ;; The :id of a fill image may differ between the copy and the main,
+   ;; because each copy may reference its own copy of the image media. That
+   ;; is not an override.
+   (and (= :fills attr)
+        (fills-equal-ignoring-image-ids? (:fills shape-main)
+                                         (:fills shape-inst)))))
+
+(defn find-missing-touched-groups
+  "Return the set of sync groups whose attributes differ between the copy
+   `shape-inst` and its main `shape-main`, after repositioning the main into
+   the copy's root frame, and are not marked in the copy's `:touched`. An
+   empty set means the copy keeps no untracked override.
+
+   `root-inst` and `root-main` are the roots of the copy and main instances,
+   used to normalize the geometry of both shapes as sync does."
+  [shape-inst shape-main root-inst root-main]
+  (let [shape-main (reposition-shape shape-main root-main root-inst)
+        touched    (get shape-inst :touched #{})]
+    (persistent!
+     (reduce (fn [result attr]
+               (let [group (or (resolve-sync-group (:type shape-main) attr)
+                               (resolve-sync-group (:type shape-inst) attr))]
+                 (if (and (some? group)
+                          (not (touched group))
+                          (not (attr-equal? attr shape-main shape-inst))
+                          (not (ignore-group-difference? attr group shape-main shape-inst)))
+                   (conj! result group)
+                   result)))
+             (transient #{})
+             updatable-attrs))))

@@ -63,6 +63,7 @@
     :non-deleted-component-cannot-have-objects
     :instance-head-not-frame
     :invalid-text-touched
+    :missing-touched-groups
     :misplaced-slot
     :missing-slot
     :shape-ref-cycle
@@ -114,6 +115,11 @@
 ;; of a walked board, and components whose main the page walk reported
 ;; outside its board. `check-component` skips the solo check for them.
 (def ^:dynamic ^:private *checked-variant-component-ids* nil)
+
+;; When true, copies are checked for attributes that differ from their main
+;; without the corresponding sync group in `:touched`. Bound by `validate-file`
+;; from its `:validate-touched` option; off by default.
+(def ^:dynamic ^:private *validate-touched* false)
 
 (defn- build-children-sets
   "Return a {parent-id → #{child-ids}} map built from `objects` in a single
@@ -489,6 +495,30 @@
                     "This thape has text type touched but not content touched"
                     shape file page))))
 
+(defn- check-touched-overrides
+  "Validate that every synced attribute of a copy that differs from its main
+   has its sync group marked in :touched. The main is located the same way
+   sync does, so switches and swaps resolve to the component the copy is
+   currently linked to. The check is skipped when the main shape cannot be
+   retrieved or no geometry is available to compare with."
+  [shape file page libraries]
+  (when (and *validate-touched*
+             (some? (:shape-ref shape)))
+    (let [objects    (:objects page)
+          root-inst  (ctn/get-head-shape objects shape)
+          root-main  (when (some? root-inst)
+                       (find-ref-shape* file page libraries root-inst))
+          shape-main (when (some? root-main)
+                       (find-ref-shape* file page libraries shape))]
+      (when (and (some? shape) (some? shape-main)
+                 (some? root-inst) (some? root-main))
+        (when-let [groups (not-empty (ctk/find-missing-touched-groups
+                                      shape shape-main root-inst root-main))]
+          (report-error :missing-touched-groups
+                        "Copy attributes differ from the main but their sync groups are not touched"
+                        shape file page
+                        :groups groups))))))
+
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -532,6 +562,7 @@
     (check-empty-swap-slot shape file page)
     (check-duplicate-swap-slot shape file page)
     (check-valid-touched shape file page)
+    (check-touched-overrides shape file page libraries)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
@@ -543,6 +574,7 @@
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
   (check-valid-touched shape file page)
+  (check-touched-overrides shape file page libraries)
   (check-ref-component-id shape file page libraries)
   (check-required-swap-slot shape file page libraries)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
@@ -570,6 +602,7 @@
   (check-ref-is-not-head shape file page libraries)
   (check-empty-swap-slot shape file page)
   (check-valid-touched shape file page)
+  (check-touched-overrides shape file page libraries)
   (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))
 
 (defn- check-shape-not-component
@@ -1042,50 +1075,64 @@
 (defn validate-file
   "Validate full referential integrity and semantic coherence on file data.
 
+  `options` may contain:
+
+  - `:validate-touched` (default false): also check that copies have no
+    attribute that differs from their main without the corresponding sync
+    group in `:touched`.
+
   Return a list of errors or `nil`"
-  [{:keys [data features] :as file} libraries]
-  (when (contains? features "components/v2")
-    (binding [*errors* (volatile! [])
-              *checked-variant-component-ids* (volatile! #{})]
+  ([file libraries]
+   (validate-file file libraries nil))
+  ([{:keys [data features] :as file} libraries options]
+   (when (contains? features "components/v2")
+     (binding [*errors* (volatile! [])
+               *checked-variant-component-ids* (volatile! #{})
+               *validate-touched* (boolean (:validate-touched options))]
 
-      ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
-      ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
-      ;; maps implement `IKVReduce`, which drives iteration internally without
-      ;; first materialising an intermediate sequence of key-value pairs.
-      (reduce-kv
-       (fn [_ _ page]
-         (when (some? page)
-           ;; Both performance caches are scoped to a single page: ref-shape
-           ;; lookups and parent→children sets are page-local and must never
-           ;; carry over to the next page.  A fresh volatile is created for
-           ;; each page so stale entries cannot corrupt subsequent pages.
-           (binding [*ref-shape-cache* (volatile! {})
-                     *children-sets* (build-children-sets (:objects page))]
-             (check-shape uuid/zero file page libraries)
-             (run! #(check-shape % file page libraries)
-                   (get-orphan-shapes page)))))
-       nil
-       (:pages-index data))
+       ;; `reduce-kv` is used throughout this function (and `validate-file-affected`)
+       ;; instead of `(run! f (vals m))` or `(doseq [[k v] m])` because persistent
+       ;; maps implement `IKVReduce`, which drives iteration internally without
+       ;; first materialising an intermediate sequence of key-value pairs.
+       (reduce-kv
+        (fn [_ _ page]
+          (when (some? page)
+            ;; Both performance caches are scoped to a single page: ref-shape
+            ;; lookups and parent→children sets are page-local and must never
+            ;; carry over to the next page.  A fresh volatile is created for
+            ;; each page so stale entries cannot corrupt subsequent pages.
+            (binding [*ref-shape-cache* (volatile! {})
+                      *children-sets* (build-children-sets (:objects page))]
+              (check-shape uuid/zero file page libraries)
+              (run! #(check-shape % file page libraries)
+                    (get-orphan-shapes page)))))
+        nil
+        (:pages-index data))
 
-      (reduce-kv
-       (fn [_ _ component]
-         (check-component component file)
-         (check-objects-only-variant-boards component file))
-       nil
-       (:components data))
+       (reduce-kv
+        (fn [_ _ component]
+          (check-component component file)
+          (check-objects-only-variant-boards component file))
+        nil
+        (:components data))
 
-      (check-tokens file)
+       (check-tokens file)
 
-      (-> *errors* deref not-empty))))
+       (-> *errors* deref not-empty)))))
 
 (defn validate-shape
-  "Validate a shape and all its children. Returns a list of errors."
-  [shape-id file page libraries]
-  (binding [*errors* (volatile! [])
-            *ref-shape-cache* (volatile! {})
-            *children-sets* (build-children-sets (:objects page))]
-    (check-shape shape-id file page libraries)
-    (deref *errors*)))
+  "Validate a shape and all its children. Returns a list of errors.
+
+  Accepts the same `options` as `validate-file`."
+  ([shape-id file page libraries]
+   (validate-shape shape-id file page libraries nil))
+  ([shape-id file page libraries options]
+   (binding [*errors* (volatile! [])
+             *ref-shape-cache* (volatile! {})
+             *children-sets* (build-children-sets (:objects page))
+             *validate-touched* (boolean (:validate-touched options))]
+     (check-shape shape-id file page libraries)
+     (deref *errors*))))
 
 (defn validate-component
   "Validate a component. Returns a list of errors."
@@ -1262,11 +1309,13 @@
 (defn validate-file!
   "Validate full referential integrity and semantic coherence on file data.
 
-  Raises an exception"
-  [file libraries]
-  (when-let [errors (validate-file file libraries)]
-    (ex/raise :type :validation
-              :code :referential-integrity
-              :hint "error on validating file referential integrity"
-              :file-id (:id file)
-              :details errors)))
+  Accepts the same `options` as `validate-file`. Raises an exception"
+  ([file libraries]
+   (validate-file! file libraries nil))
+  ([file libraries options]
+   (when-let [errors (validate-file file libraries options)]
+     (ex/raise :type :validation
+               :code :referential-integrity
+               :hint "error on validating file referential integrity"
+               :file-id (:id file)
+               :details errors))))

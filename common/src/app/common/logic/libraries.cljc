@@ -51,61 +51,6 @@
 (def log-shape-ids #{})
 (def log-container-ids #{})
 
-(def updatable-attrs
-  (->> (keys ctk/sync-attrs)
-       ;; We don't update the flex-child attrs
-       (remove ctk/swap-keep-attrs)
-       ;; We don't do automatic update of the `layout-grid-cells` property.
-       (remove #(= :layout-grid-cells %))))
-
-;; Attrs whose value drifts by float noise when a shape is moved; they
-;; are compared with tolerance during sync. The rest compare exactly.
-(def ^:private drifting-geometry-attrs
-  #{:x :y :width :height :selrect :points})
-
-;; Constraints where nil means "the default for the shape's placement",
-;; so nil and that default are the same value.
-(def ^:private default-constraints-fns
-  {:constraints-h gsh/default-constraints-h
-   :constraints-v gsh/default-constraints-v})
-
-(defn- position-data-close?
-  "Compares text position-data entry by entry: numbers with tolerance,
-  every other field (fills, fonts, text) exactly."
-  [a b]
-  (let [a (vec a)
-        b (vec b)]
-    (and (= (count a) (count b))
-         (every? true? (map mth/close-map? a b)))))
-
-(defn- attr-equal?
-  [attr origin-shape dest-shape]
-  (let [origin-val (get origin-shape attr)
-        dest-val   (get dest-shape attr)]
-    (or (= origin-val dest-val)
-        (cond
-          ;; close-attrs? zips :points and would ignore a length mismatch
-          (= :points attr)
-          (and (= (count origin-val) (count dest-val))
-               (gsh/close-attrs? attr origin-val dest-val))
-
-          (contains? drifting-geometry-attrs attr)
-          (gsh/close-attrs? attr origin-val dest-val)
-
-          (and (= :content attr)
-               (or (cfh/path-shape? origin-shape) (cfh/bool-shape? origin-shape)))
-          (segment/content-close? origin-val dest-val)
-
-          (= :position-data attr)
-          (position-data-close? origin-val dest-val)
-
-          (contains? default-constraints-fns attr)
-          (let [default ((get default-constraints-fns attr) dest-shape)]
-            (= (or origin-val default) (or dest-val default)))
-
-          :else
-          false))))
-
 ;; Flex-child layout attrs synced between main and copy (interactions are only kept on swap)
 (def ^:private flex-child-attrs
   (disj ctk/swap-keep-attrs :interactions))
@@ -155,7 +100,6 @@
 (declare update-grid-copy-attrs)
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
-(declare reposition-shape)
 (declare make-change)
 
 (defn pretty-file
@@ -933,7 +877,7 @@
   "Offset the sync applies to the top-left of `dest-shape` when it copies the
   geometry of `origin-shape`."
   [dest-shape origin-shape dest-root origin-root]
-  (gpt/subtract (grc/rect->point (:selrect (reposition-shape origin-shape origin-root dest-root)))
+  (gpt/subtract (grc/rect->point (:selrect (ctk/reposition-shape origin-shape origin-root dest-root)))
                 (grc/rect->point (:selrect dest-shape))))
 
 (defn- follow-parent-modifiers
@@ -1024,7 +968,7 @@
           set-remote-synced?   (and (not initial-root?) reset?)
           geometry-kept?       (and omit-touched?
                                     (ctk/touched-group? shape-inst :geometry-group))
-          main-geometry        (reposition-shape shape-main root-main root-inst)
+          main-geometry        (ctk/reposition-shape shape-main root-main root-inst)
           follow-modifiers     (when (and geometry-kept? (some? parent-change))
                                  (let [[parent-before parent-after] parent-change]
                                    (follow-parent-modifiers shape-inst parent-before parent-after)))
@@ -1493,9 +1437,9 @@
                                                          (:id parent-shape)))
 
         update-new-shape (fn [new-shape original-shape]
-                           (let [new-shape (reposition-shape new-shape
-                                                             root-main
-                                                             root-instance)]
+                           (let [new-shape (ctk/reposition-shape new-shape
+                                                                 root-main
+                                                                 root-instance)]
                              (cond-> new-shape
                                (= (:id original-shape) (:id component-shape))
                                (assoc :frame-id (if (= (:type parent-shape) :frame)
@@ -1576,9 +1520,9 @@
                                                (:id component-parent-shape)))
 
         update-new-shape (fn [new-shape _original-shape]
-                           (reposition-shape new-shape
-                                             root-instance
-                                             root-main))
+                           (ctk/reposition-shape new-shape
+                                                 root-instance
+                                                 root-main))
 
         update-original-shape (fn [original-shape new-shape]
                                 (assoc original-shape
@@ -2060,10 +2004,10 @@
         ;; the dest root before syncing.
         ;; In case of subinstances, the comparison is always done with the
         ;; near component, because this is that we are syncing with.
-        origin-shape (reposition-shape origin-shape origin-root dest-root)
+        origin-shape (ctk/reposition-shape origin-shape origin-root dest-root)
         touched      (get dest-shape :touched #{})]
 
-    (loop [attrs updatable-attrs
+    (loop [attrs ctk/updatable-attrs
            roperations []
            uoperations '()]
 
@@ -2092,7 +2036,7 @@
                 reset-pos-data?
                 (and (cfh/text-shape? origin-shape)
                      (= attr :position-data)
-                     (not (attr-equal? :position-data origin-shape dest-shape))
+                     (not (ctk/attr-equal? :position-data origin-shape dest-shape))
                      (touched :geometry-group))
 
                 ;; On texts, when we want to omit the touched attrs, both text (the actual letters)
@@ -2106,7 +2050,7 @@
                      (touched sync-group))
 
                 skip-operations?
-                (or (attr-equal? attr origin-shape dest-shape)
+                (or (ctk/attr-equal? attr origin-shape dest-shape)
                     (and (touched sync-group)
                          omit-touched?
                          ;; When it is a text-partial-change, we should generate operations
@@ -2426,12 +2370,12 @@
         previous-shape (-> previous-shape
                            (resize-with-parent (get (:objects container) (:parent-id previous-shape))
                                                (get (pcb/get-objects changes) (:parent-id current-shape)))
-                           (reposition-shape prev-root current-root))
+                           (ctk/reposition-shape prev-root current-root))
         touched        (get previous-shape :touched #{})
         text-auto?     (and (cfh/text-shape? current-shape)
                             (contains? #{:auto-height :auto-width} (:grow-type current-shape)))]
 
-    (loop [attrs       updatable-attrs
+    (loop [attrs       ctk/updatable-attrs
            roperations []
            uoperations '()]
       (if-let [attr (first attrs)]
@@ -2755,51 +2699,6 @@
                  (assoc shape-main :layout-grid-cells new-cells)))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
-
-(defn- reposition-shape
-  "Expresses the shape (belonging to the origin-root instance) in the frame of the
-  dest-root instance, making the geometry of both instances directly comparable —
-  and copyable.
-
-  If the dest root's geometry is NOT overridden (touched), the instance follows
-  the origin's transformation verbatim (including rotation and flips), so a
-  translation by the roots' (untransformed) position delta suffices — position is
-  free per-instance placement.
-
-  If the dest root's geometry IS overridden (e.g. the user rotated the copy as a
-  whole), the instance keeps its own placement transform, so the origin shape is
-  additionally transformed by the roots' relative transformation (rotation /
-  flips) around the dest root center — geometric changes then land expressed in
-  the dest instance's own frame instead of wiping its placement."
-  [shape origin-root dest-root]
-  (let [shape-pos        (fn [shape]
-                           (gpt/point (dm/get-in shape [:selrect :x])
-                                      (dm/get-in shape [:selrect :y])))
-
-        origin-root-pos  (shape-pos origin-root)
-        dest-root-pos    (shape-pos dest-root)
-        delta            (gpt/subtract dest-root-pos origin-root-pos)
-
-        shape            (gsh/move shape delta)]
-    (if-not (ctk/touched-group? dest-root :geometry-group)
-      shape
-      (let [origin-transform (d/nilv (:transform origin-root) (gmt/matrix))
-            dest-transform   (d/nilv (:transform dest-root) (gmt/matrix))
-            rel-transform    (gmt/multiply dest-transform (gmt/inverse origin-transform))]
-        (if ^boolean (gmt/unit? rel-transform)
-          shape
-          ;; The roots differ in rotation/flips: rotate the whole (already moved)
-          ;; shape around the dest root center by the roots' relative transform.
-          ;; The :rotation attribute delta is fed through the :modifiers path so
-          ;; apply-transform keeps it consistent with the resulting matrix.
-          (let [center       (grc/rect->center (:selrect dest-root))
-                rel-rotation (mod (- (d/nilv (:rotation dest-root) 0)
-                                     (d/nilv (:rotation origin-root) 0))
-                                  360)]
-            (-> shape
-                (assoc-in [:modifiers :rotation] rel-rotation)
-                (gsh/apply-transform (gmt/transform-in center rel-transform))
-                (dissoc :modifiers))))))))
 
 (defn- make-change
   [container change]

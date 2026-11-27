@@ -638,6 +638,21 @@
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
+(defmethod repair-error :missing-touched-groups
+  [_ {:keys [shape page-id args] :as error} file-data _]
+  (let [groups (:groups args)
+
+        repair-shape
+        (fn [shape]
+          ;; Add the sync groups of the attributes that differ from the main
+          (log/debug :hint "  -> add groups to :touched" :groups groups)
+          (update shape :touched (fnil into #{}) groups))]
+
+    (log/debug :hint "repairing shape :missing-touched-groups" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :misplaced-slot
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape
