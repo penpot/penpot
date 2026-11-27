@@ -43,9 +43,6 @@ on:
       build_key:
         description: 'Tag the images were published under'
         value: ${{ jobs.build-docker.outputs.build_key }}
-      registry:
-        description: 'Registry the images were published to'
-        value: ${{ jobs.build-docker.outputs.registry }}
       admin_console_image:
         description: 'Exact reference of the admin-console image'
         value: ${{ jobs.build-docker-admin-console.outputs.image }}
@@ -117,7 +114,9 @@ jobs:
     permissions: {}
     uses: ./.github/workflows/build-docker-admin-console.yml
     secrets:
+      DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
       ORG_WORKFLOW_TOKEN: ${{ secrets.ORG_WORKFLOW_TOKEN }}
+      PREVIEW_REGISTRY_URL: ${{ secrets.PREVIEW_REGISTRY_URL }}
     with:
       gh_ref: ${{ inputs.nitrate_ref || inputs.gh_ref }}
       force: ${{ inputs.force }}

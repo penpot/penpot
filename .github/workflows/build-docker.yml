@@ -77,9 +77,6 @@ on:
       build_key:
         description: 'Tag the images were published under'
         value: ${{ jobs.prepare.outputs.build_key }}
-      registry:
-        description: 'Registry the images were published to'
-        value: ${{ jobs.prepare.outputs.registry }}
     secrets:
       AWS_ACCESS_KEY_ID:
         required: false
@@ -144,7 +141,6 @@ jobs:
       short_sha: ${{ steps.vars.outputs.short_sha }}
       build_key: ${{ steps.vars.outputs.build_key }}
       commit_title: ${{ steps.vars.outputs.commit_title }}
-      registry: ${{ steps.vars.outputs.registry }}
       marker_key: ${{ steps.vars.outputs.marker_key }}
       images_json: ${{ steps.vars.outputs.images_json }}
       exists: ${{ steps.check.outputs.exists }}
@@ -163,7 +159,6 @@ jobs:
           GH_REF: ${{ inputs.gh_ref || github.ref_name }}
           PREVIEW: ${{ inputs.preview }}
           PREVIEW_REGISTRY: ${{ secrets.PREVIEW_REGISTRY_URL }}
-          DEFAULT_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
         run: |
           # A git ref accepts characters that a Docker tag does not.
           REF_SLUG=$(printf '%s' "$GH_REF" | tr -c 'A-Za-z0-9._-' '-' | cut -c1-100)
@@ -182,17 +177,15 @@ jobs:
           # the commit, so a preview that wrote the normal one would make a
           # later release build of that commit think it had nothing to do.
           if [ "$PREVIEW" = "true" ]; then
+            # Fail early rather than pushing to an empty registry name.
             if [ -z "$PREVIEW_REGISTRY" ]; then
               echo "::error::preview=true but PREVIEW_REGISTRY_URL is not set"
               exit 1
             fi
-            REGISTRY="$PREVIEW_REGISTRY"
             MARKER_KEY="markers/images-preview-sha-${SHORT_SHA}-${VERSION_TAG}"
           else
-            REGISTRY="$DEFAULT_REGISTRY"
             MARKER_KEY="markers/images-sha-${SHORT_SHA}-${VERSION_TAG}"
           fi
-          echo "registry=$REGISTRY" >> $GITHUB_OUTPUT
           echo "marker_key=$MARKER_KEY" >> $GITHUB_OUTPUT
           # Validated here so that a bad value fails with a clear message
           # instead of producing an empty matrix or a Dockerfile name that
@@ -387,12 +380,12 @@ jobs:
           sbom: ${{ inputs.attestations }}
           # Immutable tag only; branch tags are moved atomically for the
           # whole image set by the `promote` job.
-          tags: ${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:${{ needs.prepare.outputs.build_key }}
+          tags: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:${{ needs.prepare.outputs.build_key }}
           labels: ${{ steps.meta.outputs.labels }}
           # One cache per registry, so a single-arch preview build cannot
           # overwrite the cache a multi-arch release build needs.
-          cache-from: type=registry,ref=${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:buildcache
-          cache-to: type=registry,ref=${{ needs.prepare.outputs.registry }}/${{ matrix.image }}:buildcache,mode=max
+          cache-from: type=registry,ref=${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}/${{ matrix.image }}:buildcache,mode=max
 
   # ── 3a. Move the branch tags of ALL images together (fresh build) ──────
   promote:
@@ -421,7 +414,7 @@ jobs:
       - name: Point branch tags to the new build key
         if: inputs.move_branch_tags
         env:
-          DOCKER_REGISTRY: ${{ needs.prepare.outputs.registry }}
+          DOCKER_REGISTRY: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
           REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
         run: |
@@ -452,7 +445,7 @@ jobs:
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
           BUNDLE_VERSION: ${{ needs.prepare.outputs.bundle_version }}
           COMMIT_TITLE: ${{ needs.prepare.outputs.commit_title }}
-          REGISTRY: ${{ needs.prepare.outputs.registry }}
+          REGISTRY: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
           MOVE_BRANCH_TAGS: ${{ inputs.move_branch_tags }}
         run: |
           {
@@ -501,7 +494,7 @@ jobs:
       - name: Point branch tags to the existing build key
         if: inputs.move_branch_tags
         env:
-          DOCKER_REGISTRY: ${{ needs.prepare.outputs.registry }}
+          DOCKER_REGISTRY: ${{ inputs.preview && secrets.PREVIEW_REGISTRY_URL || secrets.DOCKER_REGISTRY }}
           REF_SLUG: ${{ needs.prepare.outputs.ref_slug }}
           BUILD_KEY: ${{ needs.prepare.outputs.build_key }}
         run: |
