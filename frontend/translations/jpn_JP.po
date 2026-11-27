@@ -345,6 +345,11 @@ msgstr "すべての変更履歴を表示"
 msgid "dashboard.check-updates.view-release-notes"
 msgstr "リリースノートを表示"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+#, fuzzy
+msgid "dashboard.clear-search"
+msgstr "検索をクリア"
+
 #: src/app/main/ui/dashboard/deleted.cljs:328
 msgid "dashboard.clear-trash-button"
 msgstr "ゴミ箱を空にする"
@@ -360,6 +365,11 @@ msgstr "組織を新規作成"
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:393
 msgid "dashboard.create-new-team"
 msgstr "チームを新規作成"
+
+#: src/app/main/ui/dashboard/team_form.cljs:122
+#, fuzzy
+msgid "dashboard.create-team-in-organization"
+msgstr "%sに新しいチームを作成"
 
 #: src/app/main/ui/workspace/main_menu.cljs:712
 msgid "dashboard.create-version-menu"
@@ -420,6 +430,12 @@ msgstr "複製"
 #: src/app/main/ui/dashboard/file_menu.cljs:269
 msgid "dashboard.duplicate-multi"
 msgstr "%s個のファイルを複製"
+
+#: src/app/main/data/dashboard.cljs:549
+#, fuzzy
+msgid "dashboard.duplicate-unsaved-changes"
+msgid_plural "dashboard.duplicate-unsaved-changes"
+msgstr[0] "ファイルを複製しましたが、最新の変更はまだ保存されていないため、複製には含まれていません。"
 
 #: src/app/main/ui/dashboard/files.cljs:243, src/app/main/ui/dashboard/projects.cljs:318
 msgid "dashboard.empty-placeholder-drafts-subtitle"
@@ -554,6 +570,11 @@ msgstr "グリッド表示"
 msgid "dashboard.files-layout.list"
 msgstr "リスト表示"
 
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+#, fuzzy
+msgid "dashboard.fonts.delete-variant"
+msgstr "フォントスタイルを削除"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:652
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "見つからないフォント"
@@ -632,6 +653,16 @@ msgstr[0] "%s個のライブラリを名前で自動的にリンクしました�
 msgid "dashboard.import.bad-url"
 msgstr "インポートに失敗しました。テンプレートのURLが正しくありません"
 
+#: src/app/main/ui/dashboard/import.cljs:625
+#, fuzzy
+msgid "dashboard.import.check.message"
+msgstr "各ファイルをインポートできるか確認しています。すぐに終わります。"
+
+#: src/app/main/ui/dashboard/import.cljs:624
+#, fuzzy
+msgid "dashboard.import.check.title"
+msgstr "ファイルを確認しています…"
+
 #: src/app/main/ui/dashboard/import.cljs:838
 msgid "dashboard.import.confirm-library-links"
 msgstr "ライブラリのリンクを確認"
@@ -677,6 +708,23 @@ msgstr[0] "%s個のファイルをインポートしました。"
 msgid "dashboard.import.import-warning"
 msgstr "一部のファイルに無効なオブジェクトが含まれていたため、削除しました。"
 
+#: src/app/main/ui/dashboard/import.cljs:600
+#, fuzzy
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "%s件完了"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+#, fuzzy
+msgid "dashboard.import.importing.message"
+msgstr "プロジェクト内でページ、コンポーネント、アセットを再構築しています。"
+
+#: src/app/main/ui/dashboard/import.cljs:598
+#, fuzzy
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "%s個のファイルをインポート中"
+
 #: src/app/main/ui/dashboard/import.cljs:815
 msgid "dashboard.import.next-file"
 msgstr "次のファイル"
@@ -684,6 +732,26 @@ msgstr "次のファイル"
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "このチームにインポートする権限がありません"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+#, fuzzy
+msgid "dashboard.import.queued.message"
+msgstr "ファイルはアップロード済みです。空きができ次第、インポートを開始します。"
+
+#: src/app/main/ui/dashboard/import.cljs:633
+#, fuzzy
+msgid "dashboard.import.queued.title"
+msgstr "開始を待っています…"
+
+#: src/app/main/ui/dashboard/import.cljs:628
+#, fuzzy
+msgid "dashboard.import.ready.message"
+msgstr "ファイルをインポートできます。続行してアップロードしてください。"
+
+#: src/app/main/ui/dashboard/import.cljs:627
+#, fuzzy
+msgid "dashboard.import.ready.title"
+msgstr "ファイルの準備完了"
 
 #: src/app/main/ui/dashboard/import.cljs:431
 msgid "dashboard.import.resolve-libraries"
@@ -700,6 +768,31 @@ msgstr "接続先"
 #: src/app/main/ui/dashboard/import.cljs:441
 msgid "dashboard.import.resolve-libraries.original-library"
 msgstr "元のライブラリ"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+#, fuzzy
+msgid "dashboard.import.status.ready"
+msgstr "準備完了"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+#, fuzzy
+msgid "dashboard.import.steps.check"
+msgstr "確認"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+#, fuzzy
+msgid "dashboard.import.steps.import"
+msgstr "インポート"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+#, fuzzy
+msgid "dashboard.import.steps.label"
+msgstr "インポートの手順"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+#, fuzzy
+msgid "dashboard.import.steps.upload"
+msgstr "アップロード"
 
 #: src/app/main/ui/dashboard/import.cljs:509
 msgid "dashboard.import.summary.linked"
@@ -720,6 +813,21 @@ msgstr "ライブラリが選択されていません"
 #: src/app/main/ui/dashboard/import.cljs:522
 msgid "dashboard.import.summary.original"
 msgstr "元"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+#, fuzzy
+msgid "dashboard.import.title"
+msgstr "ファイルをインポート"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+#, fuzzy
+msgid "dashboard.import.upload.message"
+msgstr "ファイルを送信しています。アップロードが終わるまで、このダイアログを開いたままにしてください。"
+
+#: src/app/main/ui/dashboard/import.cljs:630
+#, fuzzy
+msgid "dashboard.import.upload.title"
+msgstr "ファイルをアップロードしています…"
 
 #: src/app/main/ui/dashboard/team.cljs:879
 msgid "dashboard.invitation-modal.delete"
@@ -1495,6 +1603,16 @@ msgstr "メールアドレス「%s」には多数の恒久的な配信エラー�
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "メールアドレス「%s」はスパムとして報告されたか、恒久的な配信エラーが発生しています。"
 
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+#, fuzzy
+msgid "errors.export-failed"
+msgstr "エクスポートに失敗しました。しばらくしてからもう一度お試しください。"
+
+#: src/app/main/data/exports/assets.cljs:377
+#, fuzzy
+msgid "errors.export-too-large"
+msgstr "大きすぎてエクスポートできません。小さい倍率をお試しください"
+
 #: src/app/main/errors.cljs:990
 msgid "errors.feature-mismatch"
 msgstr "機能「%s」が有効になっているファイルを開こうとしていますが、現在のPenpotのバージョンではこの機能がサポートされていないか、無効になっています。"
@@ -1647,17 +1765,59 @@ msgstr "このプロフィールはブロックされています"
 msgid "errors.profile-is-muted"
 msgstr "あなたのプロフィールはメールがミュートされています（スパム報告または配信エラーの多発）。"
 
+#: src/app/main/errors.cljs:901
+#, fuzzy
+msgid "errors.profile-props-too-large"
+msgstr "プロフィール設定が大きすぎて保存できません。いくつかのプラグインを削除してから、もう一度お試しください。"
+
 #: src/app/main/data/auth.cljs:340, src/app/main/ui/auth/register.cljs:96
 msgid "errors.registration-disabled"
 msgstr "新規登録は現在無効になっています。"
 
 #: src/app/main/errors.cljs:700
+#, fuzzy
 msgid "errors.save-failed"
-msgstr "エラーのため自動保存が機能していません。サポートに連絡してエラーを報告し、再読み込みして最後に保存されたバージョンから続けてください。"
+msgstr "このセッションでは自動保存が停止したため、最後に保存できた後の変更は保存できません。修正に役立つレポートをダウンロードしてから、ページを再読み込みするか、このファイルを閉じて開き直すと、編集を続けられます。"
+
+#: src/app/main/errors.cljs:706
+#, fuzzy
+msgid "errors.save-permission-lost"
+msgid_plural "errors.save-permission-lost"
+msgstr[0] "このファイルを編集できなくなったため、%s件の変更を保存できませんでした。ページを再読み込みすると、ファイルの現在の状態を確認できます。"
+
+#: src/app/main/data/persistence.cljs:701
+#, fuzzy
+msgid "errors.save-rejected-changes-undone"
+msgstr "一部の変更を保存できなかったため、最新の変更を元に戻しました。"
+
+#: src/app/main/data/persistence.cljs:686
+#, fuzzy
+msgid "errors.save-rejected-changes-undone-in-file"
+msgstr "「%s」への一部の変更を保存できなかったため、そのファイルへの最新の変更を元に戻しました。"
+
+#: src/app/main/data/persistence.cljs:696
+#, fuzzy
+msgid "errors.save-rejected-damaged-data"
+msgstr "このページには自動で修復できない破損したデータがあるため、変更を保存できず、元に戻しました。サポートにお問い合わせください。"
 
 #: src/app/main/data/persistence.cljs:447
 msgid "errors.save-retrying"
 msgstr "接続が切断されました。変更の保存を再試行しています。"
+
+#: src/app/main/data/persistence.cljs:608
+#, fuzzy
+msgid "errors.save-retrying-busy"
+msgstr "サーバーが混み合っています。変更の保存を再試行しています。"
+
+#: src/app/main/errors.cljs:697
+#, fuzzy
+msgid "errors.save-still-retrying"
+msgstr "Penpotがサーバーに接続できないため、変更はまだ保存されていません。変更は保持されており、Penpotは保存を試み続けます。保存されるまでこのタブを開いたままにしてください。"
+
+#: src/app/main/errors.cljs:696
+#, fuzzy
+msgid "errors.save-still-retrying-busy"
+msgstr "サーバーが混み合っているため、変更はまだ保存されていません。変更は保持されており、Penpotは保存を試み続けます。保存されるまでこのタブを開いたままにしてください。"
 
 #: src/app/main/errors.cljs:935
 msgid "errors.svg-parser.invalid-svg"
@@ -1711,6 +1871,11 @@ msgstr "トークンに循環参照があります"
 msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr "行の高さはフォントサイズに依存します。解決された値を得るには、フォントサイズを追加してください。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+#, fuzzy
+msgid "errors.tokens.division-by-zero"
+msgstr "無効なトークン値: ゼロ除算"
+
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:442
 msgid "errors.tokens.empty-field"
 msgstr "このフィールドは空にできません"
@@ -1723,9 +1888,19 @@ msgstr "トークンの値は空にできません"
 msgid "errors.tokens.error-parse"
 msgstr "インポートエラー: JSONを解析できませんでした。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+#, fuzzy
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "無効なトークン値: %s() の引数が範囲外です"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:33, src/app/main/data/workspace/tokens/errors.cljs:38
 msgid "errors.tokens.import-error"
 msgstr "インポートエラー:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+#, fuzzy
+msgid "errors.tokens.incompatible-units"
+msgstr "無効なトークン値: 単位 %s は組み合わせられません"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:54
 msgid "errors.tokens.invalid-color"
@@ -1814,6 +1989,11 @@ msgstr "シャドウの広がりは0以上である必要があります。"
 #: src/app/main/data/workspace/tokens/errors.cljs:108, src/app/main/data/workspace/tokens/warnings.cljs:19
 msgid "errors.tokens.stroke-width-range"
 msgstr "線の幅は0以上である必要があります。"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+#, fuzzy
+msgid "errors.tokens.unknown-function"
+msgstr "無効なトークン値: 不明な関数 %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:100, ../common/src/app/common/files/tokens.cljc:52
 msgid "errors.tokens.value-with-percent"
@@ -1976,6 +2156,48 @@ msgstr "アイデア"
 msgid "feedback.type.issue"
 msgstr "問題"
 
+#: src/app/main/ui/exports/files.cljs:392
+#, fuzzy
+msgid "files-download-modal.unsaved-changes"
+msgstr "最新の変更の一部がまだ保存されていないため、このダウンロードには含まれません。"
+
+#: src/app/main/ui/exports/files.cljs:467
+#, fuzzy
+msgid "files-export-modal.cancel-export"
+msgstr "エクスポートをキャンセル"
+
+#: src/app/main/ui/exports/files.cljs:471
+#, fuzzy
+msgid "files-export-modal.done"
+msgstr "完了"
+
+#: src/app/main/ui/exports/files.cljs:210
+#, fuzzy
+msgid "files-export-modal.export-error"
+msgstr "エクスポートできませんでした: %s"
+
+#: src/app/main/ui/exports/files.cljs:246
+#, fuzzy
+msgid "files-export-modal.exported.message"
+msgstr "ダウンロードフォルダを確認してください。"
+
+#: src/app/main/ui/exports/files.cljs:239
+#, fuzzy
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "%s個のファイルをエクスポートしました"
+
+#: src/app/main/ui/exports/files.cljs:245
+#, fuzzy
+msgid "files-export-modal.exporting.message"
+msgstr "各ファイルは準備ができ次第ダウンロードされます。"
+
+#: src/app/main/ui/exports/files.cljs:238
+#, fuzzy
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "%s個のファイルをエクスポート中"
+
 #: src/app/main/ui/exports/files.cljs:431
 msgid "files-export-modal.options.detach-libraries.message"
 msgstr "リンクされたライブラリのアセットはファイルに含まれません。"
@@ -2008,6 +2230,21 @@ msgstr "ライブラリのアセットをローカルライブラリに統合し
 msgid "files-export-modal.options.merge-libraries.title"
 msgstr "ライブラリのアセットをファイルに埋め込む"
 
+#: src/app/main/ui/exports/files.cljs:179
+#, fuzzy
+msgid "files-export-modal.status.exported"
+msgstr "エクスポート済み"
+
+#: src/app/main/ui/exports/files.cljs:186
+#, fuzzy
+msgid "files-export-modal.status.waiting"
+msgstr "待機中"
+
+#: src/app/main/ui/exports/files.cljs:381
+#, fuzzy
+msgid "files-export-modal.title"
+msgstr "ファイルをエクスポート"
+
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
 msgstr "エラーが発生しました"
@@ -2024,9 +2261,24 @@ msgstr "インポートした設定により、次のショートカットが変
 msgid "import-shortcuts.diff-modal-title"
 msgstr "ショートカットをインポート"
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+#, fuzzy
+msgid "import-shortcuts.imported"
+msgstr "インポート済み"
+
+#: src/app/main/ui/settings/shortcuts.cljs:511, src/app/main/ui/settings/shortcuts.cljs:513
+#, fuzzy
+msgid "import-shortcuts.invalid-file"
+msgstr "このファイルは有効なショートカットのエクスポートではありません。"
+
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
 msgstr "現在のショートカットとインポートしたショートカットに違いはありません。"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+#, fuzzy
+msgid "import-shortcuts.skipped-entries"
+msgstr "次の項目はインポートできません: Penpotのどのショートカットにも一致しないか、予約済みのキーの組み合わせを使用しています。"
 
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
@@ -2135,6 +2387,11 @@ msgstr "バリアントのプロパティ"
 #: src/app/main/ui/inspect/attributes/variant.cljs:44
 msgid "inspect.attributes.variants"
 msgstr "バリアントのプロパティ"
+
+#: src/app/main/ui/inspect/code.cljs:322, src/app/main/ui/inspect/code.cljs:365
+#, fuzzy
+msgid "inspect.code.expand-panel"
+msgstr "パネルを展開"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
@@ -2458,6 +2715,91 @@ msgstr "このトークンは%sに期限切れになります"
 msgid "integrations.token.will-not-expire"
 msgstr "このトークンには有効期限がありません"
 
+#: src/app/main/ui/exports/files.cljs:223
+#, fuzzy
+msgid "jobs.export-cancelled"
+msgstr "エクスポートをキャンセルしました"
+
+#: src/app/main/data/imports.cljs:376
+#, fuzzy
+msgid "jobs.import-cancelled"
+msgstr "インポートをキャンセルしました"
+
+#: src/app/main/ui/jobs/progress.cljs:26
+#, fuzzy
+msgid "jobs.progress.stage.colors"
+msgstr "カラーを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+#, fuzzy
+msgid "jobs.progress.stage.components"
+msgstr "コンポーネントを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+#, fuzzy
+msgid "jobs.progress.stage.files"
+msgstr "ファイルを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+#, fuzzy
+msgid "jobs.progress.stage.manifest"
+msgstr "パッケージを読み込んでいます"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+#, fuzzy
+msgid "jobs.progress.stage.media"
+msgstr "メディアを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+#, fuzzy
+msgid "jobs.progress.stage.metadata"
+msgstr "メタデータを読み込んでいます"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+#, fuzzy
+msgid "jobs.progress.stage.pages"
+msgstr "ページを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+#, fuzzy
+msgid "jobs.progress.stage.relations"
+msgstr "ライブラリの関連付けを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+#, fuzzy
+msgid "jobs.progress.stage.storage-objects"
+msgstr "ストレージオブジェクトを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+#, fuzzy
+msgid "jobs.progress.stage.thumbnails"
+msgstr "サムネイルを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+#, fuzzy
+msgid "jobs.progress.stage.tokens"
+msgstr "トークンを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+#, fuzzy
+msgid "jobs.progress.stage.typographies"
+msgstr "タイポグラフィを処理しています"
+
+#: src/app/main/ui/jobs/progress.cljs:34
+#, fuzzy
+msgid "jobs.progress.stage.unknown"
+msgstr "処理中"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+#, fuzzy
+msgid "jobs.progress.stage.upload"
+msgstr "ファイルをアップロードしています…"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+#, fuzzy, unused
+msgid "jobs.queued"
+msgstr "ジョブの空きを待っています"
+
 #: src/app/main/ui/dashboard/comments.cljs:90
 msgid "label.mark-all-as-read"
 msgstr "すべて既読にする"
@@ -2713,6 +3055,11 @@ msgstr "エラー"
 #: src/app/main/data/workspace/versions.cljs:314
 msgid "labels.exit"
 msgstr "終了"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+#, fuzzy
+msgid "labels.expand"
+msgstr "展開"
 
 #: src/app/main/ui/dashboard/team.cljs:777
 msgid "labels.expired-invitation"
@@ -3389,6 +3736,46 @@ msgstr "コミュニティ製のプラグインでPenpotの機能を拡張でき
 #: src/app/main/ui/ds/product/loader.cljs:38
 msgid "loader.tips.10.title"
 msgstr "プラグインに対応"
+
+#: src/app/main/ui/mcp_authorize.cljs:155
+#, fuzzy
+msgid "mcp.oauth.access"
+msgstr "このクライアントは、Penpotから確立されたMCP接続を通じて、デザインを読み取り、変更できます。"
+
+#: src/app/main/ui/mcp_authorize.cljs:153
+#, fuzzy
+msgid "mcp.oauth.account"
+msgstr "%sとしてサインインしています。"
+
+#: src/app/main/ui/mcp_authorize.cljs:162
+#, fuzzy
+msgid "mcp.oauth.approve"
+msgstr "アクセスを許可"
+
+#: src/app/main/ui/mcp_authorize.cljs:133
+#, fuzzy
+msgid "mcp.oauth.cancelled"
+msgstr "接続をキャンセルしました"
+
+#: src/app/main/ui/mcp_authorize.cljs:157
+#, fuzzy
+msgid "mcp.oauth.enable"
+msgstr "アクセスを許可すると、MCP連携が有効になり、必要に応じてMCPトークンが作成されます。"
+
+#: src/app/main/ui/mcp_authorize.cljs:137
+#, fuzzy
+msgid "mcp.oauth.failed"
+msgstr "このリクエストは期限切れか、すでに使用済みか、完了できませんでした。MCPクライアントからもう一度接続を開始してください。"
+
+#: src/app/main/ui/mcp_authorize.cljs:149
+#, fuzzy
+msgid "mcp.oauth.request"
+msgstr "%sがPenpotへの接続を求めています。"
+
+#: src/app/main/ui/mcp_authorize.cljs:129
+#, fuzzy
+msgid "mcp.oauth.title"
+msgstr "Penpot MCPに接続"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:494
 msgid "media.choose-image"
@@ -4413,6 +4800,11 @@ msgstr "デザインを始める"
 msgid "options.deleted-token-with-name"
 msgstr "トークン{%s}は存在しないか、削除されています。"
 
+#: src/app/main/data/plugins.cljs:129
+#, fuzzy
+msgid "plugins.runtime-unavailable"
+msgstr "このブラウザではプラグインを使用できません。環境内の何か（たとえばTampermonkeyなどの拡張機能）が、プラグインの実行環境の起動を妨げています。拡張機能を無効にするか、ページを再読み込みしてもう一度お試しください。"
+
 #: src/app/plugins/utils.cljs:555
 msgid "plugins.validation.invalid-value"
 msgstr "%sが必要ですが、%s（%s）が渡されました"
@@ -4633,9 +5025,19 @@ msgstr "テキスト"
 msgid "shortcuts.duplicate"
 msgstr "複製"
 
+#: src/app/main/ui/shortcuts.cljs:714
+#, fuzzy
+msgid "shortcuts.edit"
+msgstr "%sを編集"
+
 #: src/app/main/ui/shortcuts.cljs:775
 msgid "shortcuts.edit-modal.conflict"
 msgstr "このキーの組み合わせは「%s」に割り当てられています。保存すると、そちらの割り当ては削除されます。"
+
+#: src/app/main/ui/shortcuts.cljs:771
+#, fuzzy
+msgid "shortcuts.edit-modal.reserved"
+msgstr "この組み合わせはPenpotで予約されているため、割り当てられません。"
 
 #: src/app/main/ui/shortcuts.cljs:761
 msgid "shortcuts.edit-modal.reset-pending"
@@ -4933,6 +5335,11 @@ msgstr "名前を変更"
 msgid "shortcuts.reset"
 msgstr "デフォルトに戻す"
 
+#: src/app/main/ui/settings/shortcuts.cljs:53
+#, fuzzy
+msgid "shortcuts.reset-all"
+msgstr "すべてリセット"
+
 #: src/app/main/data/viewer/shortcuts.cljs:49, src/app/main/data/workspace/grid_layout/shortcuts.cljs:70, src/app/main/data/workspace/path/shortcuts.cljs:217, src/app/main/data/workspace/shortcuts.cljs:706
 msgid "shortcuts.reset-zoom"
 msgstr "ズームをリセット"
@@ -4940,6 +5347,11 @@ msgstr "ズームをリセット"
 #: src/app/main/data/workspace/shortcuts.cljs:477
 msgid "shortcuts.scale"
 msgstr "拡大縮小"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+#, fuzzy
+msgid "shortcuts.search"
+msgstr "ショートカットを検索"
 
 # SECTIONS
 #: src/app/main/ui/shortcuts.cljs:255, src/app/main/ui/shortcuts.cljs:427
@@ -5236,6 +5648,16 @@ msgstr "Enterpriseサブスクリプションの有効期限はあと%s日です
 #: src/app/main/ui/dashboard/subscription.cljs:236
 msgid "subscription.dashboard.banner.subscription-expired"
 msgstr "Enterpriseサブスクリプションの有効期限が切れました。（%s）"
+
+#: src/app/main/ui/dashboard/subscription.cljs:217
+#, fuzzy
+msgid "subscription.dashboard.banner.unlock-enterprise"
+msgstr "Enterpriseを利用する"
+
+#: src/app/main/ui/dashboard/subscription.cljs:219
+#, fuzzy
+msgid "subscription.dashboard.banner.unlock-features-description"
+msgstr "高度なガバナンス、一元的な管理、安全なコラボレーションを必要とする組織向けです。"
 
 #: src/app/main/ui/dashboard/subscription.cljs:217
 msgid "subscription.dashboard.banner.unlock-features"
@@ -5557,6 +5979,11 @@ msgstr "Penpot %sプランをお選びいただき、ありがとうございま
 msgid "subscription.settings.success.dialog.title"
 msgstr "%sプランになりました！"
 
+#: src/app/main/ui/settings/subscription.cljs:724
+#, fuzzy
+msgid "subscription.settings.trial-ends-on"
+msgstr "無料トライアルは%sに終了します。"
+
 #: src/app/main/ui/settings/subscription.cljs:772, src/app/main/ui/settings/subscription.cljs:788
 msgid "subscription.settings.try-it-free"
 msgstr "14日間無料でお試し"
@@ -5693,6 +6120,11 @@ msgstr "このページにボードがありません。"
 msgid "viewer.frame-not-found"
 msgstr "ボードが見つかりません。"
 
+#: src/app/main/ui/viewer.cljs:127
+#, fuzzy
+msgid "viewer.go-to-first-board"
+msgstr "最初のボードへ移動"
+
 #: src/app/main/ui/viewer/header.cljs:367
 msgid "viewer.header.comments-section"
 msgstr "コメント（%s）"
@@ -5732,6 +6164,16 @@ msgstr "クリック時にインタラクションを表示"
 #: src/app/main/ui/viewer/header.cljs:248
 msgid "viewer.header.sitemap"
 msgstr "サイトマップ"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+#, fuzzy
+msgid "viewer.thumbnails.scroll-left"
+msgstr "左へスクロール"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+#, fuzzy
+msgid "viewer.thumbnails.scroll-right"
+msgstr "右へスクロール"
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
@@ -5968,6 +6410,11 @@ msgstr "文字間隔"
 msgid "workspace.assets.typography.line-height"
 msgstr "行の高さ"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:297
+#, fuzzy
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "タイポグラフィスタイルを作成するには、テキストを1つだけ選択してください"
+
 #: src/app/main/ui/dashboard/grid.cljs:227, src/app/main/ui/workspace/libraries.cljs:1094, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:882, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1020
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
@@ -6083,6 +6530,61 @@ msgstr "ガイドを削除"
 #: src/app/main/ui/workspace/sidebar/debug.cljs:52
 msgid "workspace.debug.title"
 msgstr "デバッグツール"
+
+#: src/app/main/data/exports/assets.cljs:388, src/app/main/data/exports/assets.cljs:564
+#, fuzzy
+msgid "workspace.export.unsaved-changes"
+msgstr "最新の変更の一部がまだ保存されていないため、このエクスポートには含まれない可能性があります。"
+
+#: src/app/main/data/exports/assets.cljs:370, src/app/main/data/exports/assets.cljs:612
+#, fuzzy
+msgid "workspace.export.unsaved-changes-included"
+msgstr "最新の変更の一部はまだ保存されていませんが、このエクスポートには含まれています。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:59
+#, fuzzy
+msgid "workspace.file-restored.accept"
+msgstr "わかりました"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:30
+#, fuzzy
+msgid "workspace.file-restored.message"
+msgstr "%sがこのファイルの以前のバージョンを復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:31
+#, fuzzy
+msgid "workspace.file-restored.message-anonymous"
+msgstr "チームメンバーがこのファイルの以前のバージョンを復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:28
+#, fuzzy
+msgid "workspace.file-restored.message-date"
+msgstr "%sが%s時点のバージョンを復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:29
+#, fuzzy
+msgid "workspace.file-restored.message-date-anonymous"
+msgstr "チームメンバーが%s時点のバージョンを復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:26
+#, fuzzy
+msgid "workspace.file-restored.message-label"
+msgstr "%sがバージョン「%s」を復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:27
+#, fuzzy
+msgid "workspace.file-restored.message-label-anonymous"
+msgstr "チームメンバーがバージョン「%s」を復元しました。それ以降の変更はファイルに含まれなくなりました。"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:50
+#, fuzzy
+msgid "workspace.file-restored.title"
+msgstr "このファイルは復元されました"
+
+#: src/app/main/ui/workspace/file_restored_modal.cljs:55
+#, fuzzy
+msgid "workspace.file-restored.unsaved-changes"
+msgstr "ファイルのバージョンが復元されたため、最新の変更を保存できませんでした。"
 
 #: src/app/main/ui/workspace/sidebar/layers.cljs:924
 msgid "workspace.focus.focus-mode"
@@ -6340,6 +6842,11 @@ msgstr "フルスクリーン"
 msgid "workspace.header.zoom-selected"
 msgstr "選択範囲にズーム"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1050
+#, fuzzy
+msgid "workspace.layout-grid.editor.columns"
+msgstr "列"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:852
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "グリッドを編集"
@@ -6376,6 +6883,21 @@ msgstr "上パディング"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "垂直方向のパディング"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, fuzzy
+msgid "workspace.layout-grid.editor.rows"
+msgstr "行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:994
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "列を選択"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:995
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "行を選択"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "グリッドを編集中"
@@ -6391,6 +6913,26 @@ msgstr "位置を表示"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1616
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "グリッドレイアウトの位置を表示"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:932
+#, fuzzy
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "トラックのオプション"
+
+#: src/app/main/ui/workspace/libraries.cljs:921
+#, fuzzy
+msgid "workspace.libraries.add-shared-library"
+msgstr "共有ライブラリを追加"
+
+#: src/app/main/ui/workspace/libraries.cljs:823
+#, fuzzy
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "このファイルのアセット"
+
+#: src/app/main/data/workspace/libraries.cljs:1963
+#, fuzzy
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "ライブラリ「%s」を読み込めなかったため、このファイルとの接続を解除しました。ファイル内で使用中のコンポーネントとカラーは影響を受けませんが、ライブラリが修正されて再接続されるまでは孤立した状態になります。"
 
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
@@ -6543,6 +7085,11 @@ msgstr "すべてのアセットのリンクを解除"
 msgid "workspace.libraries.text.multiple-token-tooltip"
 msgstr "すべてのトークンを切り離す"
 
+#: src/app/main/ui/workspace/libraries.cljs:1159
+#, fuzzy
+msgid "workspace.libraries.this-file"
+msgstr "このファイル"
+
 #: src/app/main/ui/workspace/libraries.cljs:219, src/app/main/ui/workspace/libraries.cljs:263
 msgid "workspace.libraries.token-sets"
 msgid_plural "workspace.libraries.token-sets"
@@ -6586,6 +7133,16 @@ msgstr "更新"
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:61
 msgid "workspace.notification-pill.detail"
 msgstr "詳細"
+
+#: src/app/main/data/persistence.cljs:669
+#, fuzzy
+msgid "workspace.notifications.file-repaired"
+msgstr "このファイルのいくつかの問題を修正しました。元のバージョンのコピーはバージョン履歴にあります。"
+
+#: src/app/main/data/persistence.cljs:662, src/app/main/data/persistence.cljs:691
+#, fuzzy
+msgid "workspace.notifications.file-repaired-changes-undone"
+msgstr "このファイルのいくつかの問題を修正しました。元のバージョンのコピーはバージョン履歴にあります。一部の変更を保存できなかったため、最新の変更を元に戻しました。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:784
 msgid "workspace.options.add-interaction"
@@ -6646,6 +7203,11 @@ msgstr "キャンセル"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "キャンバスの背景"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+#, fuzzy
+msgid "workspace.options.canvas-background-section"
+msgstr "キャンバスの背景セクション"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:720
 msgid "workspace.options.clip-content"
@@ -6939,6 +7501,11 @@ msgstr "列"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:249, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:283
 msgid "workspace.options.grid.params.color"
 msgstr "カラー"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+#, fuzzy
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "ガイドのデフォルト"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:303
 msgid "workspace.options.grid.params.gutter"
@@ -7339,6 +7906,11 @@ msgstr "その他のライブラリカラー"
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:297
 msgid "workspace.options.more-token-colors"
 msgstr "その他のカラートークン"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:516
+#, fuzzy
+msgid "workspace.options.no-font-results"
+msgstr "一致するフォントはありません"
 
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516
 msgid "workspace.options.no-size-preset-results"
@@ -8017,6 +8589,11 @@ msgstr "[他のプラグイン](%s)を探す"
 msgid "workspace.plugins.empty-plugins"
 msgstr "インストール済みのプラグインはまだありません"
 
+#: src/app/main/data/plugins.cljs, src/app/main/ui/dashboard.cljs, src/app/main/ui/workspace/plugins.cljs
+#, fuzzy
+msgid "workspace.plugins.error.global-not-allowed"
+msgstr "ファイルの外で動作するプラグインは、現在、信頼できる提供元からのみインストールできます。"
+
 #: src/app/main/ui/workspace/plugins.cljs:237
 msgid "workspace.plugins.error.manifest"
 msgstr "プラグインのマニフェストが正しくありません。"
@@ -8061,6 +8638,11 @@ msgstr "前回開いたときからプラグインが変更されています。
 msgid "workspace.plugins.permissions.allow-download"
 msgstr "ファイルのダウンロードを開始する。"
 
+#: src/app/main/ui/workspace/plugins.cljs:344
+#, fuzzy
+msgid "workspace.plugins.permissions.allow-global"
+msgstr "ダッシュボードとファイルの間を移動しても動作し続け、プロジェクトやファイルを検索して開く。"
+
 #: src/app/main/ui/workspace/plugins.cljs:337
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "ブラウザにデータを保存する。"
@@ -8103,6 +8685,21 @@ msgstr "あなたのライブラリとアセットを読み取る。"
 msgid "workspace.plugins.permissions.library-write"
 msgstr "あなたのライブラリとアセットを読み取り、変更する。"
 
+#: src/app/main/ui/workspace/plugins.cljs:365
+#, fuzzy
+msgid "workspace.plugins.permissions.manage-delete"
+msgstr "あなたのファイルとプロジェクトを削除する。"
+
+#: src/app/main/ui/workspace/plugins.cljs:351
+#, fuzzy
+msgid "workspace.plugins.permissions.manage-projects"
+msgstr "あなたのプロジェクトを作成、名前変更、ピン留め、複製する。"
+
+#: src/app/main/ui/workspace/plugins.cljs:358
+#, fuzzy
+msgid "workspace.plugins.permissions.manage-teams"
+msgstr "あなたのチームを表示、作成、名前変更し、チーム間でプロジェクトを移動する。"
+
 #: src/app/main/ui/workspace/plugins.cljs:424
 msgid "workspace.plugins.permissions.title"
 msgstr "プラグイン「%s」が次へのアクセスを求めています："
@@ -8114,6 +8711,16 @@ msgstr "現在のユーザーのプロフィール情報を読み取る。"
 #: src/app/main/ui/workspace/plugins.cljs:256
 msgid "workspace.plugins.plugin-list-link"
 msgstr "プラグイン一覧"
+
+#: src/app/main/ui/workspace/plugins.cljs:188
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr "プラグイン「%s」を削除してもよろしいですか？いつでも再インストールできます。"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "プラグインを削除"
 
 #: src/app/main/ui/workspace/plugins.cljs:98, src/app/main/ui/workspace/plugins.cljs:189
 msgid "workspace.plugins.remove-plugin"
@@ -8142,6 +8749,16 @@ msgstr "プラグイン「%s」があなたのユーザーにインストール�
 #: src/app/main/ui/workspace/plugins.cljs:568
 msgid "workspace.plugins.try-out.try"
 msgstr "プラグインを試す"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:46
+#, fuzzy, markdown
+msgid "workspace.save-failure.retrying"
+msgstr "変更を保存できないため、**編集は無効になっています**。"
+
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:47
+#, fuzzy, markdown
+msgid "workspace.save-failure.stopped"
+msgstr "変更を保存できないため、**編集は無効になっています**。"
 
 #: src/app/main/ui/workspace/context_menu.cljs:667
 msgid "workspace.shape.menu.add-flex"
@@ -8499,6 +9116,11 @@ msgstr "シェイプ"
 msgid "workspace.sidebar.layers.texts"
 msgstr "テキスト"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+#, fuzzy
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "属性を削除"
+
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:114
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "インポートしたSVG属性"
@@ -8654,6 +9276,11 @@ msgstr "トークンを削除"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:138
 msgid "workspace.tokens.delete-theme-title"
 msgstr "テーマを削除"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
+#, fuzzy
+msgid "workspace.tokens.detach-reference"
+msgstr "参照を切り離す"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
@@ -8867,6 +9494,11 @@ msgstr "トークンのソースのセットまたはテーマが変更されま
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s個のアクティブなセット"
 
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:112
+#, fuzzy
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr "デザイントークンは、リスト内の最初の塗りまたは線にのみ適用できます。"
+
 #: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
 msgid "workspace.tokens.open-source-new-tab"
 msgstr "トークンのソースを新しいタブで開く"
@@ -9007,6 +9639,11 @@ msgstr "サイズ"
 msgid "workspace.tokens.source"
 msgstr "ソース："
 
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+#, fuzzy
+msgid "workspace.tokens.stroke-width"
+msgstr "線の幅"
+
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:54, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:184
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "none | uppercase | lowercase | capitalize または{alias}"
@@ -9143,6 +9780,21 @@ msgstr "MCP"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP接続済み"
 
+#: src/app/main/ui/components/mcp_menu.cljs:136
+#, fuzzy
+msgid "workspace.toolbar.mcp-copy-session-id"
+msgstr "セッションIDをコピー"
+
+#: src/app/main/ui/components/mcp_menu.cljs:33
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-copied"
+msgstr "セッションIDをコピーしました"
+
+#: src/app/main/ui/components/mcp_menu.cljs:132
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-id"
+msgstr "セッションID: %s"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:63, src/app/main/ui/workspace/top_toolbar.cljs:374
 msgid "workspace.toolbar.move"
 msgstr "移動（%s）"
@@ -9150,6 +9802,11 @@ msgstr "移動（%s）"
 #: src/app/main/ui/workspace/palette.cljs:175
 msgid "workspace.toolbar.palette-bar"
 msgstr "パレットバー"
+
+#: src/app/main/ui/workspace/palette.cljs:211
+#, fuzzy
+msgid "workspace.toolbar.palette-options"
+msgstr "パレットのオプション"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:70
 msgid "workspace.toolbar.path"
@@ -9272,6 +9929,11 @@ msgstr "複数のタイポグラフィアセット"
 msgid "workspace.undo.entry.new"
 msgstr "%sを作成"
 
+#: src/app/main/ui/workspace/sidebar/history.cljs:371
+#, fuzzy
+msgid "workspace.undo.entry.show-details"
+msgstr "詳細を表示"
+
 #: src/app/main/ui/workspace/sidebar/history.cljs:132
 msgid "workspace.undo.entry.single.circle"
 msgstr "円"
@@ -9376,6 +10038,11 @@ msgstr "バージョンを復元"
 msgid "workspace.versions.button.save"
 msgstr "バージョンを保存"
 
+#: src/app/main/data/workspace/versions.cljs:93
+#, fuzzy
+msgid "workspace.versions.create-failed-unsaved"
+msgstr "変更を保存できなかったため、バージョンは作成されませんでした。"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:434
 msgid "workspace.versions.empty"
 msgstr "バージョンはまだありません"
@@ -9411,6 +10078,11 @@ msgstr "バージョンをプレビュー中：%s"
 #: src/app/main/data/workspace/versions.cljs:306
 msgid "workspace.versions.preview.unnamed"
 msgstr "名前のないバージョン"
+
+#: src/app/main/data/workspace/versions.cljs:315, src/app/main/ui/workspace/sidebar/versions.cljs:308
+#, fuzzy
+msgid "workspace.versions.repair.version"
+msgstr "自動修復前、%s"
 
 #: src/app/main/data/workspace/versions.cljs:239
 msgid "workspace.versions.restore-warning"

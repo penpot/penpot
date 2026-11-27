@@ -345,6 +345,11 @@ msgstr "檢視完整變更紀錄"
 msgid "dashboard.check-updates.view-release-notes"
 msgstr "檢視版本說明"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+#, fuzzy
+msgid "dashboard.clear-search"
+msgstr "清除搜尋"
+
 #: src/app/main/ui/dashboard/deleted.cljs:328
 msgid "dashboard.clear-trash-button"
 msgstr "清空垃圾桶"
@@ -554,6 +559,11 @@ msgstr "方格檢視"
 msgid "dashboard.files-layout.list"
 msgstr "清單檢視"
 
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+#, fuzzy
+msgid "dashboard.fonts.delete-variant"
+msgstr "刪除字型樣式"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:652
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "缺少字型"
@@ -630,9 +640,29 @@ msgstr[0] "已依名稱自動連結 %s 個資料庫。"
 msgid "dashboard.import.bad-url"
 msgstr "匯入失敗。範本網址有誤"
 
+#: src/app/main/ui/dashboard/import.cljs:625
+#, fuzzy
+msgid "dashboard.import.check.message"
+msgstr "正在確認每個檔案都能匯入，只需要一點時間。"
+
+#: src/app/main/ui/dashboard/import.cljs:624
+#, fuzzy
+msgid "dashboard.import.check.title"
+msgstr "正在檢查你的檔案…"
+
 #: src/app/main/ui/dashboard/import.cljs:838
 msgid "dashboard.import.confirm-library-links"
 msgstr "確認資料庫連結"
+
+#: src/app/main/ui/dashboard/import.cljs:814
+#, fuzzy
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "連結所選資料庫"
+
+#: src/app/main/ui/dashboard/import.cljs:288
+#, fuzzy
+msgid "dashboard.import.file-name-label"
+msgstr "檔案名稱"
 
 #: src/app/main/ui/dashboard/import.cljs:721
 msgid "dashboard.import.import-error.check-error"
@@ -666,9 +696,51 @@ msgstr "已成功匯入 %s 個檔案。"
 msgid "dashboard.import.import-warning"
 msgstr "部分檔案含有無效物件，這些物件已移除。"
 
+#: src/app/main/ui/dashboard/import.cljs:600
+#, fuzzy
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "已完成 %s 個"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+#, fuzzy
+msgid "dashboard.import.importing.message"
+msgstr "正在專案中重建頁面、元件和資產。"
+
+#: src/app/main/ui/dashboard/import.cljs:598
+#, fuzzy
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "正在匯入 %s 個檔案"
+
+#: src/app/main/ui/dashboard/import.cljs:815
+#, fuzzy
+msgid "dashboard.import.next-file"
+msgstr "下一個檔案"
+
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "您沒有權限將檔案匯入此團隊"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+#, fuzzy
+msgid "dashboard.import.queued.message"
+msgstr "檔案已上傳。一有空檔，就會開始匯入。"
+
+#: src/app/main/ui/dashboard/import.cljs:633
+#, fuzzy
+msgid "dashboard.import.queued.title"
+msgstr "等待開始…"
+
+#: src/app/main/ui/dashboard/import.cljs:628
+#, fuzzy
+msgid "dashboard.import.ready.message"
+msgstr "檔案可以匯入了。繼續即可上傳。"
+
+#: src/app/main/ui/dashboard/import.cljs:627
+#, fuzzy
+msgid "dashboard.import.ready.title"
+msgstr "檔案已就緒"
 
 #: src/app/main/ui/dashboard/import.cljs:431
 msgid "dashboard.import.resolve-libraries"
@@ -678,13 +750,78 @@ msgstr "部分資料庫無法自動連結。請為每一項選擇正確的資料
 msgid "dashboard.import.resolve-libraries-summary"
 msgstr "確認前，請檢查資料庫連結："
 
+#: src/app/main/ui/dashboard/import.cljs:447
+#, fuzzy
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "連結至"
+
+#: src/app/main/ui/dashboard/import.cljs:441
+#, fuzzy
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "原始資料庫"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+#, fuzzy
+msgid "dashboard.import.status.ready"
+msgstr "就緒"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+#, fuzzy
+msgid "dashboard.import.steps.check"
+msgstr "檢查"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+#, fuzzy
+msgid "dashboard.import.steps.import"
+msgstr "匯入"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+#, fuzzy
+msgid "dashboard.import.steps.label"
+msgstr "匯入步驟"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+#, fuzzy
+msgid "dashboard.import.steps.upload"
+msgstr "上傳"
+
 #: src/app/main/ui/dashboard/import.cljs:509
 msgid "dashboard.import.summary.linked"
 msgstr "已連結"
 
+#: src/app/main/ui/dashboard/import.cljs:517
+#, fuzzy
+msgid "dashboard.import.summary.manually-linked"
+msgstr "已手動連結"
+
+#: src/app/main/ui/dashboard/import.cljs:525
+#, fuzzy
+msgid "dashboard.import.summary.new"
+msgstr "新"
+
 #: src/app/main/ui/dashboard/import.cljs:546
 msgid "dashboard.import.summary.no-selection"
 msgstr "尚未選取資料庫"
+
+#: src/app/main/ui/dashboard/import.cljs:522
+#, fuzzy
+msgid "dashboard.import.summary.original"
+msgstr "原始"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+#, fuzzy
+msgid "dashboard.import.title"
+msgstr "匯入檔案"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+#, fuzzy
+msgid "dashboard.import.upload.message"
+msgstr "正在傳送你的檔案。上傳完成前，請保持此對話框開啟。"
+
+#: src/app/main/ui/dashboard/import.cljs:630
+#, fuzzy
+msgid "dashboard.import.upload.title"
+msgstr "正在上傳你的檔案…"
 
 #: src/app/main/ui/dashboard/team.cljs:879
 msgid "dashboard.invitation-modal.delete"
@@ -1415,6 +1552,11 @@ msgstr "剪貼簿存取遭拒。請在瀏覽器中允許存取剪貼簿，才能
 msgid "errors.comment-error"
 msgstr "留言發生錯誤"
 
+#: src/app/main/errors.cljs:587
+#, fuzzy
+msgid "errors.connection-error"
+msgstr "無法連線到伺服器。請檢查網路連線後再試一次。"
+
 #: src/app/main/errors.cljs:1013
 msgid "errors.deprecated"
 msgstr "很抱歉！這是舊版檔案，使用了已停用的 Penpot 資產類型，因此無法開啟。"
@@ -1462,6 +1604,16 @@ msgstr "電子郵件地址「%s」已有多次永久退信紀錄。"
 #: src/app/main/ui/dashboard/team.cljs:223, src/app/main/ui/dashboard/team.cljs:1129, src/app/main/ui/onboarding/team_choice.cljs:122
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "電子郵件地址 «%s» 已被回報為垃圾郵件來源，或寄往此地址的郵件遭到永久退信。"
+
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+#, fuzzy
+msgid "errors.export-failed"
+msgstr "匯出失敗。請稍後再試。"
+
+#: src/app/main/data/exports/assets.cljs:377
+#, fuzzy
+msgid "errors.export-too-large"
+msgstr "內容太大，無法匯出，請改用較小的縮放比例"
 
 #: src/app/main/errors.cljs:990
 msgid "errors.feature-mismatch"
@@ -1675,6 +1827,11 @@ msgstr "Token 存在循環參照"
 msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr "行高取決於字型大小。請新增字型大小以取得解析後的值。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+#, fuzzy
+msgid "errors.tokens.division-by-zero"
+msgstr "無效的 token 值：除以零"
+
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:442
 msgid "errors.tokens.empty-field"
 msgstr "此欄位不可空白"
@@ -1687,9 +1844,19 @@ msgstr "Token 的值不可空白"
 msgid "errors.tokens.error-parse"
 msgstr "匯入錯誤：無法解析 JSON。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+#, fuzzy
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "無效的 token 值：%s() 的參數超出範圍"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:33, src/app/main/data/workspace/tokens/errors.cljs:38
 msgid "errors.tokens.import-error"
 msgstr "匯入錯誤："
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+#, fuzzy
+msgid "errors.tokens.incompatible-units"
+msgstr "無效的 token 值：無法組合單位 %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:54
 msgid "errors.tokens.invalid-color"
@@ -1776,6 +1943,11 @@ msgstr "陰影擴張值必須大於或等於 0。"
 #: src/app/main/data/workspace/tokens/errors.cljs:108, src/app/main/data/workspace/tokens/warnings.cljs:19
 msgid "errors.tokens.stroke-width-range"
 msgstr "筆畫寬度必須大於或等於 0。"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+#, fuzzy
+msgid "errors.tokens.unknown-function"
+msgstr "無效的 token 值：未知的函式 %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:100, ../common/src/app/common/files/tokens.cljc:52
 msgid "errors.tokens.value-with-percent"
@@ -1938,6 +2110,43 @@ msgstr "想法"
 msgid "feedback.type.issue"
 msgstr "問題"
 
+#: src/app/main/ui/exports/files.cljs:467
+#, fuzzy
+msgid "files-export-modal.cancel-export"
+msgstr "取消匯出"
+
+#: src/app/main/ui/exports/files.cljs:471
+#, fuzzy
+msgid "files-export-modal.done"
+msgstr "完成"
+
+#: src/app/main/ui/exports/files.cljs:210
+#, fuzzy
+msgid "files-export-modal.export-error"
+msgstr "無法匯出：%s"
+
+#: src/app/main/ui/exports/files.cljs:246
+#, fuzzy
+msgid "files-export-modal.exported.message"
+msgstr "請查看你的下載資料夾。"
+
+#: src/app/main/ui/exports/files.cljs:239
+#, fuzzy
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "已匯出 %s 個檔案"
+
+#: src/app/main/ui/exports/files.cljs:245
+#, fuzzy
+msgid "files-export-modal.exporting.message"
+msgstr "每個檔案準備好後會立即下載。"
+
+#: src/app/main/ui/exports/files.cljs:238
+#, fuzzy
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "正在匯出 %s 個檔案"
+
 #: src/app/main/ui/exports/files.cljs:431
 msgid "files-export-modal.options.detach-libraries.message"
 msgstr "檔案將不包含已連結資料庫中的資產。"
@@ -1970,6 +2179,21 @@ msgstr "匯出檔案時，資料庫資產將合併至檔案內的資料庫。"
 msgid "files-export-modal.options.merge-libraries.title"
 msgstr "將資料庫資產嵌入檔案"
 
+#: src/app/main/ui/exports/files.cljs:179
+#, fuzzy
+msgid "files-export-modal.status.exported"
+msgstr "已匯出"
+
+#: src/app/main/ui/exports/files.cljs:186
+#, fuzzy
+msgid "files-export-modal.status.waiting"
+msgstr "等待中"
+
+#: src/app/main/ui/exports/files.cljs:381
+#, fuzzy
+msgid "files-export-modal.title"
+msgstr "匯出檔案"
+
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
 msgstr "發生錯誤"
@@ -1986,9 +2210,24 @@ msgstr "匯入的設定將變更下列快捷鍵。"
 msgid "import-shortcuts.diff-modal-title"
 msgstr "匯入快捷鍵"
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+#, fuzzy
+msgid "import-shortcuts.imported"
+msgstr "已匯入"
+
+#: src/app/main/ui/settings/shortcuts.cljs:511, src/app/main/ui/settings/shortcuts.cljs:513
+#, fuzzy
+msgid "import-shortcuts.invalid-file"
+msgstr "此檔案不是有效的快捷鍵匯出檔案。"
+
 #: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
 msgid "import-shortcuts.no-changes"
 msgstr "目前的快捷鍵與匯入的快捷鍵沒有差異。"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+#, fuzzy
+msgid "import-shortcuts.skipped-entries"
+msgstr "以下項目無法匯入：它們不符合任何 Penpot 快捷鍵，或使用了保留的按鍵組合。"
 
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
@@ -2062,6 +2301,11 @@ msgstr "混合字型家族"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "無"
 
+#: src/app/main/ui/inspect/attributes/text.cljs:117
+#, fuzzy
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr "刪除線"
+
 #: src/app/main/ui/inspect/attributes/text.cljs:115
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "底線"
@@ -2094,6 +2338,11 @@ msgstr "變體屬性"
 msgid "inspect.attributes.variants"
 msgstr "變體屬性"
 
+#: src/app/main/ui/inspect/code.cljs:322, src/app/main/ui/inspect/code.cljs:365
+#, fuzzy
+msgid "inspect.code.expand-panel"
+msgstr "展開面板"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
 msgstr "選擇色彩空間"
@@ -2125,6 +2374,11 @@ msgstr "複本"
 #: src/app/main/ui/inspect/right_sidebar.cljs:63
 msgid "inspect.subtitle.main"
 msgstr "主要元件"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:176
+#, fuzzy
+msgid "inspect.tabs-switcher-label"
+msgstr "切換檢查面板分頁"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:142
 msgid "inspect.tabs.code.selected.circle"
@@ -2410,6 +2664,91 @@ msgstr "token 將於 %s 到期"
 msgid "integrations.token.will-not-expire"
 msgstr "token 沒有到期日"
 
+#: src/app/main/ui/exports/files.cljs:223
+#, fuzzy
+msgid "jobs.export-cancelled"
+msgstr "已取消匯出"
+
+#: src/app/main/data/imports.cljs:376
+#, fuzzy
+msgid "jobs.import-cancelled"
+msgstr "已取消匯入"
+
+#: src/app/main/ui/jobs/progress.cljs:26
+#, fuzzy
+msgid "jobs.progress.stage.colors"
+msgstr "正在處理色彩"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+#, fuzzy
+msgid "jobs.progress.stage.components"
+msgstr "正在處理元件"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+#, fuzzy
+msgid "jobs.progress.stage.files"
+msgstr "正在處理檔案"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+#, fuzzy
+msgid "jobs.progress.stage.manifest"
+msgstr "正在讀取檔案包"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+#, fuzzy
+msgid "jobs.progress.stage.media"
+msgstr "正在處理媒體"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+#, fuzzy
+msgid "jobs.progress.stage.metadata"
+msgstr "正在讀取中繼資料"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+#, fuzzy
+msgid "jobs.progress.stage.pages"
+msgstr "正在處理頁面"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+#, fuzzy
+msgid "jobs.progress.stage.relations"
+msgstr "正在處理資料庫關聯"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+#, fuzzy
+msgid "jobs.progress.stage.storage-objects"
+msgstr "正在處理儲存物件"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+#, fuzzy
+msgid "jobs.progress.stage.thumbnails"
+msgstr "正在處理縮圖"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+#, fuzzy
+msgid "jobs.progress.stage.tokens"
+msgstr "正在處理 token"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+#, fuzzy
+msgid "jobs.progress.stage.typographies"
+msgstr "正在處理文字樣式"
+
+#: src/app/main/ui/jobs/progress.cljs:34
+#, fuzzy
+msgid "jobs.progress.stage.unknown"
+msgstr "處理中"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+#, fuzzy
+msgid "jobs.progress.stage.upload"
+msgstr "正在上傳檔案…"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+#, fuzzy, unused
+msgid "jobs.queued"
+msgstr "正在等待工作空檔"
+
 #: src/app/main/ui/dashboard/comments.cljs:90
 msgid "label.mark-all-as-read"
 msgstr "全部標示為已讀"
@@ -2665,6 +3004,11 @@ msgstr "錯誤"
 #: src/app/main/data/workspace/versions.cljs:314
 msgid "labels.exit"
 msgstr "離開"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+#, fuzzy
+msgid "labels.expand"
+msgstr "展開"
 
 #: src/app/main/ui/dashboard/team.cljs:777
 msgid "labels.expired-invitation"
@@ -3121,6 +3465,11 @@ msgstr "僅顯示您的留言"
 msgid "labels.sketch"
 msgstr "sketch"
 
+#: src/app/main/ui/dashboard/import.cljs:808
+#, fuzzy
+msgid "labels.skip"
+msgstr "略過"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:359
 msgid "labels.sources"
 msgstr "來源"
@@ -3164,6 +3513,11 @@ msgstr "SVG"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:593
 msgid "labels.switch"
 msgstr "切換"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:657
+#, fuzzy
+msgid "labels.team-management"
+msgstr "團隊管理"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:30
 msgid "labels.text"
@@ -4575,9 +4929,19 @@ msgstr "文字"
 msgid "shortcuts.duplicate"
 msgstr "建立複本"
 
+#: src/app/main/ui/shortcuts.cljs:714
+#, fuzzy
+msgid "shortcuts.edit"
+msgstr "編輯 %s"
+
 #: src/app/main/ui/shortcuts.cljs:775
 msgid "shortcuts.edit-modal.conflict"
 msgstr "此按鍵組合已指派給「%s」。儲存後將移除該功能的此組快捷鍵。"
+
+#: src/app/main/ui/shortcuts.cljs:771
+#, fuzzy
+msgid "shortcuts.edit-modal.reserved"
+msgstr "此按鍵組合已由 Penpot 保留，無法指派。"
 
 #: src/app/main/ui/shortcuts.cljs:761
 msgid "shortcuts.edit-modal.reset-pending"
@@ -4875,6 +5239,11 @@ msgstr "重新命名"
 msgid "shortcuts.reset"
 msgstr "還原為預設值"
 
+#: src/app/main/ui/settings/shortcuts.cljs:53
+#, fuzzy
+msgid "shortcuts.reset-all"
+msgstr "全部還原"
+
 #: src/app/main/data/viewer/shortcuts.cljs:49, src/app/main/data/workspace/grid_layout/shortcuts.cljs:70, src/app/main/data/workspace/path/shortcuts.cljs:217, src/app/main/data/workspace/shortcuts.cljs:706
 msgid "shortcuts.reset-zoom"
 msgstr "重設縮放比例"
@@ -4882,6 +5251,11 @@ msgstr "重設縮放比例"
 #: src/app/main/data/workspace/shortcuts.cljs:477
 msgid "shortcuts.scale"
 msgstr "縮放"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+#, fuzzy
+msgid "shortcuts.search"
+msgstr "搜尋快捷鍵"
 
 # SECTIONS
 #: src/app/main/ui/shortcuts.cljs:255, src/app/main/ui/shortcuts.cljs:427
@@ -5498,8 +5872,9 @@ msgid "subscription.settings.try-it-free"
 msgstr "免費試用 14 天"
 
 #: src/app/main/ui/dashboard/subscription.cljs:297, src/app/main/ui/settings/subscription.cljs:125, src/app/main/ui/settings/subscription.cljs:475, src/app/main/ui/settings/subscription.cljs:616, src/app/main/ui/settings/subscription.cljs:681, src/app/main/ui/settings/subscription.cljs:764
+#, fuzzy
 msgid "subscription.settings.unlimited"
-msgstr ""
+msgstr "無限版"
 
 #: src/app/main/ui/dashboard/subscription.cljs:296, src/app/main/ui/settings/subscription.cljs:121, src/app/main/ui/settings/subscription.cljs:615, src/app/main/ui/settings/subscription.cljs:668
 msgid "subscription.settings.unlimited-trial"
@@ -5629,6 +6004,11 @@ msgstr "此頁面沒有畫板。"
 msgid "viewer.frame-not-found"
 msgstr "找不到畫板。"
 
+#: src/app/main/ui/viewer.cljs:127
+#, fuzzy
+msgid "viewer.go-to-first-board"
+msgstr "前往第一個畫板"
+
 #: src/app/main/ui/viewer/header.cljs:367
 msgid "viewer.header.comments-section"
 msgstr "留言 (%s)"
@@ -5669,6 +6049,16 @@ msgstr "點選時顯示互動"
 msgid "viewer.header.sitemap"
 msgstr "網站地圖"
 
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+#, fuzzy
+msgid "viewer.thumbnails.scroll-left"
+msgstr "向左捲動"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+#, fuzzy
+msgid "viewer.thumbnails.scroll-right"
+msgstr "向右捲動"
+
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
 msgstr "前往控制台"
@@ -5684,6 +6074,11 @@ msgstr "您的瀏覽器無法使用 WebGL，而 Penpot 需要 WebGL 才能運作
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:58
 msgid "webgl.modals.webgl-unavailable.title"
 msgstr "糟糕！無法使用 WebGL"
+
+#: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:71
+#, fuzzy
+msgid "webgl.modals.webgl-unavailable.troubleshooting.after"
+msgstr " ，了解如何檢查瀏覽器設定、GPU 加速、驅動程式和常見系統問題。"
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:65
 msgid "webgl.modals.webgl-unavailable.troubleshooting.before"
@@ -5898,6 +6293,11 @@ msgstr "字距"
 msgid "workspace.assets.typography.line-height"
 msgstr "行高"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:297
+#, fuzzy
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "請只選取一段文字來建立文字樣式"
+
 #: src/app/main/ui/dashboard/grid.cljs:227, src/app/main/ui/workspace/libraries.cljs:1094, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:882, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1020
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
@@ -5921,6 +6321,11 @@ msgstr "已將圖片複製到剪貼簿"
 #: src/app/main/data/workspace/clipboard.cljs:1270
 msgid "workspace.clipboard.image-copy-failed"
 msgstr "複製圖片時發生錯誤"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:447
+#, fuzzy
+msgid "workspace.colorpicker.color-picker"
+msgstr "從螢幕擷取色彩"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
@@ -6233,6 +6638,11 @@ msgstr "解除參考線鎖定"
 msgid "workspace.header.reset-zoom"
 msgstr "重設"
 
+#: src/app/main/ui/workspace/left_header.cljs:133
+#, fuzzy
+msgid "workspace.header.retrying"
+msgstr "正在重試儲存"
+
 #: src/app/main/ui/workspace/left_header.cljs:134
 msgid "workspace.header.save-error"
 msgstr "儲存時發生錯誤"
@@ -6277,6 +6687,11 @@ msgstr "全螢幕"
 msgid "workspace.header.zoom-selected"
 msgstr "縮放至選取範圍"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1050
+#, fuzzy
+msgid "workspace.layout-grid.editor.columns"
+msgstr "欄"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:852
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "編輯網格"
@@ -6313,6 +6728,21 @@ msgstr "上內距"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "垂直內距"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, fuzzy
+msgid "workspace.layout-grid.editor.rows"
+msgstr "列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:994
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "選取欄"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:995
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "選取列"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "正在編輯網格"
@@ -6328,6 +6758,26 @@ msgstr "定位"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1616
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "定位網格佈局"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:932
+#, fuzzy
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "軌道選項"
+
+#: src/app/main/ui/workspace/libraries.cljs:921
+#, fuzzy
+msgid "workspace.libraries.add-shared-library"
+msgstr "新增共享資料庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:823
+#, fuzzy
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "此檔案中的資產"
+
+#: src/app/main/data/workspace/libraries.cljs:1963
+#, fuzzy
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "資料庫「%s」無法載入，已與此檔案中斷連結。檔案中已使用的元件和色彩不受影響，但在修復該資料庫並重新連結之前，它們會處於孤立狀態。"
 
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
@@ -6375,6 +6825,16 @@ msgid "workspace.libraries.components"
 msgid_plural "workspace.libraries.components"
 msgstr[0] "%s 個元件"
 
+#: src/app/main/ui/workspace/libraries.cljs:864
+#, fuzzy
+msgid "workspace.libraries.connected-libraries"
+msgstr "已連結的資料庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:235
+#, fuzzy
+msgid "workspace.libraries.connected-through"
+msgstr "經由"
+
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
 msgstr "已連結至"
@@ -6382,6 +6842,16 @@ msgstr "已連結至"
 #: src/app/main/ui/workspace/libraries.cljs:573, src/app/main/ui/workspace/libraries.cljs:697
 msgid "workspace.libraries.empty.add-some"
 msgstr "或新增下列項目來試試："
+
+#: src/app/main/ui/workspace/libraries.cljs:834
+#, fuzzy
+msgid "workspace.libraries.empty.no-assets"
+msgstr "尚無資產"
+
+#: src/app/main/ui/workspace/libraries.cljs:918
+#, fuzzy
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "尚無已連結的資料庫。"
 
 #: src/app/main/ui/workspace/libraries.cljs:567, src/app/main/ui/workspace/libraries.cljs:691
 msgid "workspace.libraries.empty.no-libraries"
@@ -6428,9 +6898,19 @@ msgstr "找不到符合「%s」的結果"
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "搜尋共享資料庫"
 
+#: src/app/main/ui/workspace/libraries.cljs:849, src/app/main/ui/workspace/libraries.cljs:897
+#, fuzzy
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "設為 token 來源"
+
 #: src/app/main/ui/workspace/libraries.cljs:531, src/app/main/ui/workspace/libraries.cljs:648
 msgid "workspace.libraries.shared-libraries"
 msgstr "共享資料庫"
+
+#: src/app/main/ui/workspace/libraries.cljs:674
+#, fuzzy
+msgid "workspace.libraries.shared-library-added"
+msgstr "已新增"
 
 #: src/app/main/ui/workspace/libraries.cljs:555, src/app/main/ui/workspace/libraries.cljs:679
 msgid "workspace.libraries.shared-library-btn"
@@ -6455,6 +6935,34 @@ msgstr "解除所有資產的連結"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:554
 msgid "workspace.libraries.text.multiple-token-tooltip"
 msgstr "解除所有 tokens 的套用"
+
+#: src/app/main/ui/workspace/libraries.cljs:1159
+#, fuzzy
+msgid "workspace.libraries.this-file"
+msgstr "此檔案"
+
+#: src/app/main/ui/workspace/libraries.cljs:219, src/app/main/ui/workspace/libraries.cljs:263
+#, fuzzy
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "%s 個集合"
+
+#: src/app/main/ui/workspace/libraries.cljs:222, src/app/main/ui/workspace/libraries.cljs:267
+#, fuzzy
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "%s 個主題"
+
+#: src/app/main/ui/workspace/libraries.cljs:216, src/app/main/ui/workspace/libraries.cljs:259
+#, fuzzy
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "%s 個 token"
+
+#: src/app/main/ui/workspace/libraries.cljs:842, src/app/main/ui/workspace/libraries.cljs:889
+#, fuzzy
+msgid "workspace.libraries.tokens-source"
+msgstr "token 來源"
 
 #: src/app/main/ui/workspace/libraries.cljs:181, src/app/main/ui/workspace/libraries.cljs:210, src/app/main/ui/workspace/libraries.cljs:255
 msgid "workspace.libraries.typography"
@@ -6540,6 +7048,11 @@ msgstr "取消"
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "畫布背景"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+#, fuzzy
+msgid "workspace.options.canvas-background-section"
+msgstr "畫布背景區塊"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:720
 msgid "workspace.options.clip-content"
@@ -6818,6 +7331,11 @@ msgstr "流程起點"
 msgid "workspace.options.flows.flow-starts"
 msgstr "流程起點"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:300, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+#, fuzzy
+msgid "workspace.options.font-not-available"
+msgstr "此文字使用的字型（%s）已無法使用。請重新上傳該字型以建立文字樣式"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
 msgstr "自動"
@@ -6829,6 +7347,11 @@ msgstr "欄"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:249, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:283
 msgid "workspace.options.grid.params.color"
 msgstr "色彩"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+#, fuzzy
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "輔助線預設值"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:303
 msgid "workspace.options.grid.params.gutter"
@@ -7230,6 +7753,11 @@ msgstr "更多資料庫色彩"
 msgid "workspace.options.more-token-colors"
 msgstr "更多色彩 tokens"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:516
+#, fuzzy
+msgid "workspace.options.no-font-results"
+msgstr "沒有符合的字型"
+
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516
 msgid "workspace.options.no-size-preset-results"
 msgstr "沒有符合的尺寸預設值"
@@ -7237,6 +7765,11 @@ msgstr "沒有符合的尺寸預設值"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:298
 msgid "workspace.options.opacity"
 msgstr "不透明度"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
+#, fuzzy
+msgid "workspace.options.pixel-grid-color"
+msgstr "像素網格色彩"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs:242
 msgid "workspace.options.prototype"
@@ -8226,6 +8759,16 @@ msgstr "讀取目前使用者的個人資料。"
 msgid "workspace.plugins.plugin-list-link"
 msgstr "外掛清單"
 
+#: src/app/main/ui/workspace/plugins.cljs:188
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr "確定要移除外掛 %s 嗎？你可以隨時重新安裝。"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "移除外掛"
+
 #: src/app/main/ui/workspace/plugins.cljs:98, src/app/main/ui/workspace/plugins.cljs:189
 msgid "workspace.plugins.remove-plugin"
 msgstr "移除外掛"
@@ -8610,6 +9153,11 @@ msgstr "形狀"
 msgid "workspace.sidebar.layers.texts"
 msgstr "文字"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+#, fuzzy
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "移除屬性"
+
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:114
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "匯入的 SVG 屬性"
@@ -8712,6 +9260,11 @@ msgstr "%s 個已啟用的主題"
 msgid "workspace.tokens.add-new-theme"
 msgstr "新增主題"
 
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:106
+#, fuzzy
+msgid "workspace.tokens.add-set"
+msgstr "新增集合"
+
 #: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:62
 msgid "workspace.tokens.add-set-to-group"
 msgstr "在此群組中新增集合"
@@ -8740,6 +9293,11 @@ msgstr "基準字級"
 msgid "workspace.tokens.base-font-size.error"
 msgstr "基準字級必須是以像素為單位或不含單位的數值。"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:98
+#, fuzzy
+msgid "workspace.tokens.change-token-source"
+msgstr "變更 token 來源"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
 msgid "workspace.tokens.color"
 msgstr "色彩"
@@ -8760,6 +9318,11 @@ msgstr "建立一個。"
 msgid "workspace.tokens.create-token"
 msgstr "建立新的 %s token"
 
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:101
+#, fuzzy
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "這是目前的 token 來源"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "刪除 token"
@@ -8767,6 +9330,11 @@ msgstr "刪除 token"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:138
 msgid "workspace.tokens.delete-theme-title"
 msgstr "刪除主題"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
+#, fuzzy
+msgid "workspace.tokens.detach-reference"
+msgstr "解除參照連結"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
@@ -8972,9 +9540,24 @@ msgstr "您目前沒有任何主題。"
 msgid "workspace.tokens.not-remap"
 msgstr "不要重新對應"
 
+#: src/app/main/data/workspace/libraries.cljs:850
+#, fuzzy
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "token 來源的集合或主題已被修改"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:132
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s 個已啟用的集合"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:112
+#, fuzzy
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr "設計 token 只能套用到清單中的第一個填充或筆畫。"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
+#, fuzzy
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "在新分頁中開啟 token 來源"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:157
 msgid "workspace.tokens.original-value"
@@ -9108,6 +9691,16 @@ msgstr "Y"
 msgid "workspace.tokens.size"
 msgstr "尺寸"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
+#, fuzzy
+msgid "workspace.tokens.source"
+msgstr "來源："
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+#, fuzzy
+msgid "workspace.tokens.stroke-width"
+msgstr "筆畫寬度"
+
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:54, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:184
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "none | uppercase | lowercase | capitalize 或 {alias}"
@@ -9123,6 +9716,11 @@ msgstr "你可以在這裡管理主題、啟用或停用主題，並設定各主
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83
 msgid "workspace.tokens.themes-list"
 msgstr "主題清單"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:80
+#, fuzzy
+msgid "workspace.tokens.this-file"
+msgstr "此檔案"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
 msgid "workspace.tokens.token-description"
@@ -9222,6 +9820,11 @@ msgstr "畫板（%s）"
 msgid "workspace.toolbar.image"
 msgstr "圖片（%s）"
 
+#: src/app/main/ui/workspace/top_toolbar.cljs:362
+#, fuzzy
+msgid "workspace.toolbar.label"
+msgstr "繪圖工具"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:67
 msgid "workspace.toolbar.line"
 msgstr "直線（%s）"
@@ -9234,6 +9837,21 @@ msgstr "MCP"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP 已連線"
 
+#: src/app/main/ui/components/mcp_menu.cljs:136
+#, fuzzy
+msgid "workspace.toolbar.mcp-copy-session-id"
+msgstr "複製工作階段 ID"
+
+#: src/app/main/ui/components/mcp_menu.cljs:33
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-copied"
+msgstr "已複製工作階段 ID"
+
+#: src/app/main/ui/components/mcp_menu.cljs:132
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-id"
+msgstr "工作階段 ID：%s"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:63, src/app/main/ui/workspace/top_toolbar.cljs:374
 msgid "workspace.toolbar.move"
 msgstr "移動（%s）"
@@ -9241,6 +9859,11 @@ msgstr "移動（%s）"
 #: src/app/main/ui/workspace/palette.cljs:175
 msgid "workspace.toolbar.palette-bar"
 msgstr "色票列"
+
+#: src/app/main/ui/workspace/palette.cljs:211
+#, fuzzy
+msgid "workspace.toolbar.palette-options"
+msgstr "調色盤選項"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:70
 msgid "workspace.toolbar.path"
@@ -9362,6 +9985,11 @@ msgstr "文字樣式資產"
 #: src/app/main/ui/workspace/sidebar/history.cljs:152
 msgid "workspace.undo.entry.new"
 msgstr "新增 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:371
+#, fuzzy
+msgid "workspace.undo.entry.show-details"
+msgstr "顯示詳細資訊"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:132
 msgid "workspace.undo.entry.single.circle"

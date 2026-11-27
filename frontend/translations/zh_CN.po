@@ -75,6 +75,11 @@ msgstr "使用 OpenID 登录"
 msgid "auth.new-password"
 msgstr "输入新的密码"
 
+#: src/app/main/ui/auth/verify_token.cljs:54
+#, fuzzy
+msgid "auth.notifications.organization-invitation-accepted"
+msgstr "你已成为 %s 的一员"
+
 #: src/app/main/ui/auth/recovery.cljs:52
 msgid "auth.notifications.password-changed-successfully"
 msgstr "密码修改成功"
@@ -270,6 +275,101 @@ msgstr "添加为共享库"
 msgid "dashboard.change-email"
 msgstr "修改电子邮件"
 
+#: src/app/main/data/nitrate.cljs:614
+#, fuzzy
+msgid "dashboard.change-organization-modal.accept"
+msgstr "移动团队"
+
+#: src/app/main/data/nitrate.cljs:612
+#, fuzzy
+msgid "dashboard.change-organization-modal.choose"
+msgstr "移动到："
+
+#: src/app/main/data/nitrate.cljs:611
+#, fuzzy
+msgid "dashboard.change-organization-modal.description"
+msgstr "团队成员仍可访问原有的项目和文件。团队将应用新组织的设置。"
+
+#: src/app/main/data/nitrate.cljs:613
+#, fuzzy
+msgid "dashboard.change-organization-modal.select"
+msgstr "选择组织"
+
+#: src/app/main/data/nitrate.cljs:603, src/app/main/data/nitrate.cljs:610, src/app/main/ui/dashboard/team_form.cljs:163
+#, fuzzy
+msgid "dashboard.change-organization-modal.title"
+msgstr "更改团队所属组织"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:334
+#, fuzzy
+msgid "dashboard.check-updates.available-message"
+msgstr "新版本包含性能改进、新功能和问题修复，让你的 Penpot 保持最新状态。"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:309
+#, fuzzy
+msgid "dashboard.check-updates.available-title"
+msgstr "Penpot 新版本已发布"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:341
+#, fuzzy
+msgid "dashboard.check-updates.highlights-title"
+msgstr "新版本亮点"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:318
+#, fuzzy
+msgid "dashboard.check-updates.installed-version"
+msgstr "已安装版本"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:326
+#, fuzzy
+msgid "dashboard.check-updates.latest-version"
+msgstr "最新版本"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:235
+#, fuzzy
+msgid "dashboard.check-updates.try-again"
+msgstr "重试"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:230
+#, fuzzy
+msgid "dashboard.check-updates.unable-hint"
+msgstr "请检查网络或实例配置，然后重试。"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:226
+#, fuzzy
+msgid "dashboard.check-updates.unable-message"
+msgstr "此 Penpot 实例无法连接到 Penpot 版本发布服务。"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:215
+#, fuzzy
+msgid "dashboard.check-updates.unable-title"
+msgstr "无法检查更新"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:265
+#, fuzzy
+msgid "dashboard.check-updates.uptodate-message"
+msgstr "你当前使用的是最新稳定版本："
+
+#: src/app/main/ui/dashboard/check_updates.cljs:254
+#, fuzzy
+msgid "dashboard.check-updates.uptodate-title"
+msgstr "PENPOT 已是最新版本"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:371
+#, fuzzy
+msgid "dashboard.check-updates.view-changelog"
+msgstr "查看完整更新日志"
+
+#: src/app/main/ui/dashboard/check_updates.cljs:374
+#, fuzzy
+msgid "dashboard.check-updates.view-release-notes"
+msgstr "查看发布说明"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:228
+#, fuzzy
+msgid "dashboard.clear-search"
+msgstr "清除搜索"
+
 #: src/app/main/ui/dashboard/deleted.cljs:328
 msgid "dashboard.clear-trash-button"
 msgstr "清空回收站"
@@ -277,6 +377,11 @@ msgstr "清空回收站"
 #: src/app/main/data/dashboard.cljs:317, src/app/main/data/dashboard.cljs:553, src/app/main/data/workspace/pages.cljs:206
 msgid "dashboard.copy-suffix"
 msgstr "（复制）"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:311, src/app/main/ui/dashboard/organization_team_switch.cljs:402
+#, fuzzy
+msgid "dashboard.create-new-organization"
+msgstr "创建组织"
 
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:393
 msgid "dashboard.create-new-team"
@@ -469,6 +574,21 @@ msgid_plural "dashboard.file-menu.restore-files-option"
 msgstr[0] "恢复文件"
 msgstr[1] "恢复文件"
 
+#: src/app/main/ui/dashboard/layout_toggle.cljs:32
+#, fuzzy
+msgid "dashboard.files-layout.grid"
+msgstr "网格视图"
+
+#: src/app/main/ui/dashboard/layout_toggle.cljs:28
+#, fuzzy
+msgid "dashboard.files-layout.list"
+msgstr "列表视图"
+
+#: src/app/main/ui/dashboard/fonts.cljs:442, src/app/main/ui/dashboard/fonts.cljs:443
+#, fuzzy
+msgid "dashboard.fonts.delete-variant"
+msgstr "删除字体样式"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:652
 msgid "dashboard.fonts.deleted-placeholder"
 msgstr "缺失字体"
@@ -526,6 +646,11 @@ msgstr ""
 msgid "dashboard.go-to-admin-console"
 msgstr "前往管理控制台"
 
+#: src/app/main/ui/dashboard/grid.cljs:253
+#, fuzzy
+msgid "dashboard.grid.last-modified-at"
+msgstr "上次修改时间：%s"
+
 #: src/app/main/ui/dashboard/project_menu.cljs:110
 msgid "dashboard.import"
 msgstr "导入 Penpot 文件"
@@ -534,9 +659,41 @@ msgstr "导入 Penpot 文件"
 msgid "dashboard.import.analyze-error"
 msgstr "糟糕！无法导入此文件"
 
+#: src/app/main/ui/dashboard/import.cljs:698
+#, fuzzy
+msgid "dashboard.import.auto-linked-libraries"
+msgid_plural "dashboard.import.auto-linked-libraries"
+msgstr[0] "已按名称自动连接 1 个库。"
+msgstr[1] "已按名称自动连接 %s 个库。"
+
 #: src/app/main/ui/dashboard.cljs:264
 msgid "dashboard.import.bad-url"
 msgstr "导入失败。模板 URL 不正确"
+
+#: src/app/main/ui/dashboard/import.cljs:625
+#, fuzzy
+msgid "dashboard.import.check.message"
+msgstr "正在确认每个文件都可以导入，只需片刻。"
+
+#: src/app/main/ui/dashboard/import.cljs:624
+#, fuzzy
+msgid "dashboard.import.check.title"
+msgstr "正在检查你的文件…"
+
+#: src/app/main/ui/dashboard/import.cljs:838
+#, fuzzy
+msgid "dashboard.import.confirm-library-links"
+msgstr "确认库连接"
+
+#: src/app/main/ui/dashboard/import.cljs:814
+#, fuzzy
+msgid "dashboard.import.connect-selected-libraries"
+msgstr "连接所选库"
+
+#: src/app/main/ui/dashboard/import.cljs:288
+#, fuzzy
+msgid "dashboard.import.file-name-label"
+msgstr "文件名"
 
 #: src/app/main/ui/dashboard/import.cljs:721
 msgid "dashboard.import.import-error.check-error"
@@ -572,9 +729,138 @@ msgstr[1] "已成功导入 %s 个文件。"
 msgid "dashboard.import.import-warning"
 msgstr "部分文件包含无效对象，这些对象已被移除。"
 
+#: src/app/main/ui/dashboard/import.cljs:600
+#, fuzzy
+msgid "dashboard.import.importing.done"
+msgid_plural "dashboard.import.importing.done"
+msgstr[0] "已完成 1 个"
+msgstr[1] "已完成 %s 个"
+
+#: src/app/main/ui/dashboard/import.cljs:637
+#, fuzzy
+msgid "dashboard.import.importing.message"
+msgstr "正在项目中重建页面、组件和素材。"
+
+#: src/app/main/ui/dashboard/import.cljs:598
+#, fuzzy
+msgid "dashboard.import.importing.title"
+msgid_plural "dashboard.import.importing.title"
+msgstr[0] "正在导入 1 个文件"
+msgstr[1] "正在导入 %s 个文件"
+
+#: src/app/main/ui/dashboard/import.cljs:815
+#, fuzzy
+msgid "dashboard.import.next-file"
+msgstr "下一个文件"
+
 #: src/app/main/ui/dashboard.cljs:265
 msgid "dashboard.import.no-perms"
 msgstr "你没有权限将文件导入此团队"
+
+#: src/app/main/ui/dashboard/import.cljs:634
+#, fuzzy
+msgid "dashboard.import.queued.message"
+msgstr "文件已上传。一有空闲位置，就会开始导入。"
+
+#: src/app/main/ui/dashboard/import.cljs:633
+#, fuzzy
+msgid "dashboard.import.queued.title"
+msgstr "等待开始…"
+
+#: src/app/main/ui/dashboard/import.cljs:628
+#, fuzzy
+msgid "dashboard.import.ready.message"
+msgstr "文件可以导入了。继续即可上传。"
+
+#: src/app/main/ui/dashboard/import.cljs:627
+#, fuzzy
+msgid "dashboard.import.ready.title"
+msgstr "文件已就绪"
+
+#: src/app/main/ui/dashboard/import.cljs:431
+#, fuzzy
+msgid "dashboard.import.resolve-libraries"
+msgstr "部分库无法自动连接。请为每一项选择正确的库："
+
+#: src/app/main/ui/dashboard/import.cljs:553
+#, fuzzy
+msgid "dashboard.import.resolve-libraries-summary"
+msgstr "确认前，请检查库连接："
+
+#: src/app/main/ui/dashboard/import.cljs:447
+#, fuzzy
+msgid "dashboard.import.resolve-libraries.connect-to"
+msgstr "连接到"
+
+#: src/app/main/ui/dashboard/import.cljs:441
+#, fuzzy
+msgid "dashboard.import.resolve-libraries.original-library"
+msgstr "原始库"
+
+#: src/app/main/ui/dashboard/import.cljs:331
+#, fuzzy
+msgid "dashboard.import.status.ready"
+msgstr "就绪"
+
+#: src/app/main/ui/dashboard/import.cljs:568
+#, fuzzy
+msgid "dashboard.import.steps.check"
+msgstr "检查"
+
+#: src/app/main/ui/dashboard/import.cljs:570
+#, fuzzy
+msgid "dashboard.import.steps.import"
+msgstr "导入"
+
+#: src/app/main/ui/dashboard/import.cljs:573
+#, fuzzy
+msgid "dashboard.import.steps.label"
+msgstr "导入步骤"
+
+#: src/app/main/ui/dashboard/import.cljs:569
+#, fuzzy
+msgid "dashboard.import.steps.upload"
+msgstr "上传"
+
+#: src/app/main/ui/dashboard/import.cljs:509
+#, fuzzy
+msgid "dashboard.import.summary.linked"
+msgstr "已自动连接"
+
+#: src/app/main/ui/dashboard/import.cljs:517
+#, fuzzy
+msgid "dashboard.import.summary.manually-linked"
+msgstr "已手动链接"
+
+#: src/app/main/ui/dashboard/import.cljs:525
+#, fuzzy
+msgid "dashboard.import.summary.new"
+msgstr "新"
+
+#: src/app/main/ui/dashboard/import.cljs:546
+#, fuzzy
+msgid "dashboard.import.summary.no-selection"
+msgstr "尚未选择库"
+
+#: src/app/main/ui/dashboard/import.cljs:522
+#, fuzzy
+msgid "dashboard.import.summary.original"
+msgstr "原始"
+
+#: src/app/main/ui/dashboard/import.cljs:1130
+#, fuzzy
+msgid "dashboard.import.title"
+msgstr "导入文件"
+
+#: src/app/main/ui/dashboard/import.cljs:631
+#, fuzzy
+msgid "dashboard.import.upload.message"
+msgstr "正在发送你的文件。上传结束前，请保持此对话框打开。"
+
+#: src/app/main/ui/dashboard/import.cljs:630
+#, fuzzy
+msgid "dashboard.import.upload.title"
+msgstr "正在上传你的文件…"
 
 #: src/app/main/ui/dashboard/team.cljs:879
 msgid "dashboard.invitation-modal.delete"
@@ -599,6 +885,21 @@ msgstr "你没有权限邀请他人加入此团队，也没有权限编辑或删
 #: src/app/main/ui/dashboard/team.cljs:133, src/app/main/ui/dashboard/team.cljs:855
 msgid "dashboard.invite-profile"
 msgstr "邀请成员"
+
+#: src/app/main/ui/dashboard/team.cljs:136
+#, fuzzy
+msgid "dashboard.invite-profile-disabled"
+msgstr "你没有权限邀请他人加入此团队"
+
+#: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:235, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:266
+#, fuzzy
+msgid "dashboard.leave-organization"
+msgstr "退出组织"
+
+#: src/app/main/data/nitrate.cljs:259
+#, fuzzy
+msgid "dashboard.leave-organization.toast"
+msgstr "你已不再是 %s 组织的成员。"
 
 #: src/app/main/ui/dashboard/organization_team_switch_menus.cljs:210, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:216, src/app/main/ui/dashboard/organization_team_switch_menus.cljs:221, src/app/main/ui/dashboard/team.cljs:455
 msgid "dashboard.leave-team"
@@ -668,6 +969,11 @@ msgstr "新建项目"
 msgid "dashboard.no-matches-for"
 msgstr "没有找到“%s”的匹配项"
 
+#: src/app/main/ui/dashboard/team_form.cljs:162
+#, fuzzy
+msgid "dashboard.no-organization-allows-create-team.message"
+msgstr "你没有权限在所属的任何组织中添加团队。"
+
 #: src/app/main/ui/dashboard/team_form.cljs:156
 msgid "dashboard.no-permission-create-team.message"
 msgstr "你无权在 %s 组织内创建团队。如需更多信息，请联系该组织的负责人。"
@@ -728,6 +1034,16 @@ msgstr "按角色排序"
 msgid "dashboard.order-invitations-by-status"
 msgstr "按状态排序"
 
+#: src/app/main/data/dashboard.cljs:753
+#, fuzzy
+msgid "dashboard.organization-deleted"
+msgstr "%s 组织已删除。"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:236, src/app/main/ui/dashboard/organization_team_switch.cljs:237
+#, fuzzy
+msgid "dashboard.other-teams"
+msgstr "其他团队"
+
 #: src/app/main/ui/settings/password.cljs:112, src/app/main/ui/settings/password.cljs:126
 msgid "dashboard.password-change"
 msgstr "修改密码"
@@ -747,6 +1063,11 @@ msgstr "你现在是此团队的所有者。"
 #: src/app/main/data/common.cljs:192
 msgid "dashboard.permissions-change.viewer"
 msgstr "你现在是此团队的查看者。"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:38, src/app/main/ui/dashboard/fonts.cljs:51, src/app/main/ui/dashboard/libraries.cljs:60, src/app/main/ui/dashboard/organization_team_switch.cljs:57, src/app/main/ui/dashboard/projects.cljs:57, src/app/main/ui/dashboard/projects.cljs:373, src/app/main/ui/dashboard/search.cljs:49, src/app/main/ui/dashboard/team.cljs:638, src/app/main/ui/dashboard/team.cljs:1258, src/app/main/ui/dashboard/team.cljs:1548, src/app/main/ui/dashboard/team.cljs:1655
+#, fuzzy
+msgid "dashboard.personal-projects"
+msgstr "你的 Penpot"
 
 #: src/app/main/ui/dashboard/files.cljs:132, src/app/main/ui/dashboard/project_menu.cljs:98, src/app/main/ui/dashboard/projects.cljs:260
 msgid "dashboard.pin-unpin"
@@ -839,6 +1160,51 @@ msgstr "正在搜索“%s”…"
 #: src/app/main/ui/dashboard/organization_team_switch.cljs:263
 msgid "dashboard.section.organizations"
 msgstr "组织"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:363
+#, fuzzy
+msgid "dashboard.section.teams"
+msgstr "团队"
+
+#: src/app/main/data/nitrate.cljs:529
+#, fuzzy
+msgid "dashboard.select-organization-modal.accept"
+msgstr "加入组织"
+
+#: src/app/main/data/nitrate.cljs:527
+#, fuzzy
+msgid "dashboard.select-organization-modal.choose"
+msgstr "选择组织："
+
+#: src/app/main/ui/dashboard/team.cljs:1042
+#, fuzzy
+msgid "dashboard.select-organization-modal.external-invitations-warning"
+msgstr "“%s”仅允许组织成员加入其下属团队。所有发送给组织外部人员且尚未接受的邀请都将被撤销。"
+
+#: src/app/main/ui/dashboard/team.cljs:1038
+#, fuzzy
+msgid "dashboard.select-organization-modal.external-invitations-will-be-canceled"
+msgstr "发送给外部用户且尚未接受的邀请将被取消。"
+
+#: src/app/main/data/nitrate.cljs:595
+#, fuzzy
+msgid "dashboard.select-organization-modal.permission-info"
+msgstr "这里会列出你所属且有权将团队移入的组织。"
+
+#: src/app/main/data/nitrate.cljs:519
+#, fuzzy
+msgid "dashboard.select-organization-modal.permission-info-add"
+msgstr "这里会列出你所属且有权在其中创建团队或将现有团队加入的组织。"
+
+#: src/app/main/data/nitrate.cljs:528
+#, fuzzy
+msgid "dashboard.select-organization-modal.select"
+msgstr "选择组织"
+
+#: src/app/main/data/nitrate.cljs:526, src/app/main/data/nitrate.cljs:546, src/app/main/ui/dashboard/team_form.cljs:161
+#, fuzzy
+msgid "dashboard.select-organization-modal.title"
+msgstr "将团队加入组织"
 
 #: src/app/main/ui/settings/options.cljs:69
 msgid "dashboard.select-ui-language"
@@ -960,6 +1326,11 @@ msgstr "成功移动了文件"
 msgid "dashboard.success-move-project"
 msgstr "成功移动了项目"
 
+#: src/app/main/data/common.cljs:268
+#, fuzzy, backend
+msgid "dashboard.team-belong-organization"
+msgstr "%s 现已属于 %s"
+
 #: src/app/main/ui/dashboard/team.cljs:1682
 msgid "dashboard.team-info"
 msgstr "团队信息"
@@ -967,6 +1338,11 @@ msgstr "团队信息"
 #: src/app/main/ui/dashboard/team.cljs:1728
 msgid "dashboard.team-members"
 msgstr "团队成员"
+
+#: src/app/main/data/common.cljs:269
+#, fuzzy, backend
+msgid "dashboard.team-no-longer-belong-organization"
+msgstr "%s 已不再属于 %s"
 
 #: src/app/main/ui/dashboard/team.cljs:1689
 msgid "dashboard.team-organization"
@@ -976,9 +1352,19 @@ msgstr "团队组织"
 msgid "dashboard.team-organization.add"
 msgstr "添加到组织"
 
+#: src/app/main/data/nitrate.cljs:545, src/app/main/data/nitrate.cljs:602
+#, fuzzy
+msgid "dashboard.team-organization.add.no-valid-organizations"
+msgstr "你没有权限将此团队加入你所属的任何组织。"
+
 #: src/app/main/ui/dashboard/team.cljs:1713
 msgid "dashboard.team-organization.change"
 msgstr "更改团队所属组织"
+
+#: src/app/main/ui/dashboard/team.cljs:946
+#, fuzzy
+msgid "dashboard.team-organization.disabled-organization-tooltip"
+msgstr "只能邀请你所属组织内的人员。"
 
 #: src/app/main/ui/dashboard/team.cljs:1720
 msgid "dashboard.team-organization.none"
@@ -1051,6 +1437,11 @@ msgstr "取消发布库"
 #: src/app/main/ui/settings/options.cljs:88
 msgid "dashboard.update-settings"
 msgstr "更新设置"
+
+#: src/app/main/data/dashboard.cljs:721
+#, fuzzy, backend
+msgid "dashboard.user-no-longer-belong-organization"
+msgstr "你已不再是 %s 组织的成员"
 
 #: src/app/main/ui/settings/options.cljs:115
 msgid "dashboard.webgl-switch.beta"
@@ -1200,6 +1591,11 @@ msgstr "无法上传该媒体文件。"
 msgid "errors.character-limit-exceeded"
 msgstr "超出字符限制"
 
+#: src/app/main/data/workspace/libraries.cljs:1838
+#, fuzzy
+msgid "errors.circular-library-reference"
+msgstr "无法添加库：这会造成循环依赖"
+
 #: src/app/main/ui/components/mcp_menu.cljs:34, src/app/main/ui/settings/integrations.cljs:93, src/app/util/clipboard.cljs:274
 msgid "errors.clipboard-api-unavailable"
 msgstr "剪贴板 API 不可用。请通过 HTTPS 提供 Penpot 服务以启用剪贴板访问"
@@ -1215,6 +1611,11 @@ msgstr "剪贴板访问遭拒。请在浏览器中授予剪贴板权限以粘贴
 #: src/app/main/errors.cljs:944
 msgid "errors.comment-error"
 msgstr "处理评论时出错"
+
+#: src/app/main/errors.cljs:587
+#, fuzzy
+msgid "errors.connection-error"
+msgstr "无法连接到服务器。请检查网络连接后重试。"
 
 #: src/app/main/errors.cljs:1013
 msgid "errors.deprecated"
@@ -1263,6 +1664,16 @@ msgstr "电子邮箱 «%s» 有多次永久退信记录。"
 #: src/app/main/ui/dashboard/team.cljs:223, src/app/main/ui/dashboard/team.cljs:1129, src/app/main/ui/onboarding/team_choice.cljs:122
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "电子邮箱 «%s» 已被举报为垃圾邮件来源或有永久退信记录。"
+
+#: src/app/main/data/exports/assets.cljs:64, src/app/main/data/exports/assets.cljs:93
+#, fuzzy
+msgid "errors.export-failed"
+msgstr "导出失败。请稍后重试。"
+
+#: src/app/main/data/exports/assets.cljs:377
+#, fuzzy
+msgid "errors.export-too-large"
+msgstr "内容太大，无法导出，请尝试更小的缩放比例"
 
 #: src/app/main/errors.cljs:990
 msgid "errors.feature-mismatch"
@@ -1384,6 +1795,21 @@ msgstr "只有版本创建者可以锁定"
 msgid "errors.only-creator-can-unlock"
 msgstr "只有版本创建者可以解除锁定"
 
+#: src/app/main/data/nitrate.cljs:209
+#, fuzzy
+msgid "errors.organization-leave.no-valid-teams"
+msgstr "退出组织时出现问题，请重试。"
+
+#: src/app/main/data/nitrate.cljs:210
+#, fuzzy
+msgid "errors.organization-leave.organization-owner-cannot-leave"
+msgstr "组织负责人无法退出组织。"
+
+#: src/app/main/ui/auth/verify_token.cljs:98
+#, fuzzy
+msgid "errors.organization-not-found"
+msgstr "该组织不存在"
+
 #: src/app/main/ui/auth/recovery.cljs:25, src/app/main/ui/settings/password.cljs:73
 msgid "errors.password-invalid-confirmation"
 msgstr "两次输入的密码必须一致"
@@ -1407,6 +1833,11 @@ msgstr "你的邮件通知已停用（曾举报垃圾邮件或多次发生退信
 #: src/app/main/data/auth.cljs:340, src/app/main/ui/auth/register.cljs:96
 msgid "errors.registration-disabled"
 msgstr "当前禁止注册。"
+
+#: src/app/main/errors.cljs:715
+#, fuzzy
+msgid "errors.save-failed"
+msgstr "此会话的自动保存已停止，自上次成功保存以来的更改无法保存。请下载报告以帮助我们修复问题，然后重新加载页面，或离开此文件后重新打开，以继续编辑。"
 
 #: src/app/main/errors.cljs:935
 msgid "errors.svg-parser.invalid-svg"
@@ -1460,6 +1891,11 @@ msgstr "令牌存在循环引用"
 msgid "errors.tokens.composite-line-height-needs-font-size"
 msgstr "行高依赖字号。请添加字号以获取解析值。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:62
+#, fuzzy
+msgid "errors.tokens.division-by-zero"
+msgstr "无效的令牌值：除以零"
+
 #: src/app/main/ui/workspace/tokens/management/forms/controls/color_input.cljs:347, src/app/main/ui/workspace/tokens/management/forms/controls/input.cljs:442
 msgid "errors.tokens.empty-field"
 msgstr "此字段不能为空"
@@ -1472,9 +1908,19 @@ msgstr "令牌值不能为空"
 msgid "errors.tokens.error-parse"
 msgstr "导入错误：不能解析 JSON。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:74
+#, fuzzy
+msgid "errors.tokens.function-argument-out-of-range"
+msgstr "无效的令牌值：%s() 的参数超出范围"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:33, src/app/main/data/workspace/tokens/errors.cljs:38
 msgid "errors.tokens.import-error"
 msgstr "导入错误："
+
+#: src/app/main/data/workspace/tokens/errors.cljs:66
+#, fuzzy
+msgid "errors.tokens.incompatible-units"
+msgstr "无效的令牌值：无法组合单位 %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:54
 msgid "errors.tokens.invalid-color"
@@ -1562,6 +2008,11 @@ msgstr "阴影扩展值必须大于或等于 0。"
 msgid "errors.tokens.stroke-width-range"
 msgstr "描边宽度必须大于或等于 0。"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:70
+#, fuzzy
+msgid "errors.tokens.unknown-function"
+msgstr "无效的令牌值：未知函数 %s"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:100, ../common/src/app/common/files/tokens.cljc:52
 msgid "errors.tokens.value-with-percent"
 msgstr "值无效：不允许使用 %。"
@@ -1589,6 +2040,36 @@ msgstr "此版本被锁定，不能被其他人删除"
 #: src/app/main/errors.cljs:998
 msgid "errors.version-not-supported"
 msgstr "文件具有不兼容的版本号"
+
+#: src/app/main/ui/auth/recovery.cljs:44, src/app/main/ui/auth/register.cljs:125, src/app/main/ui/settings/password.cljs:42
+#, fuzzy
+msgid "errors.weak-password"
+msgstr "密码不符合要求"
+
+#: src/app/main/ui/auth/recovery.cljs:37, src/app/main/ui/auth/register.cljs:119, src/app/main/ui/settings/password.cljs:35
+#, fuzzy, backend
+msgid "errors.weak-password.insufficient-digits"
+msgstr "至少包含 1 个数字"
+
+#: src/app/main/ui/auth/recovery.cljs:38, src/app/main/ui/auth/register.cljs:120, src/app/main/ui/settings/password.cljs:36
+#, fuzzy, backend
+msgid "errors.weak-password.insufficient-lowercase"
+msgstr "至少包含 1 个小写字母"
+
+#: src/app/main/ui/auth/recovery.cljs:40, src/app/main/ui/auth/register.cljs:122, src/app/main/ui/settings/password.cljs:38
+#, fuzzy, backend
+msgid "errors.weak-password.insufficient-special"
+msgstr "至少包含 1 个特殊字符"
+
+#: src/app/main/ui/auth/recovery.cljs:39, src/app/main/ui/auth/register.cljs:121, src/app/main/ui/settings/password.cljs:37
+#, fuzzy, backend
+msgid "errors.weak-password.insufficient-uppercase"
+msgstr "至少包含 1 个大写字母"
+
+#: src/app/main/ui/auth/recovery.cljs:36, src/app/main/ui/auth/register.cljs:118, src/app/main/ui/settings/password.cljs:34
+#, fuzzy, backend
+msgid "errors.weak-password.too-short"
+msgstr "至少 8 个字符"
 
 #: src/app/main/ui/static.cljs:385
 msgid "errors.webgl-context-lost.desc-message"
@@ -1694,9 +2175,138 @@ msgstr "建议"
 msgid "feedback.type.issue"
 msgstr "问题"
 
+#: src/app/main/ui/exports/files.cljs:467
+#, fuzzy
+msgid "files-export-modal.cancel-export"
+msgstr "取消导出"
+
+#: src/app/main/ui/exports/files.cljs:471
+#, fuzzy
+msgid "files-export-modal.done"
+msgstr "完成"
+
+#: src/app/main/ui/exports/files.cljs:210
+#, fuzzy
+msgid "files-export-modal.export-error"
+msgstr "无法导出：%s"
+
+#: src/app/main/ui/exports/files.cljs:246
+#, fuzzy
+msgid "files-export-modal.exported.message"
+msgstr "请查看你的下载文件夹。"
+
+#: src/app/main/ui/exports/files.cljs:239
+#, fuzzy
+msgid "files-export-modal.exported.title"
+msgid_plural "files-export-modal.exported.title"
+msgstr[0] "已导出 1 个文件"
+msgstr[1] "已导出 %s 个文件"
+
+#: src/app/main/ui/exports/files.cljs:245
+#, fuzzy
+msgid "files-export-modal.exporting.message"
+msgstr "每个文件准备好后会立即下载。"
+
+#: src/app/main/ui/exports/files.cljs:238
+#, fuzzy
+msgid "files-export-modal.exporting.title"
+msgid_plural "files-export-modal.exporting.title"
+msgstr[0] "正在导出 1 个文件"
+msgstr[1] "正在导出 %s 个文件"
+
+#: src/app/main/ui/exports/files.cljs:431
+#, fuzzy
+msgid "files-export-modal.options.detach-libraries.message"
+msgstr "文件将不包含已连接库中的素材。"
+
+#: src/app/main/ui/exports/files.cljs:425
+#, fuzzy
+msgid "files-export-modal.options.detach-libraries.title"
+msgstr "将素材视为基本对象"
+
+#: src/app/main/ui/exports/files.cljs:429
+#, fuzzy
+msgid "files-export-modal.options.include-libraries.message"
+msgstr "导出内容将包含文件及其连接的库，并保留彼此的连接关系。 "
+
+#: src/app/main/ui/exports/files.cljs:423
+#, fuzzy
+msgid "files-export-modal.options.include-libraries.title"
+msgstr "导出文件 + 库"
+
+#: src/app/main/ui/exports/files.cljs:432
+#, fuzzy
+msgid "files-export-modal.options.link-later.message"
+msgstr "导入时，你可以连接名称相符的现有库。"
+
+#: src/app/main/ui/exports/files.cljs:426
+#, fuzzy
+msgid "files-export-modal.options.link-later.title"
+msgstr "导入时连接名称相符的库"
+
+#: src/app/main/ui/exports/files.cljs:430
+#, fuzzy
+msgid "files-export-modal.options.merge-libraries.message"
+msgstr "导出文件时，库素材将合并到文件内的本地库中。"
+
+#: src/app/main/ui/exports/files.cljs:424
+#, fuzzy
+msgid "files-export-modal.options.merge-libraries.title"
+msgstr "将库素材嵌入文件"
+
+#: src/app/main/ui/exports/files.cljs:179
+#, fuzzy
+msgid "files-export-modal.status.exported"
+msgstr "已导出"
+
+#: src/app/main/ui/exports/files.cljs:186
+#, fuzzy
+msgid "files-export-modal.status.waiting"
+msgstr "等待中"
+
+#: src/app/main/ui/exports/files.cljs:381
+#, fuzzy
+msgid "files-export-modal.title"
+msgstr "导出文件"
+
 #: src/app/main/ui/settings/password.cljs:45
 msgid "generic.error"
 msgstr "发生错误"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:171
+#, fuzzy
+msgid "import-shortcuts.apply"
+msgstr "导入"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:102
+#, fuzzy
+msgid "import-shortcuts.diff-modal-text"
+msgstr "导入的设置将更改以下快捷键："
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:98
+#, fuzzy
+msgid "import-shortcuts.diff-modal-title"
+msgstr "导入快捷键"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:113
+#, fuzzy
+msgid "import-shortcuts.imported"
+msgstr "已导入"
+
+#: src/app/main/ui/settings/shortcuts.cljs:511, src/app/main/ui/settings/shortcuts.cljs:513
+#, fuzzy
+msgid "import-shortcuts.invalid-file"
+msgstr "此文件不是有效的快捷键导出文件。"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:148
+#, fuzzy
+msgid "import-shortcuts.no-changes"
+msgstr "当前快捷键与导入的快捷键没有差异。"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:153
+#, fuzzy
+msgid "import-shortcuts.skipped-entries"
+msgstr "以下条目无法导入：它们与任何 Penpot 快捷键都不匹配，或使用了保留的按键组合。"
 
 #: src/app/main/ui/components/color_input.cljs:31
 msgid "inspect.attributes.color"
@@ -1805,6 +2415,11 @@ msgstr "变体属性"
 #: src/app/main/ui/inspect/attributes/variant.cljs:44
 msgid "inspect.attributes.variants"
 msgstr "变体属性"
+
+#: src/app/main/ui/inspect/code.cljs:322, src/app/main/ui/inspect/code.cljs:365
+#, fuzzy
+msgid "inspect.code.expand-panel"
+msgstr "展开面板"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:169
 msgid "inspect.color-space-label"
@@ -2126,6 +2741,91 @@ msgstr "令牌将于 %s 过期"
 msgid "integrations.token.will-not-expire"
 msgstr "令牌没有到期日期"
 
+#: src/app/main/ui/exports/files.cljs:223
+#, fuzzy
+msgid "jobs.export-cancelled"
+msgstr "导出已取消"
+
+#: src/app/main/data/imports.cljs:376
+#, fuzzy
+msgid "jobs.import-cancelled"
+msgstr "导入已取消"
+
+#: src/app/main/ui/jobs/progress.cljs:26
+#, fuzzy
+msgid "jobs.progress.stage.colors"
+msgstr "正在处理颜色"
+
+#: src/app/main/ui/jobs/progress.cljs:25
+#, fuzzy
+msgid "jobs.progress.stage.components"
+msgstr "正在处理组件"
+
+#: src/app/main/ui/jobs/progress.cljs:21
+#, fuzzy
+msgid "jobs.progress.stage.files"
+msgstr "正在处理文件"
+
+#: src/app/main/ui/jobs/progress.cljs:32
+#, fuzzy
+msgid "jobs.progress.stage.manifest"
+msgstr "正在读取文件包"
+
+#: src/app/main/ui/jobs/progress.cljs:23
+#, fuzzy
+msgid "jobs.progress.stage.media"
+msgstr "正在处理媒体"
+
+#: src/app/main/ui/jobs/progress.cljs:31
+#, fuzzy
+msgid "jobs.progress.stage.metadata"
+msgstr "正在读取元数据"
+
+#: src/app/main/ui/jobs/progress.cljs:22
+#, fuzzy
+msgid "jobs.progress.stage.pages"
+msgstr "正在处理页面"
+
+#: src/app/main/ui/jobs/progress.cljs:30
+#, fuzzy
+msgid "jobs.progress.stage.relations"
+msgstr "正在处理库关联"
+
+#: src/app/main/ui/jobs/progress.cljs:29
+#, fuzzy
+msgid "jobs.progress.stage.storage-objects"
+msgstr "正在处理存储对象"
+
+#: src/app/main/ui/jobs/progress.cljs:24
+#, fuzzy
+msgid "jobs.progress.stage.thumbnails"
+msgstr "正在处理缩略图"
+
+#: src/app/main/ui/jobs/progress.cljs:28
+#, fuzzy
+msgid "jobs.progress.stage.tokens"
+msgstr "正在处理令牌"
+
+#: src/app/main/ui/jobs/progress.cljs:27
+#, fuzzy
+msgid "jobs.progress.stage.typographies"
+msgstr "正在处理排版"
+
+#: src/app/main/ui/jobs/progress.cljs:34
+#, fuzzy
+msgid "jobs.progress.stage.unknown"
+msgstr "处理中"
+
+#: src/app/main/ui/jobs/progress.cljs:33
+#, fuzzy
+msgid "jobs.progress.stage.upload"
+msgstr "正在上传文件…"
+
+#: src/app/main/ui/dashboard/import.cljs:328, src/app/main/ui/exports/files.cljs:103
+#, fuzzy, unused
+msgid "jobs.queued"
+msgstr "正在等待任务空位"
+
 #: src/app/main/ui/dashboard/comments.cljs:90
 msgid "label.mark-all-as-read"
 msgstr "标记全部为已读"
@@ -2201,6 +2901,16 @@ msgstr "取消"
 #: src/app/main/ui/onboarding/questions.cljs:162
 msgid "labels.canva"
 msgstr "Canva"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:546
+#, fuzzy
+msgid "labels.check-for-updates"
+msgstr "检查更新"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:545
+#, fuzzy
+msgid "labels.checking-for-updates"
+msgstr "正在检查更新…"
 
 #: src/app/main/data/common.cljs:98, src/app/main/ui/alert.cljs:63, src/app/main/ui/auth/login_modal.cljs:92, src/app/main/ui/confirm.cljs:78, src/app/main/ui/dashboard/change_owner.cljs:52, src/app/main/ui/dashboard/change_owner.cljs:156, src/app/main/ui/dashboard/check_updates.cljs:217, src/app/main/ui/dashboard/check_updates.cljs:256, src/app/main/ui/dashboard/check_updates.cljs:272, src/app/main/ui/dashboard/check_updates.cljs:311, src/app/main/ui/dashboard/comments.cljs:97, src/app/main/ui/dashboard/import.cljs:1132, src/app/main/ui/dashboard/projects.cljs:105, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:872, src/app/main/ui/dashboard/team.cljs:1003, src/app/main/ui/dashboard/team.cljs:1386, src/app/main/ui/dashboard/team_form.cljs:124, src/app/main/ui/dashboard/team_form.cljs:171, src/app/main/ui/delete_shared.cljs:104, src/app/main/ui/ds/layout/modal.cljs:96, src/app/main/ui/ds/product/panel_title.cljs:32, src/app/main/ui/exports/assets.cljs:81, src/app/main/ui/exports/assets.cljs:341, src/app/main/ui/exports/files.cljs:383, src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:82, src/app/main/ui/settings/change_email.cljs:94, src/app/main/ui/settings/delete_account.cljs:68, src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:93, src/app/main/ui/settings/integrations.cljs:128, src/app/main/ui/settings/integrations.cljs:247, src/app/main/ui/settings/integrations.cljs:287, src/app/main/ui/settings/integrations.cljs:329, src/app/main/ui/settings/restore_shortcuts_modal.cljs:85, src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:391, src/app/main/ui/settings/subscription.cljs:414, src/app/main/ui/settings/subscription.cljs:847, src/app/main/ui/settings/subscription.cljs:903, src/app/main/ui/settings/subscription.cljs:958, src/app/main/ui/static.cljs:159, src/app/main/ui/static.cljs:234, src/app/main/ui/viewer/share_link.cljs:177, src/app/main/ui/viewer/thumbnails.cljs:101, src/app/main/ui/workspace/components_debugger.cljs:1102, src/app/main/ui/workspace/libraries.cljs:1179, src/app/main/ui/workspace/nudge.cljs:50, src/app/main/ui/workspace/plugins.cljs:213, src/app/main/ui/workspace/plugins.cljs:421, src/app/main/ui/workspace/plugins.cljs:487, src/app/main/ui/workspace/plugins.cljs:544, src/app/main/ui/workspace/sidebar/assets/groups.cljs:164, src/app/main/ui/workspace/sidebar/layers.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:869, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:890, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:265, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/import_from_library.cljs:63, src/app/main/ui/workspace/tokens/management/forms/modals.cljs:99, src/app/main/ui/workspace/tokens/management/forms/rename_node_modal.cljs:114, src/app/main/ui/workspace/tokens/remapping_modal.cljs:93, src/app/main/ui/workspace/tokens/settings/menu.cljs:77, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:62, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:145, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:476, src/app/main/ui/workspace/webgl_unavailable_modal.cljs:56
 msgid "labels.close"
@@ -2286,9 +2996,19 @@ msgstr "创建新团队"
 msgid "labels.create-team.placeholder"
 msgstr "输入新的团队名称"
 
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:111, src/app/main/ui/settings/restore_shortcuts_modal.cljs:102
+#, fuzzy
+msgid "labels.current"
+msgstr "当前"
+
 #: src/app/main/ui/settings/sidebar.cljs:82
 msgid "labels.dashboard"
 msgstr "仪表板"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs:104
+#, fuzzy
+msgid "labels.default"
+msgstr "默认"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:335, src/app/main/ui/dashboard/fonts.cljs:303, src/app/main/ui/dashboard/fonts.cljs:380, src/app/main/ui/dashboard/fonts.cljs:414, src/app/main/ui/dashboard/import.cljs:319, src/app/main/ui/dashboard/project_menu.cljs:116, src/app/main/ui/dashboard/team.cljs:1454, src/app/main/ui/settings/integrations.cljs:376, src/app/main/ui/settings/profile.cljs:123, src/app/main/ui/settings/profile.cljs:137, src/app/main/ui/settings/profile.cljs:138, src/app/main/ui/workspace/sidebar/assets/common.cljs:231, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:228, src/app/main/ui/workspace/sidebar/versions.cljs:257, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:353, src/app/main/ui/workspace/tokens/management/node_context_menu.cljs:111, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:394
 msgid "labels.delete"
@@ -2365,6 +3085,11 @@ msgstr "错误"
 #: src/app/main/data/workspace/versions.cljs:314
 msgid "labels.exit"
 msgstr "退出"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:96
+#, fuzzy
+msgid "labels.expand"
+msgstr "展开"
 
 #: src/app/main/ui/dashboard/team.cljs:777
 msgid "labels.expired-invitation"
@@ -2541,6 +3266,26 @@ msgstr "新密码"
 #: src/app/main/ui/dashboard/templates.cljs:293, src/app/main/ui/onboarding/questions.cljs:54, src/app/main/ui/viewer.cljs:118, src/app/main/ui/workspace/sidebar/layers.cljs:647
 msgid "labels.next"
 msgstr "下一项"
+
+#: src/app/main/ui/static.cljs:367
+#, fuzzy
+msgid "labels.nitrate-not-configured.desc-message"
+msgstr "此实例需要完成最新版本新增的设置步骤。"
+
+#: src/app/main/ui/static.cljs:370
+#, fuzzy
+msgid "labels.nitrate-not-configured.learn-more"
+msgstr "请参阅我们的"
+
+#: src/app/main/ui/static.cljs:365
+#, fuzzy
+msgid "labels.nitrate-not-configured.main-message"
+msgstr "Penpot 暂时无法启动。"
+
+#: src/app/main/ui/static.cljs:375
+#, fuzzy
+msgid "labels.nitrate-not-configured.technical-guide"
+msgstr "技术指南"
 
 #: src/app/main/ui/static.cljs:355
 msgid "labels.nitrate-unavailable.main-message"
@@ -2808,9 +3553,29 @@ msgstr "只显示你的评论"
 msgid "labels.sketch"
 msgstr "Sketch"
 
+#: src/app/main/ui/dashboard/import.cljs:808
+#, fuzzy
+msgid "labels.skip"
+msgstr "跳过"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:359
 msgid "labels.sources"
 msgstr "来源"
+
+#: src/app/main/ui/static.cljs:562
+#, fuzzy
+msgid "labels.sso-error.desc-message"
+msgstr "未能通过你所在组织的身份提供商完成登录。该服务可能暂时不可用，或你的账号尚未加入其目录。"
+
+#: src/app/main/ui/static.cljs:563
+#, fuzzy
+msgid "labels.sso-error.retry"
+msgstr "重试"
+
+#: src/app/main/ui/static.cljs:561
+#, fuzzy
+msgid "labels.sso-error.title"
+msgstr "无法登录 %s"
 
 #: src/app/main/ui/onboarding/questions.cljs:55
 msgid "labels.start"
@@ -2839,6 +3604,11 @@ msgstr "SVG"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:593
 msgid "labels.switch"
 msgstr "切换"
+
+#: src/app/main/ui/dashboard/organization_team_switch.cljs:657
+#, fuzzy
+msgid "labels.team-management"
+msgstr "团队管理"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:30
 msgid "labels.text"
@@ -3054,6 +3824,21 @@ msgstr "添加为共享库后，此文件库中的素材可供其他文件使用
 msgid "modals.add-shared-confirm.message"
 msgstr "将“%s”添加为共享库"
 
+#: src/app/main/data/nitrate.cljs:320
+#, fuzzy
+msgid "modals.before-leave-organization.message"
+msgstr "你是部分团队中唯一的成员。这些团队及其项目和文件都将被删除。"
+
+#: src/app/main/data/nitrate.cljs:319, src/app/main/ui/dashboard/change_owner.cljs:153
+#, fuzzy
+msgid "modals.before-leave-organization.title"
+msgstr "退出组织前"
+
+#: src/app/main/data/nitrate.cljs:323
+#, fuzzy
+msgid "modals.before-leave-organization.warning"
+msgstr "所有只有你一名成员的团队都将被删除。"
+
 #: src/app/main/ui/workspace/nudge.cljs:63
 msgid "modals.big-nudge"
 msgstr "大幅微调"
@@ -3105,6 +3890,26 @@ msgstr "是的，删除我的账号"
 #: src/app/main/ui/settings/delete_account.cljs:78
 msgid "modals.delete-account.info"
 msgstr "删除账号后，你会失去所有项目和存档。"
+
+#: src/app/main/ui/settings/delete_account.cljs:77
+#, fuzzy
+msgid "modals.delete-account.info.with-organizations"
+msgstr "此操作无法撤销。你的账号、订阅和组织将立即删除，你也将无法再访问当前的项目和文件。"
+
+#: src/app/main/ui/settings/delete_account.cljs:87
+#, fuzzy
+msgid "modals.delete-account.owned-organizations.list-title"
+msgstr "即将删除的组织"
+
+#: src/app/main/ui/settings/delete_account.cljs:102
+#, fuzzy
+msgid "modals.delete-account.owned-organizations.members-count"
+msgstr "%s 名成员"
+
+#: src/app/main/ui/settings/delete_account.cljs:100
+#, fuzzy
+msgid "modals.delete-account.owned-organizations.teams-count"
+msgstr "%s 个团队"
 
 #: src/app/main/ui/settings/delete_account.cljs:65
 msgid "modals.delete-account.title"
@@ -3180,12 +3985,27 @@ msgstr "确定要删除此字体吗？如果文件使用了该字体，将无法
 msgid "modals.delete-font.title"
 msgstr "删除字体"
 
+#: src/app/main/data/team.cljs:159
+#, fuzzy
+msgid "modals.delete-organization-team-confirm.message"
+msgstr "确定要删除属于 %s 组织的这个团队吗？"
+
 #: src/app/main/ui/workspace/context_menu.cljs:816, src/app/main/ui/workspace/sidebar/sitemap.cljs:125
 msgid "modals.delete-page.body"
 msgstr "你确定想要删除这个页面？"
 
 #: src/app/main/ui/workspace/context_menu.cljs:815, src/app/main/ui/workspace/sidebar/sitemap.cljs:124, src/app/main/ui/workspace/sidebar/sitemap.cljs:242
 msgid "modals.delete-page.title"
+msgstr "删除页面"
+
+#: src/app/main/ui/workspace/context_menu.cljs:822
+#, fuzzy
+msgid "modals.delete-pages.body"
+msgstr "确定要删除所选页面吗？"
+
+#: src/app/main/ui/workspace/context_menu.cljs:821
+#, fuzzy
+msgid "modals.delete-pages.title"
 msgstr "删除页面"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:84
@@ -3312,6 +4132,11 @@ msgstr "只能邀请组织的现有成员。由于列表中的人员都不是组
 msgid "modals.invite-restricted-members.all-blocked-title"
 msgstr "未发送任何邀请"
 
+#: src/app/main/data/team.cljs:192
+#, fuzzy
+msgid "modals.invite-restricted-members.all-organization-members-in-team"
+msgstr "只有“%s”组织的成员才能受邀加入此团队，而他们都已经是团队成员。如需更多信息，请联系组织负责人。"
+
 #: src/app/main/ui/dashboard/team.cljs:327
 msgid "modals.invite-restricted-members.blocked-addresses"
 msgstr "不会收到邀请的地址"
@@ -3384,6 +4209,36 @@ msgstr "你确定要离开本团队吗？"
 msgid "modals.leave-confirm.title"
 msgstr "正在退出团队"
 
+#: src/app/main/ui/dashboard/change_owner.cljs:163
+#, fuzzy
+msgid "modals.leave-organization-and-reassign.hint"
+msgstr "你是组织中部分团队的所有者。请将其他成员设为所有者。"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:166
+#, fuzzy
+msgid "modals.leave-organization-and-reassign.hint-delete"
+msgstr "你是部分团队中唯一的成员。这些团队将连同其中的项目和文件一并删除。"
+
+#: src/app/main/ui/dashboard/change_owner.cljs:168
+#, fuzzy
+msgid "modals.leave-organization-and-reassign.hint-promote"
+msgstr "此外，你也是组织中部分团队的所有者。请将其他成员设为所有者。"
+
+#: src/app/main/data/nitrate.cljs:321, src/app/main/data/nitrate.cljs:330
+#, fuzzy
+msgid "modals.leave-organization-confirm.accept"
+msgstr "退出组织"
+
+#: src/app/main/data/nitrate.cljs:329
+#, fuzzy
+msgid "modals.leave-organization-confirm.message"
+msgstr "你将永久失去此组织内所有团队、项目和文件的访问权限。"
+
+#: src/app/main/data/nitrate.cljs:328
+#, fuzzy
+msgid "modals.leave-organization-confirm.title"
+msgstr "要退出 %s 组织吗？"
+
 #: src/app/main/ui/delete_shared.cljs:56
 msgid "modals.move-shared-confirm.accept"
 msgid_plural "modals.move-shared-confirm.accept"
@@ -3434,6 +4289,26 @@ msgstr "你的库是空的。你确定想要发布它？"
 msgid "modals.publish-empty-library.title"
 msgstr "发布空库"
 
+#: src/app/main/data/nitrate.cljs:377
+#, fuzzy
+msgid "modals.remove-team-organization.accept"
+msgstr "从组织中移除"
+
+#: src/app/main/data/nitrate.cljs:375
+#, fuzzy
+msgid "modals.remove-team-organization.info"
+msgstr "团队成员仍可访问项目和文件，但组织的设置将不再适用。"
+
+#: src/app/main/data/nitrate.cljs:374
+#, fuzzy
+msgid "modals.remove-team-organization.text"
+msgstr "确定要将“%s”团队从“%s”组织中移除吗？"
+
+#: src/app/main/data/nitrate.cljs:373
+#, fuzzy
+msgid "modals.remove-team-organization.title"
+msgstr "从组织中移除团队"
+
 #: src/app/main/ui/workspace/nudge.cljs:56
 msgid "modals.small-nudge"
 msgstr "小幅微调"
@@ -3480,9 +4355,19 @@ msgstr "此激活码已过期。"
 msgid "nitrate.activation-code.invalid-error"
 msgstr "激活码无效。"
 
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:59
+#, fuzzy
+msgid "nitrate.activation-code.used-error"
+msgstr "此激活码已被使用。"
+
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:58
 msgid "nitrate.activation-success.active-until"
 msgstr "你的方案有效期至 %s。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:211, src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:69
+#, fuzzy
+msgid "nitrate.activation-success.create-organization"
+msgstr "创建组织"
 
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:64
 msgid "nitrate.activation-success.enjoy"
@@ -3491,6 +4376,26 @@ msgstr "尽情使用你的方案吧！"
 #: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:61
 msgid "nitrate.activation-success.manage-info"
 msgstr "你可以随时在账号设置的“订阅”页面管理订阅。"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:121
+#, fuzzy
+msgid "nitrate.code-activation.footer-after"
+msgstr "将文件发送至"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:126
+#, fuzzy
+msgid "nitrate.code-activation.footer-before"
+msgstr "我们就会将激活码发送给你。"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:119
+#, fuzzy
+msgid "nitrate.code-activation.footer-download"
+msgstr "下载激活码申请文件"
+
+#: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:114
+#, fuzzy
+msgid "nitrate.code-activation.footer-title"
+msgstr "需要激活码吗？"
 
 #: src/app/main/ui/nitrate/nitrate_code_activation_modal.cljs:96
 msgid "nitrate.code-activation.input-label"
@@ -3520,6 +4425,11 @@ msgstr "联系销售团队"
 msgid "nitrate.contact-sales.downgrade-contact-info"
 msgstr "如需切换到此方案，请联系我们的销售团队。我们会协助你更新订阅并确保一切设置妥当。"
 
+#: src/app/main/ui/settings/subscription.cljs:912
+#, fuzzy
+msgid "nitrate.contact-sales.downgrade-organization-deleted"
+msgstr "你的组织将被删除。"
+
 #: src/app/main/ui/settings/subscription.cljs:914
 msgid "nitrate.contact-sales.downgrade-storage-limited"
 msgstr "你的总存储空间、自动版本历史记录和文件恢复期限将受到限制。"
@@ -3548,6 +4458,21 @@ msgstr "联系我们，免费试用 Enterprise 14 天："
 msgid "nitrate.form.contact-upgrade"
 msgstr "联系我们，升级到 Enterprise："
 
+#: src/app/main/ui/settings/subscription.cljs:879
+#, fuzzy
+msgid "nitrate.form.contact-us-free-trial"
+msgstr "联系我们，试用 Enterprise 方案 14 天："
+
+#: src/app/main/ui/settings/subscription.cljs:879
+#, fuzzy
+msgid "nitrate.form.contact-us-upgrade"
+msgstr "联系我们，升级到 Enterprise 方案："
+
+#: src/app/main/ui/settings/subscription.cljs:862
+#, fuzzy
+msgid "nitrate.form.enterprise-description"
+msgstr "目前不会向你收费，试用期结束后才会扣款。你可以随时取消。"
+
 #: src/app/main/ui/nitrate/nitrate_form.cljs:83
 msgid "nitrate.form.enterprise-feature-1"
 msgstr "为团队和项目提供从全局到精细级别的权限控制"
@@ -3568,6 +4493,11 @@ msgstr "为团队安全地规模化协作提供所需的一切："
 msgid "nitrate.form.enterprise.price"
 msgstr "每位成员每月"
 
+#: src/app/main/ui/settings/subscription.cljs:806, src/app/main/ui/settings/subscription.cljs:875
+#, fuzzy
+msgid "nitrate.form.free-trial-button"
+msgstr "免费试用 14 天"
+
 #: src/app/main/ui/nitrate/nitrate_form.cljs:114
 msgid "nitrate.form.see-plan"
 msgstr "查看当前方案"
@@ -3576,6 +4506,11 @@ msgstr "查看当前方案"
 msgid "nitrate.form.start-enterprise"
 msgstr "开始使用 Enterprise"
 
+#: src/app/main/ui/nitrate/nitrate_form.cljs:108, src/app/main/ui/nitrate/nitrate_form.cljs:128
+#, fuzzy
+msgid "nitrate.form.subscribe-with-code"
+msgstr "使用激活码订阅"
+
 #: src/app/main/ui/nitrate/nitrate_form.cljs:77, src/app/main/ui/settings/subscription.cljs:851
 msgid "nitrate.form.title"
 msgstr "解锁 Enterprise 功能"
@@ -3583,6 +4518,11 @@ msgstr "解锁 Enterprise 功能"
 #: src/app/main/ui/dashboard/subscription.cljs:225, src/app/main/ui/nitrate/nitrate_form.cljs:101
 msgid "nitrate.form.try-free"
 msgstr "免费试用 14 天"
+
+#: src/app/main/ui/nitrate/nitrate_activation_success_modal.cljs:54
+#, fuzzy
+msgid "nitrate.modal-success.title"
+msgstr "欢迎使用 Enterprise 方案！"
 
 #: src/app/main/ui/settings/subscription.cljs:634
 msgid "nitrate.subscription.active-until"
@@ -3595,6 +4535,11 @@ msgstr "你的 Nitrate 订阅已续订。"
 #: src/app/main/ui/settings/subscription.cljs:646, src/app/main/ui/settings/subscription.cljs:962
 msgid "nitrate.subscription.settings.manual-cancel"
 msgstr "取消订阅"
+
+#: src/app/main/ui/settings/subscription.cljs:966
+#, fuzzy
+msgid "nitrate.subscription.settings.manual-contact-us"
+msgstr "如需取消 Enterprise 订阅，请通过以下方式联系我们："
 
 #: src/app/main/ui/settings/subscription.cljs:113
 msgid "nitrate.subscription.settings.renew-with-code"
@@ -3700,6 +4645,11 @@ msgstr "维护通知：系统将在 5 分钟内短暂停机维护。"
 msgid "notifications.by-code.upgrade-version"
 msgstr "有新版本可用。"
 
+#: src/app/main/ui/auth/verify_token.cljs:106, src/app/main/ui/auth/verify_token.cljs:109
+#, fuzzy
+msgid "notifications.invitation-canceled"
+msgstr "此邀请已失效。"
+
 #: src/app/main/ui/dashboard/team.cljs:1097
 msgid "notifications.invitation-deleted"
 msgstr "邀请已成功删除"
@@ -3744,6 +4694,16 @@ msgstr "创建团队 & 邀请"
 msgid "onboarding.choice.team-up.create-team-desc"
 msgstr "为团队命名后，你就可以邀请其他人加入。"
 
+#: src/app/main/ui/onboarding/team_choice.cljs:189
+#, fuzzy
+msgid "onboarding.choice.team-up.create-team-enter"
+msgstr "输入团队名称"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:196
+#, fuzzy
+msgid "onboarding.choice.team-up.create-team-name"
+msgstr "团队名称"
+
 #: src/app/main/ui/onboarding/team_choice.cljs:237
 msgid "onboarding.choice.team-up.create-team-without-invite"
 msgstr "创建团队"
@@ -3751,6 +4711,11 @@ msgstr "创建团队"
 #: src/app/main/ui/dashboard/projects.cljs:101, src/app/main/ui/onboarding/team_choice.cljs:207
 msgid "onboarding.choice.team-up.invite-members"
 msgstr "邀请成员"
+
+#: src/app/main/ui/onboarding/team_choice.cljs:226
+#, fuzzy
+msgid "onboarding.choice.team-up.invite-members-desc"
+msgstr "开发人员、设计师、管理者……欢迎所有人加入。你也可以稍后邀请更多成员。"
 
 #: src/app/main/ui/dashboard/team.cljs:276
 msgid "onboarding.choice.team-up.roles"
@@ -3884,13 +4849,48 @@ msgstr "这里有一些模板。"
 msgid "onboarding.templates.title"
 msgstr "开始设计"
 
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:52, src/app/main/ui/workspace/sidebar/options/menus/token_typography_row.cljs:57, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:121, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:137
+#, fuzzy
+msgid "options.deleted-token-with-name"
+msgstr "{%s} 令牌不存在或已被删除。"
+
+#: src/app/plugins/utils.cljs:579
+#, fuzzy
+msgid "plugins.validation.invalid-value"
+msgstr "预期为 %s，实际收到 %s（%s）"
+
 #: src/app/plugins/utils.cljs:569
 msgid "plugins.validation.message"
 msgstr "字段 %s 无效：%s"
 
+#: src/app/plugins/utils.cljs:582
+#, fuzzy
+msgid "plugins.validation.received-value"
+msgstr "收到 %s（%s）"
+
 #: src/app/main/ui/auth/recovery.cljs:103
 msgid "profile.recovery.go-to-login"
 msgstr "去登录"
+
+#: src/app/main/ui/settings/import_shortcuts_diff_modal.cljs:109, src/app/main/ui/settings/restore_shortcuts_modal.cljs:100
+#, fuzzy
+msgid "restore-shortcuts.action"
+msgstr "操作"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs:94
+#, fuzzy
+msgid "restore-shortcuts.modal-text"
+msgstr "以下快捷键将重置为默认值："
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs:90
+#, fuzzy
+msgid "restore-shortcuts.modal-title"
+msgstr "全部重置为默认设置"
+
+#: src/app/main/ui/settings/restore_shortcuts_modal.cljs:170
+#, fuzzy
+msgid "restore-shortcuts.restore"
+msgstr "重置"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1034, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:425
 msgid "settings.detach"
@@ -4016,9 +5016,39 @@ msgstr "删除"
 msgid "shortcuts.delete-node"
 msgstr "删除节点"
 
+#: src/app/main/data/workspace/path/shortcuts.cljs:69
+#, fuzzy
+msgid "shortcuts.delete-node-and-segments"
+msgstr "删除节点和线段"
+
+#: src/app/main/data/workspace/path/shortcuts.cljs:151
+#, fuzzy
+msgid "shortcuts.deselect-all"
+msgstr "取消全选"
+
 #: src/app/main/data/workspace/shortcuts.cljs:240
 msgid "shortcuts.detach-component"
 msgstr "拆分组件"
+
+#: src/app/main/ui/shortcuts.cljs:795
+#, fuzzy
+msgid "shortcuts.disable"
+msgstr "禁用快捷键"
+
+#: src/app/main/ui/settings/shortcuts.cljs:346, src/app/main/ui/settings/shortcuts.cljs:580
+#, fuzzy
+msgid "shortcuts.disabled"
+msgstr "已关闭"
+
+#: src/app/main/ui/shortcuts.cljs:868
+#, fuzzy
+msgid "shortcuts.disabled-shortcut"
+msgstr "已禁用的快捷键"
+
+#: src/app/main/data/workspace/shortcuts.cljs:420
+#, fuzzy
+msgid "shortcuts.draw-arrow"
+msgstr "箭头"
 
 #: src/app/main/data/workspace/shortcuts.cljs:427
 msgid "shortcuts.draw-curve"
@@ -4031,6 +5061,11 @@ msgstr "椭圆"
 #: src/app/main/data/workspace/shortcuts.cljs:370
 msgid "shortcuts.draw-frame"
 msgstr "画板"
+
+#: src/app/main/data/workspace/shortcuts.cljs:413
+#, fuzzy
+msgid "shortcuts.draw-line"
+msgstr "直线"
 
 #: src/app/main/data/workspace/path/shortcuts.cljs:53
 msgid "shortcuts.draw-nodes"
@@ -4051,6 +5086,36 @@ msgstr "文本"
 #: src/app/main/data/workspace/path/shortcuts.cljs:139, src/app/main/data/workspace/shortcuts.cljs:155
 msgid "shortcuts.duplicate"
 msgstr "复制"
+
+#: src/app/main/ui/shortcuts.cljs:714
+#, fuzzy
+msgid "shortcuts.edit"
+msgstr "编辑 %s"
+
+#: src/app/main/ui/shortcuts.cljs:775
+#, fuzzy
+msgid "shortcuts.edit-modal.conflict"
+msgstr "此组合键已分配给“%s”。保存后将从该操作中移除此快捷键。"
+
+#: src/app/main/ui/shortcuts.cljs:771
+#, fuzzy
+msgid "shortcuts.edit-modal.reserved"
+msgstr "此按键组合已被 Penpot 保留，无法分配。"
+
+#: src/app/main/ui/shortcuts.cljs:761
+#, fuzzy
+msgid "shortcuts.edit-modal.reset-pending"
+msgstr "保存后，此快捷键将重置为默认设置："
+
+#: src/app/main/ui/shortcuts.cljs:779
+#, fuzzy
+msgid "shortcuts.edit-modal.success"
+msgstr "此组合键可用，分配后不会产生冲突。"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:161
+#, fuzzy
+msgid "shortcuts.edit-on-settings"
+msgstr "在设置中自定义"
 
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:37, src/app/main/data/workspace/path/shortcuts.cljs:170, src/app/main/data/workspace/shortcuts.cljs:179
 msgid "shortcuts.escape"
@@ -4112,6 +5177,11 @@ msgstr "水平分布"
 msgid "shortcuts.hide-ui"
 msgstr "显示/隐藏 UI"
 
+#: src/app/main/ui/settings/shortcuts.cljs:587
+#, fuzzy
+msgid "shortcuts.import-export"
+msgstr "导入/导出"
+
 #: src/app/main/data/viewer/shortcuts.cljs:19, src/app/main/data/workspace/grid_layout/shortcuts.cljs:57, src/app/main/data/workspace/path/shortcuts.cljs:204, src/app/main/data/workspace/shortcuts.cljs:692, src/app/main/ui/viewer/header.cljs:102, src/app/main/ui/workspace/right_header.cljs:93
 msgid "shortcuts.increase-zoom"
 msgstr "放大"
@@ -4127,6 +5197,11 @@ msgstr "切换斜体"
 #: src/app/main/data/workspace/path/shortcuts.cljs:82
 msgid "shortcuts.join-nodes"
 msgstr "连接节点"
+
+#: src/app/main/ui/shortcuts.cljs:749
+#, fuzzy
+msgid "shortcuts.key-combo"
+msgstr "按下组合键"
 
 #: src/app/main/data/workspace/text/shortcuts.cljs:249
 msgid "shortcuts.line-through"
@@ -4191,6 +5266,21 @@ msgstr "上移"
 #: src/app/main/data/viewer/shortcuts.cljs:77
 msgid "shortcuts.next-frame"
 msgstr "下个画板"
+
+#: src/app/main/ui/settings/shortcuts.cljs:561
+#, fuzzy
+msgid "shortcuts.no-disabled"
+msgstr "没有已禁用的快捷键"
+
+#: src/app/main/ui/settings/shortcuts.cljs:551
+#, fuzzy
+msgid "shortcuts.no-personalized"
+msgstr "还没有自定义快捷键。前往“全部”标签页自定义快捷键。"
+
+#: src/app/main/ui/settings/shortcuts.cljs:289, src/app/main/ui/settings/shortcuts.cljs:542
+#, fuzzy
+msgid "shortcuts.no-shortcuts"
+msgstr "未找到快捷键"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:158
 msgid "shortcuts.not-found"
@@ -4268,6 +5358,16 @@ msgstr "前往工作区"
 msgid "shortcuts.or"
 msgstr " 或 "
 
+#: src/app/main/ui/shortcuts.cljs:730, src/app/main/ui/shortcuts.cljs:880
+#, fuzzy
+msgid "shortcuts.overwritten-by"
+msgstr "此快捷键已重新分配给“%s”"
+
+#: src/app/main/ui/settings/shortcuts.cljs:519
+#, fuzzy
+msgid "shortcuts.page"
+msgstr "快捷键页面"
+
 #: src/app/main/data/workspace/path/shortcuts.cljs:132, src/app/main/data/workspace/shortcuts.cljs:118
 msgid "shortcuts.paste"
 msgstr "粘贴"
@@ -4279,6 +5379,11 @@ msgstr "粘贴属性"
 #: src/app/main/data/workspace/shortcuts.cljs:127
 msgid "shortcuts.paste-replace"
 msgstr "粘贴并替换"
+
+#: src/app/main/ui/settings/shortcuts.cljs:343, src/app/main/ui/settings/shortcuts.cljs:574
+#, fuzzy
+msgid "shortcuts.personalized"
+msgstr "自定义"
 
 #: src/app/main/data/workspace/shortcuts.cljs:834
 msgid "shortcuts.plugins"
@@ -4292,9 +5397,24 @@ msgstr "前一画板"
 msgid "shortcuts.redo"
 msgstr "重做"
 
+#: src/app/main/ui/settings/shortcuts.cljs:530
+#, fuzzy
+msgid "shortcuts.reload-hint"
+msgstr "编辑快捷键后，请重新加载其他已打开的 Penpot 标签页，以应用更改。"
+
 #: src/app/main/data/workspace/shortcuts.cljs:198
 msgid "shortcuts.rename"
 msgstr "重命名"
+
+#: src/app/main/ui/shortcuts.cljs:803
+#, fuzzy
+msgid "shortcuts.reset"
+msgstr "重置为默认值"
+
+#: src/app/main/ui/settings/shortcuts.cljs:53
+#, fuzzy
+msgid "shortcuts.reset-all"
+msgstr "全部重置"
 
 #: src/app/main/data/viewer/shortcuts.cljs:49, src/app/main/data/workspace/grid_layout/shortcuts.cljs:70, src/app/main/data/workspace/path/shortcuts.cljs:217, src/app/main/data/workspace/shortcuts.cljs:706
 msgid "shortcuts.reset-zoom"
@@ -4303,6 +5423,11 @@ msgstr "重置缩放"
 #: src/app/main/data/workspace/shortcuts.cljs:477
 msgid "shortcuts.scale"
 msgstr "缩放"
+
+#: src/app/main/ui/settings/shortcuts.cljs:44, src/app/main/ui/workspace/sidebar/shortcuts.cljs:143
+#, fuzzy
+msgid "shortcuts.search"
+msgstr "搜索快捷键"
 
 # SECTIONS
 #: src/app/main/ui/shortcuts.cljs:255, src/app/main/ui/shortcuts.cljs:427
@@ -4340,6 +5465,11 @@ msgstr "选择上一个图层"
 #: src/app/main/data/workspace/path/shortcuts.cljs:89
 msgid "shortcuts.separate-nodes"
 msgstr "分离节点"
+
+#: src/app/main/data/workspace/shortcuts.cljs:169
+#, fuzzy
+msgid "shortcuts.show-measure"
+msgstr "显示测量值"
 
 #: src/app/main/data/workspace/shortcuts.cljs:594
 msgid "shortcuts.show-pixel-grid"
@@ -4442,6 +5572,11 @@ msgstr "切换素材面板"
 msgid "shortcuts.toggle-colorpalette"
 msgstr "切换调色板"
 
+#: src/app/main/data/workspace/shortcuts.cljs:442
+#, fuzzy
+msgid "shortcuts.toggle-comments-visibility"
+msgstr "显示/隐藏评论"
+
 #: src/app/main/data/workspace/shortcuts.cljs:491
 msgid "shortcuts.toggle-focus-mode"
 msgstr "切换焦点模式"
@@ -4537,6 +5672,11 @@ msgstr "提高缩放镜倍率"
 #: src/app/main/data/workspace/grid_layout/shortcuts.cljs:82, src/app/main/data/workspace/path/shortcuts.cljs:229, src/app/main/data/workspace/shortcuts.cljs:720
 msgid "shortcuts.zoom-selected"
 msgstr "缩放至所选对象"
+
+#: src/app/main/ui/dashboard/subscription.cljs:207
+#, fuzzy
+msgid "subscription.banner.create-organization-info"
+msgstr "创建组织，亲身体验 Enterprise 的功能。设置规则、管理团队，更全面地掌控设计工作流程。"
 
 #: src/app/main/ui/dashboard/subscription.cljs:205
 msgid "subscription.banner.see-enterprise"
@@ -4690,12 +5830,22 @@ msgstr "输入激活码"
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "添加付款方式以便在试用后继续"
 
+#: src/app/main/ui/settings/subscription.cljs:642
+#, fuzzy
+msgid "subscription.settings.admin-console"
+msgstr "管理控制台"
+
 #: src/app/main/ui/settings/subscription.cljs:670, src/app/main/ui/settings/subscription.cljs:768
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "包含 Professional 方案的所有权益，此外还有："
 
 #: src/app/main/ui/settings/subscription.cljs:683, src/app/main/ui/settings/subscription.cljs:696, src/app/main/ui/settings/subscription.cljs:707, src/app/main/ui/settings/subscription.cljs:784
 msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "包含 Unlimited 方案的所有权益，此外还有："
+
+#: src/app/main/ui/settings/subscription.cljs:635, src/app/main/ui/settings/subscription.cljs:799
+#, fuzzy
+msgid "subscription.settings.benefits.nitrate-unlimited-benefits"
 msgstr "包含 Unlimited 方案的所有权益，此外还有："
 
 #: src/app/main/ui/settings/subscription.cljs:65
@@ -4717,6 +5867,36 @@ msgstr "90 天自动保存版本和文件恢复"
 #: src/app/main/ui/settings/subscription.cljs:699, src/app/main/ui/settings/subscription.cljs:710, src/app/main/ui/settings/subscription.cljs:787
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "每月固定费用"
+
+#: src/app/main/ui/settings/subscription.cljs:640, src/app/main/ui/settings/subscription.cljs:804
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.advanced-control"
+msgstr "高级控制："
+
+#: src/app/main/ui/settings/subscription.cljs:638, src/app/main/ui/settings/subscription.cljs:802
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.enterprise-security"
+msgstr "企业级安全："
+
+#: src/app/main/ui/settings/subscription.cljs:636, src/app/main/ui/settings/subscription.cljs:800
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.multi-organization-management"
+msgstr "多组织管理："
+
+#: src/app/main/ui/settings/subscription.cljs:639, src/app/main/ui/settings/subscription.cljs:803
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.native-sso"
+msgstr "原生支持 SAML/SSO，并提供完整的审计跟踪日志，用于合规报告。"
+
+#: src/app/main/ui/settings/subscription.cljs:641, src/app/main/ui/settings/subscription.cljs:805
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.plugin-whitelisting"
+msgstr "精细的插件白名单管控，包括我们用于连接 AI 的安全、隔离的 MCP 服务器。"
+
+#: src/app/main/ui/settings/subscription.cljs:637, src/app/main/ui/settings/subscription.cljs:801
+#, fuzzy
+msgid "subscription.settings.enterprise.nitrate.support-team"
+msgstr "支持复杂的团队层级结构和独立的子组织。"
 
 #: src/app/main/ui/settings/subscription.cljs:697, src/app/main/ui/settings/subscription.cljs:708, src/app/main/ui/settings/subscription.cljs:785
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
@@ -4801,6 +5981,11 @@ msgstr "Penpot 的其他方案"
 msgid "subscription.settings.price-organization-month"
 msgstr "每个组织每月"
 
+#: src/app/main/ui/settings/subscription.cljs:744, src/app/main/ui/settings/subscription.cljs:767
+#, fuzzy
+msgid "subscription.settings.price-user-month"
+msgstr "每位用户每月"
+
 #: src/app/main/ui/dashboard/subscription.cljs:294, src/app/main/ui/settings/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:654, src/app/main/ui/settings/subscription.cljs:742
 msgid "subscription.settings.professional"
 msgstr "Professional"
@@ -4844,6 +6029,11 @@ msgstr "开始免费试用"
 #: src/app/main/ui/settings/subscription.cljs:336, src/app/main/ui/settings/subscription.cljs:754, src/app/main/ui/settings/subscription.cljs:772, src/app/main/ui/settings/subscription.cljs:788, src/app/main/ui/settings/subscription.cljs:806, src/app/main/ui/settings/subscription.cljs:875
 msgid "subscription.settings.subscribe"
 msgstr "订阅"
+
+#: src/app/main/ui/settings/subscription.cljs:730
+#, fuzzy
+msgid "subscription.settings.subscribed-since"
+msgstr "你的 %s 方案自 %s 起生效。"
 
 #: src/app/main/ui/settings/subscription.cljs:406
 msgid "subscription.settings.success.dialog.description"
@@ -4998,6 +6188,11 @@ msgstr "此页面上未找到画板。"
 msgid "viewer.frame-not-found"
 msgstr "未找到画板。"
 
+#: src/app/main/ui/viewer.cljs:127
+#, fuzzy
+msgid "viewer.go-to-first-board"
+msgstr "转到第一个画板"
+
 #: src/app/main/ui/viewer/header.cljs:367
 msgid "viewer.header.comments-section"
 msgstr "评论（%s）"
@@ -5037,6 +6232,16 @@ msgstr "点击时显示交互"
 #: src/app/main/ui/viewer/header.cljs:248
 msgid "viewer.header.sitemap"
 msgstr "站点地图"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:70
+#, fuzzy
+msgid "viewer.thumbnails.scroll-left"
+msgstr "向左滚动"
+
+#: src/app/main/ui/viewer/thumbnails.cljs:76
+#, fuzzy
+msgid "viewer.thumbnails.scroll-right"
+msgstr "向右滚动"
 
 #: src/app/main/ui/workspace/webgl_unavailable_modal.cljs:76
 msgid "webgl.modals.webgl-unavailable.cta-dashboard"
@@ -5166,6 +6371,11 @@ msgstr "删除"
 msgid "workspace.assets.delete-group"
 msgstr "删除组"
 
+#: src/app/main/ui/workspace/context_menu.cljs:832
+#, fuzzy
+msgid "workspace.assets.delete-pages"
+msgstr "删除页面"
+
 #: src/app/main/ui/workspace/context_menu.cljs:841, src/app/main/ui/workspace/sidebar/assets/colors.cljs:262, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:525, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:861
 msgid "workspace.assets.duplicate"
 msgstr "创建副本"
@@ -5268,6 +6478,11 @@ msgstr "字间距"
 msgid "workspace.assets.typography.line-height"
 msgstr "行高"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:297
+#, fuzzy
+msgid "workspace.assets.typography.multiple-texts-selected"
+msgstr "请只选择一个文本来创建排版样式"
+
 #: src/app/main/ui/dashboard/grid.cljs:227, src/app/main/ui/workspace/libraries.cljs:1094, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:846, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:882, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1001, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:1020
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
@@ -5291,6 +6506,11 @@ msgstr "图片已复制到剪贴板"
 #: src/app/main/data/workspace/clipboard.cljs:1270
 msgid "workspace.clipboard.image-copy-failed"
 msgstr "复制图片时出错"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:447
+#, fuzzy
+msgid "workspace.colorpicker.color-picker"
+msgstr "从屏幕拾取颜色"
 
 #: src/app/main/ui/workspace/colorpicker.cljs:439, src/app/main/ui/workspace/colorpicker.cljs:454
 msgid "workspace.colorpicker.color-tokens"
@@ -5603,6 +6823,11 @@ msgstr "解锁参考线"
 msgid "workspace.header.reset-zoom"
 msgstr "重置"
 
+#: src/app/main/ui/workspace/left_header.cljs:133
+#, fuzzy
+msgid "workspace.header.retrying"
+msgstr "正在重试保存"
+
 #: src/app/main/ui/workspace/left_header.cljs:134
 msgid "workspace.header.save-error"
 msgstr "保存时发生错误"
@@ -5647,6 +6872,11 @@ msgstr "全屏"
 msgid "workspace.header.zoom-selected"
 msgstr "缩放至所选对象"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1050
+#, fuzzy
+msgid "workspace.layout-grid.editor.columns"
+msgstr "列"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/grid_cell.cljs:296, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:852
 msgid "workspace.layout-grid.editor.options.edit-grid"
 msgstr "编辑网格"
@@ -5683,6 +6913,21 @@ msgstr "上内边距"
 msgid "workspace.layout-grid.editor.padding.vertical"
 msgstr "垂直内边距"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1051
+#, fuzzy
+msgid "workspace.layout-grid.editor.rows"
+msgstr "行"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:994
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-column"
+msgstr "选择列"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:995
+#, fuzzy
+msgid "workspace.layout-grid.editor.select-row"
+msgstr "选择行"
+
 #: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:61
 msgid "workspace.layout-grid.editor.title"
 msgstr "编辑网格"
@@ -5698,6 +6943,26 @@ msgstr "定位"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1616
 msgid "workspace.layout-grid.editor.top-bar.locate.tooltip"
 msgstr "定位网格布局"
+
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:932
+#, fuzzy
+msgid "workspace.layout-grid.editor.track-options"
+msgstr "轨道选项"
+
+#: src/app/main/ui/workspace/libraries.cljs:921
+#, fuzzy
+msgid "workspace.libraries.add-shared-library"
+msgstr "添加共享库"
+
+#: src/app/main/ui/workspace/libraries.cljs:823
+#, fuzzy
+msgid "workspace.libraries.assets-in-this-file"
+msgstr "此文件中的素材"
+
+#: src/app/main/data/workspace/libraries.cljs:1963
+#, fuzzy
+msgid "workspace.libraries.broken-library-disconnected"
+msgstr "库“%s”无法加载，已与此文件断开连接。文件中已使用的组件和颜色不受影响，但在修复该库并重新连接之前，它们将处于孤立状态。"
 
 #: src/app/main/ui/workspace/libraries.cljs:178, src/app/main/ui/workspace/libraries.cljs:207, src/app/main/ui/workspace/libraries.cljs:251
 msgid "workspace.libraries.colors"
@@ -5747,6 +7012,16 @@ msgid_plural "workspace.libraries.components"
 msgstr[0] "1 个组件"
 msgstr[1] "%s 个组件"
 
+#: src/app/main/ui/workspace/libraries.cljs:864
+#, fuzzy
+msgid "workspace.libraries.connected-libraries"
+msgstr "已连接的库"
+
+#: src/app/main/ui/workspace/libraries.cljs:235
+#, fuzzy
+msgid "workspace.libraries.connected-through"
+msgstr "经由"
+
 #: src/app/main/ui/workspace/libraries.cljs:507
 msgid "workspace.libraries.connected-to"
 msgstr "已连接到"
@@ -5754,6 +7029,16 @@ msgstr "已连接到"
 #: src/app/main/ui/workspace/libraries.cljs:573, src/app/main/ui/workspace/libraries.cljs:697
 msgid "workspace.libraries.empty.add-some"
 msgstr "也可以添加以下内容试用："
+
+#: src/app/main/ui/workspace/libraries.cljs:834
+#, fuzzy
+msgid "workspace.libraries.empty.no-assets"
+msgstr "还没有素材"
+
+#: src/app/main/ui/workspace/libraries.cljs:918
+#, fuzzy
+msgid "workspace.libraries.empty.no-connected-libraries"
+msgstr "还没有已连接的库。"
 
 #: src/app/main/ui/workspace/libraries.cljs:567, src/app/main/ui/workspace/libraries.cljs:691
 msgid "workspace.libraries.empty.no-libraries"
@@ -5801,9 +7086,19 @@ msgstr "未找到与“%s”匹配的结果"
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "搜索共享库"
 
+#: src/app/main/ui/workspace/libraries.cljs:849, src/app/main/ui/workspace/libraries.cljs:897
+#, fuzzy
+msgid "workspace.libraries.set-as-tokens-source"
+msgstr "设为令牌来源"
+
 #: src/app/main/ui/workspace/libraries.cljs:531, src/app/main/ui/workspace/libraries.cljs:648
 msgid "workspace.libraries.shared-libraries"
 msgstr "共享库"
+
+#: src/app/main/ui/workspace/libraries.cljs:674
+#, fuzzy
+msgid "workspace.libraries.shared-library-added"
+msgstr "已添加"
 
 #: src/app/main/ui/workspace/libraries.cljs:555, src/app/main/ui/workspace/libraries.cljs:679
 msgid "workspace.libraries.shared-library-btn"
@@ -5828,6 +7123,37 @@ msgstr "取消链接所有素材"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:554
 msgid "workspace.libraries.text.multiple-token-tooltip"
 msgstr "分离所有令牌"
+
+#: src/app/main/ui/workspace/libraries.cljs:1159
+#, fuzzy
+msgid "workspace.libraries.this-file"
+msgstr "此文件"
+
+#: src/app/main/ui/workspace/libraries.cljs:219, src/app/main/ui/workspace/libraries.cljs:263
+#, fuzzy
+msgid "workspace.libraries.token-sets"
+msgid_plural "workspace.libraries.token-sets"
+msgstr[0] "1 个令牌集"
+msgstr[1] "%s 个令牌集"
+
+#: src/app/main/ui/workspace/libraries.cljs:222, src/app/main/ui/workspace/libraries.cljs:267
+#, fuzzy
+msgid "workspace.libraries.token-themes"
+msgid_plural "workspace.libraries.token-themes"
+msgstr[0] "1 个主题"
+msgstr[1] "%s 个主题"
+
+#: src/app/main/ui/workspace/libraries.cljs:216, src/app/main/ui/workspace/libraries.cljs:259
+#, fuzzy
+msgid "workspace.libraries.tokens"
+msgid_plural "workspace.libraries.tokens"
+msgstr[0] "1 个令牌"
+msgstr[1] "%s 个令牌"
+
+#: src/app/main/ui/workspace/libraries.cljs:842, src/app/main/ui/workspace/libraries.cljs:889
+#, fuzzy
+msgid "workspace.libraries.tokens-source"
+msgstr "令牌来源"
 
 #: src/app/main/ui/workspace/libraries.cljs:181, src/app/main/ui/workspace/libraries.cljs:210, src/app/main/ui/workspace/libraries.cljs:255
 msgid "workspace.libraries.typography"
@@ -5907,9 +7233,19 @@ msgstr "切换模糊"
 msgid "workspace.options.blur-options.toggle-more-options"
 msgstr "显示或隐藏更多选项"
 
+#: src/app/main/ui/exports/assets.cljs:327
+#, fuzzy
+msgid "workspace.options.cancel-export"
+msgstr "取消"
+
 #: src/app/main/ui/workspace/sidebar/options/page.cljs:78, src/app/main/ui/workspace/sidebar/options/page.cljs:86
 msgid "workspace.options.canvas-background"
 msgstr "画布背景"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:75
+#, fuzzy
+msgid "workspace.options.canvas-background-section"
+msgstr "画布背景区域"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:720
 msgid "workspace.options.clip-content"
@@ -6121,6 +7457,21 @@ msgstr "移除导出"
 msgid "workspace.options.export.suffix"
 msgstr "后缀"
 
+#: src/app/main/ui/exports/assets.cljs:260
+#, fuzzy
+msgid "workspace.options.exporting-busy"
+msgstr "导出服务繁忙，请稍后重试"
+
+#: src/app/main/ui/exports/assets.cljs:263
+#, fuzzy
+msgid "workspace.options.exporting-cancelled"
+msgstr "已取消导出"
+
+#: src/app/main/ui/exports/assets.cljs:262
+#, fuzzy
+msgid "workspace.options.exporting-cancelling"
+msgstr "正在取消…"
+
 #: src/app/main/ui/exports/assets.cljs:265
 msgid "workspace.options.exporting-complete"
 msgstr "导出完成"
@@ -6136,6 +7487,11 @@ msgstr "导出失败"
 #: src/app/main/ui/exports/assets.cljs:267
 msgid "workspace.options.exporting-object-slow"
 msgstr "导出速度意外缓慢"
+
+#: src/app/main/ui/exports/assets.cljs:264
+#, fuzzy
+msgid "workspace.options.exporting-queued"
+msgstr "等待中…"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:238
 msgid "workspace.options.fill"
@@ -6173,6 +7529,11 @@ msgstr "流程起点"
 msgid "workspace.options.flows.flow-starts"
 msgstr "所有流程起点"
 
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:300, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:526
+#, fuzzy
+msgid "workspace.options.font-not-available"
+msgstr "此文本使用的字体（%s）已不可用。请重新上传该字体以创建排版样式"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:34
 msgid "workspace.options.grid.auto"
 msgstr "自动"
@@ -6184,6 +7545,11 @@ msgstr "列"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:249, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:283
 msgid "workspace.options.grid.params.color"
 msgstr "颜色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:44
+#, fuzzy
+msgid "workspace.options.grid.params.guide-defaults"
+msgstr "参考线默认设置"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:303
 msgid "workspace.options.grid.params.gutter"
@@ -6585,6 +7951,11 @@ msgstr "更多库颜色"
 msgid "workspace.options.more-token-colors"
 msgstr "更多颜色令牌"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:516
+#, fuzzy
+msgid "workspace.options.no-font-results"
+msgstr "没有匹配的字体"
+
 #: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:117, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:516
 msgid "workspace.options.no-size-preset-results"
 msgstr "没有匹配的尺寸预设"
@@ -6592,6 +7963,11 @@ msgstr "没有匹配的尺寸预设"
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:241, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:298
 msgid "workspace.options.opacity"
 msgstr "不透明度"
+
+#: src/app/main/ui/workspace/sidebar/options/page.cljs:99, src/app/main/ui/workspace/sidebar/options/page.cljs:106
+#, fuzzy
+msgid "workspace.options.pixel-grid-color"
+msgstr "像素网格颜色"
 
 #: src/app/main/ui/workspace/sidebar/options.cljs:242
 msgid "workspace.options.prototype"
@@ -6793,6 +8169,26 @@ msgstr "间隙"
 msgid "workspace.options.stroke-width"
 msgstr "描边宽度"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:541
+#, fuzzy
+msgid "workspace.options.stroke-width-bottom"
+msgstr "下侧（块结束端）"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:554
+#, fuzzy
+msgid "workspace.options.stroke-width-left"
+msgstr "左侧（行内起始端）"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:528
+#, fuzzy
+msgid "workspace.options.stroke-width-right"
+msgstr "右侧（行内结束端）"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:515
+#, fuzzy
+msgid "workspace.options.stroke-width-top"
+msgstr "上侧（块起始端）"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:267
 msgid "workspace.options.stroke.add-stroke"
 msgstr "新增描边颜色"
@@ -6820,6 +8216,16 @@ msgstr "混合"
 #: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:265
 msgid "workspace.options.stroke.outer"
 msgstr "外侧"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:175
+#, fuzzy
+msgid "workspace.options.stroke.per-side"
+msgstr "各边描边"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:174
+#, fuzzy
+msgid "workspace.options.stroke.per-side-disabled"
+msgstr "各边描边功能仅适用于新版渲染器。请切换渲染器以使用此功能。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:282, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:414
 msgid "workspace.options.stroke.remove-stroke"
@@ -7408,6 +8814,26 @@ msgstr "Y 轴"
 msgid "workspace.path.actions.draw-nodes"
 msgstr "绘制节点（%s）"
 
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:132
+#, fuzzy
+msgid "workspace.path.actions.handler-aligned"
+msgstr "对齐"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:136
+#, fuzzy
+msgid "workspace.path.actions.handler-independent"
+msgstr "独立"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:128
+#, fuzzy
+msgid "workspace.path.actions.handler-mirror"
+msgstr "等长"
+
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:121
+#, fuzzy
+msgid "workspace.path.actions.handler-type"
+msgstr "控制柄行为"
+
 #: src/app/main/ui/workspace/viewport/path_actions.cljs:256
 msgid "workspace.path.actions.join-nodes"
 msgstr "连接节点（%s）"
@@ -7541,6 +8967,16 @@ msgstr "读取当前用户的个人资料信息。"
 msgid "workspace.plugins.plugin-list-link"
 msgstr "插件列表"
 
+#: src/app/main/ui/workspace/plugins.cljs:188
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.message"
+msgstr "确定要移除插件 %s 吗？你可以随时重新安装。"
+
+#: src/app/main/ui/workspace/plugins.cljs:187
+#, fuzzy
+msgid "workspace.plugins.remove-confirmation.title"
+msgstr "移除插件"
+
 #: src/app/main/ui/workspace/plugins.cljs:98, src/app/main/ui/workspace/plugins.cljs:189
 msgid "workspace.plugins.remove-plugin"
 msgstr "移除插件"
@@ -7624,6 +9060,11 @@ msgstr "复制为 CSS"
 #: src/app/main/ui/workspace/context_menu.cljs:253
 msgid "workspace.shape.menu.copy-css-nested"
 msgstr "复制为 CSS（嵌套图层）"
+
+#: src/app/main/ui/workspace/context_menu.cljs:226
+#, fuzzy
+msgid "workspace.shape.menu.copy-id"
+msgstr "复制 ID"
 
 #: src/app/main/ui/workspace/context_menu.cljs:232
 msgid "workspace.shape.menu.copy-link"
@@ -7921,6 +9362,11 @@ msgstr "形状"
 msgid "workspace.sidebar.layers.texts"
 msgstr "文本"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:53
+#, fuzzy
+msgid "workspace.sidebar.options.svg-attrs.remove"
+msgstr "移除属性"
+
 #: src/app/main/ui/inspect/attributes/svg.cljs:56, src/app/main/ui/workspace/sidebar/options/menus/svg_attrs.cljs:114
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "已导入的 SVG 属性"
@@ -8023,6 +9469,11 @@ msgstr "%s 个已启用的令牌主题"
 msgid "workspace.tokens.add-new-theme"
 msgstr "添加令牌主题"
 
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:106
+#, fuzzy
+msgid "workspace.tokens.add-set"
+msgstr "添加令牌集"
+
 #: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:62
 msgid "workspace.tokens.add-set-to-group"
 msgstr "向此组添加令牌集"
@@ -8051,6 +9502,11 @@ msgstr "基准字号"
 msgid "workspace.tokens.base-font-size.error"
 msgstr "基准字号必须是像素值或无单位数值。"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:98
+#, fuzzy
+msgid "workspace.tokens.change-token-source"
+msgstr "更改令牌来源"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:369, src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:152
 msgid "workspace.tokens.color"
 msgstr "颜色"
@@ -8071,6 +9527,11 @@ msgstr "创建一个。"
 msgid "workspace.tokens.create-token"
 msgstr "创建新的 %s 令牌"
 
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:101
+#, fuzzy
+msgid "workspace.tokens.current-tokens-source-tooltip"
+msgstr "这是当前的令牌来源"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:437
 msgid "workspace.tokens.delete"
 msgstr "删除令牌"
@@ -8078,6 +9539,11 @@ msgstr "删除令牌"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:138
 msgid "workspace.tokens.delete-theme-title"
 msgstr "删除令牌主题"
+
+#: src/app/main/ui/workspace/tokens/management/forms/shadow.cljs:253, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:226
+#, fuzzy
+msgid "workspace.tokens.detach-reference"
+msgstr "分离引用"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:430
 msgid "workspace.tokens.duplicate"
@@ -8283,9 +9749,24 @@ msgstr "你目前没有令牌主题。"
 msgid "workspace.tokens.not-remap"
 msgstr "不重新映射"
 
+#: src/app/main/data/workspace/libraries.cljs:850
+#, fuzzy
+msgid "workspace.tokens.notifications.source-sets-or-themes-updated"
+msgstr "令牌来源的令牌集或主题已被修改"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:132
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s 个已启用的令牌集"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:438, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:112
+#, fuzzy
+msgid "workspace.tokens.only-first-fill-or-stroke"
+msgstr "设计令牌只能应用于列表中的第一个填充或描边。"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:104
+#, fuzzy
+msgid "workspace.tokens.open-source-new-tab"
+msgstr "在新标签页中打开令牌来源"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:157
 msgid "workspace.tokens.original-value"
@@ -8419,6 +9900,16 @@ msgstr "Y"
 msgid "workspace.tokens.size"
 msgstr "大小"
 
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:75
+#, fuzzy
+msgid "workspace.tokens.source"
+msgstr "来源："
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:311, src/app/main/ui/workspace/tokens/management/context_menu.cljs:335
+#, fuzzy
+msgid "workspace.tokens.stroke-width"
+msgstr "描边宽度"
+
 #: src/app/main/ui/workspace/tokens/management/forms/form_container.cljs:54, src/app/main/ui/workspace/tokens/management/forms/typography.cljs:184
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "none | uppercase | lowercase | capitalize 或 {alias}"
@@ -8434,6 +9925,11 @@ msgstr "你可以在此管理令牌主题、启用或停用主题，以及配置
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:83
 msgid "workspace.tokens.themes-list"
 msgstr "令牌主题列表"
+
+#: src/app/main/ui/workspace/tokens/tokens_source.cljs:80
+#, fuzzy
+msgid "workspace.tokens.this-file"
+msgstr "此文件"
 
 #: src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:334, src/app/main/ui/workspace/tokens/management/forms/generic_form.cljs:335
 msgid "workspace.tokens.token-description"
@@ -8501,6 +9997,11 @@ msgstr "使用引用"
 msgid "workspace.tokens.value-not-valid"
 msgstr "值无效"
 
+#: src/app/main/ui/workspace/top_toolbar.cljs:68
+#, fuzzy
+msgid "workspace.toolbar.arrow"
+msgstr "箭头（%s）"
+
 #: src/app/main/ui/workspace/sidebar.cljs:159, src/app/main/ui/workspace/sidebar.cljs:166
 msgid "workspace.toolbar.assets"
 msgstr "素材"
@@ -8529,6 +10030,16 @@ msgstr "画板（%s）"
 msgid "workspace.toolbar.image"
 msgstr "图片（%s）"
 
+#: src/app/main/ui/workspace/top_toolbar.cljs:362
+#, fuzzy
+msgid "workspace.toolbar.label"
+msgstr "绘图工具"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:67
+#, fuzzy
+msgid "workspace.toolbar.line"
+msgstr "直线（%s）"
+
 #: src/app/main/ui/components/mcp_menu.cljs:120
 msgid "workspace.toolbar.mcp"
 msgstr "MCP"
@@ -8537,6 +10048,21 @@ msgstr "MCP"
 msgid "workspace.toolbar.mcp-connected"
 msgstr "MCP 已连接"
 
+#: src/app/main/ui/components/mcp_menu.cljs:136
+#, fuzzy
+msgid "workspace.toolbar.mcp-copy-session-id"
+msgstr "复制会话 ID"
+
+#: src/app/main/ui/components/mcp_menu.cljs:33
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-copied"
+msgstr "已复制会话 ID"
+
+#: src/app/main/ui/components/mcp_menu.cljs:132
+#, fuzzy
+msgid "workspace.toolbar.mcp-session-id"
+msgstr "会话 ID：%s"
+
 #: src/app/main/ui/workspace/top_toolbar.cljs:63, src/app/main/ui/workspace/top_toolbar.cljs:374
 msgid "workspace.toolbar.move"
 msgstr "移动（%s）"
@@ -8544,6 +10070,11 @@ msgstr "移动（%s）"
 #: src/app/main/ui/workspace/palette.cljs:175
 msgid "workspace.toolbar.palette-bar"
 msgstr "调色板栏"
+
+#: src/app/main/ui/workspace/palette.cljs:211
+#, fuzzy
+msgid "workspace.toolbar.palette-options"
+msgstr "调色板选项"
 
 #: src/app/main/ui/workspace/top_toolbar.cljs:70
 msgid "workspace.toolbar.path"
@@ -8665,6 +10196,11 @@ msgstr "排版素材"
 #: src/app/main/ui/workspace/sidebar/history.cljs:152
 msgid "workspace.undo.entry.new"
 msgstr "新建了 %s"
+
+#: src/app/main/ui/workspace/sidebar/history.cljs:371
+#, fuzzy
+msgid "workspace.undo.entry.show-details"
+msgstr "显示详细信息"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:132
 msgid "workspace.undo.entry.single.circle"
