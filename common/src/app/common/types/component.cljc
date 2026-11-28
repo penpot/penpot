@@ -102,6 +102,7 @@
    :grids                   :grids-group
 
    :show-content            :show-content
+   :hide-in-viewer          :hide-in-viewer
 
    :layout                  :layout-container
 
